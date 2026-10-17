@@ -85,6 +85,7 @@ fun VoiceScreen(onBack: () -> Unit) {
                 }
                 Text("Conversación por internet dentro de la app. Para atender tu número de celular se necesita configurar el desvío a un servicio telefónico.", style = MaterialTheme.typography.bodySmall)
             }
+            item { CallForwardingCard(enabled = !active && !pendingStart) }
             item {
                 OutlinedTextField(value = baseUrl, onValueChange = { baseUrl = it }, label = { Text("Canal HTTPS") }, enabled = !active, singleLine = true, modifier = Modifier.fillMaxWidth())
             }

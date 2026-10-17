@@ -1,0 +1,19 @@
+{
+  "verified_at_utc": "2026-10-17T22:25:35.361135+00:00",
+  "marin_pr": 2,
+  "marin_merge_commit": "f1dcf76b0dac5c7dbd1353801ba8691467a7872e",
+  "android_unit_tests": 18,
+  "failures": 0,
+  "assemble_debug": "passed",
+  "lint_errors": 0,
+  "lint_warnings": 43,
+  "apk_sha256": "b9615c8dbb94aa8cc6d3d5295d8e10319c46ab0a335b9d8434001255328f657e",
+  "scope": "Acceso asistido a ajustes públicos de llamadas desde Voz en vivo; guía para elegir SIM Entel y un número receptor conectado al agente.",
+  "phone_forwarding_changed": false,
+  "phone_forwarding_verified_on_carrier": false,
+  "additional_permissions": false,
+  "mmi_or_ussd_sent": false,
+  "physical_device_settings_navigation_tested": false,
+  "receiving_number_configured": false,
+  "zavu_external_audio_bridge_verified": false
+}
