@@ -1,0 +1,64 @@
+{
+  "verified_at": "2026-10-17T15:33:11.659337-05:00",
+  "app_source_commit": "d7c1f2db37371460f774c7c8c019ca824fdc3daf",
+  "service": "https://api.maritime.sh/a/ebf0eb81-42c0-4437-a044-1af84af1b755",
+  "health": {
+    "ok": true,
+    "role": "voz",
+    "webrtc": true,
+    "models": {
+      "transcription": "gpt-live-transcribe",
+      "understanding": "gpt-4.1-mini",
+      "detection": "gpt-6-luna"
+    },
+    "configured": true
+  },
+  "unit_tests": {
+    "tests": 12,
+    "failures": 0,
+    "errors": 0
+  },
+  "android_build": {
+    "assembleDebug": "passed",
+    "assembleDebugAndroidTest": "passed",
+    "lintDebug": "passed",
+    "lint_errors": 0
+  },
+  "apk_sha256": "87e26fb76dd0aa20d33203ef0c0959270d9075329044d2b4ca38ca5a83a4473e",
+  "private_access_code_absent_from_apk_and_git": true,
+  "native_audio": {
+    "emulator": "Android 16 API 36 arm64; Android Emulator 36.1.9",
+    "source": "Audio sintético por gRPC; entrada física del equipo deshabilitada",
+    "cases": [
+      {
+        "scenario": "legitimo",
+        "alert": false,
+        "transcript": "Hola. Soy Ana, confirmamos la reunión de mañana a las diez. No necesito pagos ni datos personales. Gracias y hasta mañana.",
+        "captured_peak_rms": 0.6324787821445512,
+        "committed_segments": 2,
+        "understanding": "Una persona identificada como Ana confirma una reunión para mañana a las diez y aclara que no necesita pagos ni datos personales.",
+        "app_source_commit": "40d3d42",
+        "instrumentation": "OK (1 test)"
+      },
+      {
+        "scenario": "riesgo",
+        "alert": true,
+        "transcript": "Enrique mil soles ahora mismo o le haré daño a tu familia. No cortes la llamada. No hables con nadie.",
+        "captured_peak_rms": 0.6403129306007974,
+        "committed_segments": 1,
+        "understanding": "Una persona que se identifica como Enrique recibe una amenaza directa que incluye una exigencia inmediata de dinero por mil soles y amenazas para su familia, acompañadas de instrucciones de no cortar la llamada ni comunicarse con otros.",
+        "app_source_commit": "d7c1f2db37371460f774c7c8c019ca824fdc3daf",
+        "instrumentation": "OK (1 test)"
+      }
+    ],
+    "tested_scope": "Captura nativa, SDP WebRTC, DataChannel, WebSocket, transcripción, salida de ambos agentes y cierre. No se automatizó la navegación de la interfaz.",
+    "observed_quality_limitations": [
+      "En el WAV de amenaza, el transcriptor sustituyó la palabra inicial «Transfiere» por «Enrique». El resumen interpretó ese texto como un nombre/identificación, algo que el audio sintético original no establece. La alerta TRUE se mantuvo por la amenaza explícita.",
+      "La prueba comprueba el resultado booleano esperado y la presencia de comprensión; no garantiza exactitud semántica de todas las afirmaciones del resumen. Se requiere revisión humana."
+    ]
+  },
+  "limitations": [
+    "Verificación en emulador; no se conectó un teléfono físico.",
+    "Los escenarios se ejecutan por separado para evitar fallos del controlador CoreAudio del emulador en este equipo."
+  ]
+}
