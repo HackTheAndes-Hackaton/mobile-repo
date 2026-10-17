@@ -1,0 +1,33 @@
+{
+  "verified_at": "2026-10-17T16:41:25.945437-05:00",
+  "integrated_main": "cc3e906b612bf5ffe389465222dedadbdc4ccf93",
+  "feature_before_merge": "fcdb17e041693f6a89b247e777e1503a94c7c6ba",
+  "conflicts_resolved": [
+    "app/build.gradle.kts: mantener WebRTC, pruebas y Tabler Icons",
+    "HomeScreen.kt: conservar rediseño, contactos, demos y acceso al canal de voz"
+  ],
+  "compatibility_change": "VoiceScreen usa el icono Tabler ArrowLeft que ya utiliza main",
+  "unit_tests": {
+    "tests": 15,
+    "failures": 0,
+    "errors": 0
+  },
+  "assembleDebug": "passed",
+  "assembleDebugAndroidTest": "passed",
+  "lintDebug": "passed",
+  "lint_errors": 0,
+  "apks": {
+    "app-arm64-v8a-debug.apk": {
+      "sha256": "dd15b0c02c2585ef9c8e0b295c958b986433c01171627b57834bd35231bd8950",
+      "bytes": 44356359
+    },
+    "app-universal-debug.apk": {
+      "sha256": "f388b9c49a999c065e229cbd164da2d9ddc7fe709b707d4d4f5693dbac3a2331",
+      "bytes": 80217487
+    }
+  },
+  "private_access_code_absent_from_apks": true,
+  "voice_and_analysis_implementation_unchanged": true,
+  "native_audio_repeated_for_merge": false,
+  "prior_native_audio_evidence": "verificacion-voz.json"
+}

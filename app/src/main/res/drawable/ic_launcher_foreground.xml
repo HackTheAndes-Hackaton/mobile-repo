@@ -1,15 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Marca Tiskz: escudo con ondas de voz (protección de llamadas por IA). Dentro de la zona segura de 66dp. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <group
-        android:scaleX="2.5"
-        android:scaleY="2.5"
-        android:translateX="24"
-        android:translateY="24">
-        <path
-            android:fillColor="#FFFFFFFF"
-            android:pathData="M12,1L3,5v6c0,5.55 3.84,10.74 9,12 5.16,-1.26 9,-6.45 9,-12L21,5l-9,-4zM10,17l-4,-4 1.41,-1.41L10,14.17l6.59,-6.59L18,9l-8,8z" />
-    </group>
+    <!-- Sombra suave del escudo -->
+    <path
+        android:fillColor="#260B1B4D"
+        android:pathData="M54,28C59,31.5 67.5,34 76,35C76.6,36 77,37.5 77,39V53C77,67.5 67.5,78.5 54,84C40.5,78.5 31,67.5 31,53V39C31,37.5 31.4,36 32,35C40.5,34 49,31.5 54,28Z" />
+    <!-- Escudo -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M54,26C59,29.5 67.5,32 76,33C76.6,34 77,35.5 77,37V51C77,65.5 67.5,76.5 54,82C40.5,76.5 31,65.5 31,51V37C31,35.5 31.4,34 32,33C40.5,32 49,29.5 54,26Z" />
+    <!-- Ondas de voz -->
+    <path android:pathData="M41.5,48.5A2.5,2.5 0,0 1,46.5 48.5V57.5A2.5,2.5 0,0 1,41.5 57.5Z M51.5,44.5A2.5,2.5 0,0 1,56.5 44.5V61.5A2.5,2.5 0,0 1,51.5 61.5Z M61.5,48.5A2.5,2.5 0,0 1,66.5 48.5V57.5A2.5,2.5 0,0 1,61.5 57.5Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:endX="54"
+                android:endY="64"
+                android:startX="54"
+                android:startY="42"
+                android:type="linear">
+                <item android:color="#FF1D4ED8" android:offset="0" />
+                <item android:color="#FF38BDF8" android:offset="1" />
+            </gradient>
+        </aapt:attr>
+    </path>
 </vector>

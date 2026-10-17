@@ -1,9 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Marca Tiskz en 24dp (logo dentro de la app y notificaciones): escudo con las ondas recortadas. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M12,1L3,5v6c0,5.55 3.84,10.74 9,12 5.16,-1.26 9,-6.45 9,-12L21,5l-9,-4zM10,17l-4,-4 1.41,-1.41L10,14.17l6.59,-6.59L18,9l-8,8z" />
+    <group
+        android:scaleX="0.36"
+        android:scaleY="0.36"
+        android:translateX="-7.44"
+        android:translateY="-7.44">
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:fillType="evenOdd"
+            android:pathData="M54,26C59,29.5 67.5,32 76,33C76.6,34 77,35.5 77,37V51C77,65.5 67.5,76.5 54,82C40.5,76.5 31,65.5 31,51V37C31,35.5 31.4,34 32,33C40.5,32 49,29.5 54,26Z M41.5,48.5A2.5,2.5 0,0 1,46.5 48.5V57.5A2.5,2.5 0,0 1,41.5 57.5Z M51.5,44.5A2.5,2.5 0,0 1,56.5 44.5V61.5A2.5,2.5 0,0 1,51.5 61.5Z M61.5,48.5A2.5,2.5 0,0 1,66.5 48.5V57.5A2.5,2.5 0,0 1,61.5 57.5Z" />
+    </group>
 </vector>

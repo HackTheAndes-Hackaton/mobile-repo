@@ -43,9 +43,14 @@ class AppContainer(private val context: Context) {
         }
     }
 
-    /** En modo automático: último dígito par = llamada segura, impar = estafa. */
+    /**
+     * En modo automático: un contacto guardado es una llamada segura; si no,
+     * último dígito par = segura, impar = estafa.
+     */
     private fun resolveScenario(scenario: DemoScenario, number: String): DemoScenario {
         if (scenario != DemoScenario.AUTO) return scenario
+        // Consulta corta a Contactos en el hilo principal: aceptable para el modo demo.
+        if (ContactLookup.findName(context, number) != null) return DemoScenario.SAFE
         val lastDigit = PhoneNumbers.digits(number).lastOrNull()?.digitToInt() ?: 1
         return if (lastDigit % 2 == 0) DemoScenario.SAFE else DemoScenario.SCAM
     }

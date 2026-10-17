@@ -7,8 +7,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import compose.icons.TablerIcons
+import compose.icons.tablericons.ArrowLeft
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -69,7 +69,7 @@ fun VoiceScreen(onBack: () -> Unit) {
 
     Scaffold(topBar = {
         TopAppBar(title = { Text("Voz en vivo") }, navigationIcon = {
-            IconButton(onClick = { session?.close(); onBack() }) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Volver") }
+            IconButton(onClick = { session?.close(); onBack() }) { Icon(TablerIcons.ArrowLeft, "Volver") }
         })
     }) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {

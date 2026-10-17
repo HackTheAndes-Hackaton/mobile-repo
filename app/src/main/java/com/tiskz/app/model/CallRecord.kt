@@ -1,5 +1,6 @@
 package com.tiskz.app.model
 
+import com.tiskz.app.util.PhoneNumbers
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -7,6 +8,7 @@ import org.json.JSONObject
 data class CallRecord(
     val id: String,
     val number: String,
+    val callerName: String?,
     val direction: CallDirection,
     val startedAt: Long,
     val durationSec: Long,
@@ -19,9 +21,12 @@ data class CallRecord(
     val blocked: Boolean,
     val simulated: Boolean,
 ) {
+    val title: String get() = callerName ?: PhoneNumbers.display(number)
+
     fun toJson(): JSONObject = JSONObject().apply {
         put("id", id)
         put("number", number)
+        put("callerName", callerName ?: JSONObject.NULL)
         put("direction", direction.name)
         put("startedAt", startedAt)
         put("durationSec", durationSec)
@@ -51,6 +56,7 @@ data class CallRecord(
             return CallRecord(
                 id = call.id,
                 number = call.number,
+                callerName = call.callerName,
                 direction = call.direction,
                 startedAt = call.startedAt,
                 durationSec = duration,
@@ -68,6 +74,7 @@ data class CallRecord(
         fun fromJson(json: JSONObject): CallRecord = CallRecord(
             id = json.getString("id"),
             number = json.getString("number"),
+            callerName = json.optStringOrNull("callerName"),
             direction = CallDirection.valueOf(json.getString("direction")),
             startedAt = json.getLong("startedAt"),
             durationSec = json.getLong("durationSec"),
