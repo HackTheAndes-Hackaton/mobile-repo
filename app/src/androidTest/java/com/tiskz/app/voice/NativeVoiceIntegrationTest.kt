@@ -36,6 +36,7 @@ class NativeVoiceIntegrationTest {
         org.junit.Assume.assumeTrue("Prueba externa opcional: falta el código privado de voz.", keyFile.isFile)
         val code = keyFile.readText().trim()
         val phase = File(context.filesDir, "voice-test-phase")
+        val audioComplete = File(context.filesDir, "voice-test-audio-complete")
         val results = JSONArray()
         val client = OkHttpClient.Builder().pingInterval(20, TimeUnit.SECONDS).callTimeout(25, TimeUnit.SECONDS).build()
         val activity = instrumentation.startActivitySync(Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
@@ -54,13 +55,23 @@ class NativeVoiceIntegrationTest {
                             delay(100)
                         }
                     }
+                    audioComplete.delete()
                     phase.writeText("ready:$name")
+                    // El inyector marca el final del WAV y de su silencio de cierre. No terminar
+                    // la captura al recibir una alerta temprana mientras todavía se envía audio.
+                    withTimeout(80000) {
+                        while (!audioComplete.isFile) {
+                            check(session.connection.value != WebRtcVoiceSession.Connection.ENDED) { session.state.value.error.orEmpty() }
+                            delay(100)
+                        }
+                    }
                     withTimeout(45000) {
                         while (true) {
                             val state = session.state.value
                             check(state.error == null) { state.error.orEmpty() }
                             val transcript = state.transcript.joinToString(" ") { it.text }
-                            if (state.alert == expected && state.understanding?.mode == "extractivo_sin_identidades_v1" && state.understandingRevision == state.alertRevision && transcript.contains(needle, ignoreCase = true) && state.understanding.evidence.any { it.quote.contains(needle, ignoreCase = true) }) break
+                            val ending = if (name == "legitimo") "hasta mañana" else "No hables con nadie"
+                            if (state.alert == expected && state.understanding?.mode == "extractivo_sin_identidades_v1" && state.understandingRevision == state.alertRevision && transcript.contains(needle, ignoreCase = true) && transcript.contains(ending, ignoreCase = true) && state.understanding.evidence.any { it.quote.contains(needle, ignoreCase = true) }) break
                             delay(100)
                         }
                     }
@@ -68,7 +79,7 @@ class NativeVoiceIntegrationTest {
                     assertEquals(expected, state.alert)
                     assertNotNull(state.understanding)
                     assertEquals(48000, session.capturedSampleRate)
-                    assertTrue(state.understanding!!.evidence.all { state.transcript.joinToString(" ") { line -> line.text }.contains(it.quote) })
+                    assertTrue(state.understanding!!.evidence.all { state.transcript.joinToString("\n") { line -> line.text }.contains(it.quote) })
                     assertFalse(Regex("\\b(Enrique|Ana)\\b", RegexOption.IGNORE_CASE).containsMatchIn(state.understanding!!.summary))
                     if (name == "riesgo") assertTrue("Debe conservar Transfiere, sin sustituirlo por un nombre", state.transcript.joinToString(" ") { it.text }.startsWith("Transfiere", ignoreCase = true))
                     results.put(JSONObject().put("scenario", name).put("alert", state.alert)
@@ -101,6 +112,7 @@ class NativeVoiceIntegrationTest {
             phase.writeText("done")
         } finally {
             keyFile.delete()
+            audioComplete.delete()
             instrumentation.runOnMainSync { activity.finish() }
             client.connectionPool.evictAll()
             client.dispatcher.executorService.shutdown()

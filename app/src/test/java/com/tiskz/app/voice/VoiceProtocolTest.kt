@@ -155,10 +155,22 @@ class VoiceProtocolTest {
         val vad = VoiceActivityDetector()
         for (time in 0L..20000L step 10) assertFalse(vad.accept(.1, time))
         assertFalse(vad.accept(0.0, 20100))
-        assertTrue(vad.accept(0.0, 20200))
-        assertFalse(vad.accept(0.0, 21000))
+        assertFalse(vad.accept(0.0, 20650))
+        assertTrue(vad.accept(0.0, 21210))
+        assertFalse(vad.accept(0.0, 22000))
         assertEquals(1.0, VoiceActivityDetector.pcm16Rms(byteArrayOf(0, -128, 0, -128)), .00001)
         assertEquals(0.0, VoiceActivityDetector.pcm16Rms(byteArrayOf(0, 0)), .00001)
+    }
+
+    @Test fun shortPauseInLongUtteranceKeepsItsEndingInTheSameCommit() {
+        val vad = VoiceActivityDetector()
+        for (time in 0L..8000L step 10) assertFalse(vad.accept(.1, time))
+        assertFalse(vad.accept(0.0, 8250))
+        assertFalse(vad.accept(0.0, 8650))
+        assertFalse(vad.accept(.1, 8700))
+        assertFalse(vad.accept(0.0, 9800))
+        assertTrue(vad.accept(0.0, 10000))
+        assertFalse(vad.accept(0.0, 11000))
     }
     @Test fun remoteCloseStopsCaptureHookWithoutCallEndedOrPingTimeout() {
         val server = MockWebServer()

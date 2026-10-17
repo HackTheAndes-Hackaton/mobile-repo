@@ -20,6 +20,7 @@ URL incluida por defecto:
 `https://api.maritime.sh/a/ebf0eb81-42c0-4437-a044-1af84af1b755`.
 
 La captura solicita 48 kHz. La comprensión acepta oraciones completas y genera descripciones controladas; no convierte nombres mencionados o palabras dudosas en identidades ni hablantes. La pantalla muestra también incertidumbres y limitaciones.
+Los fragmentos se cierran tras 1,2 segundos de pausa, dando margen a la entrega del audio antes del análisis. La alerta llega después de esa pausa y del procesamiento de los modelos.
 
 El código se mantiene solo en memoria durante la pantalla; no se incluye en el APK ni se guarda en
 ajustes. El audio se transmite al proveedor de transcripción por WebRTC y el texto final se envía
@@ -107,6 +108,10 @@ en `files/voice-test-code` dentro del almacenamiento privado de la app. Se omite
 y lo elimina al terminar. No utiliza el micrófono del equipo anfitrión ni incorpora secretos al APK.
 El argumento de instrumentación `-e voiceScenario riesgo` o `-e voiceScenario legitimo` permite
 ejecutar cada caso en un arranque separado del emulador cuando su controlador de audio lo requiere.
+El inyector espera `ready:<escenario>` en `files/voice-test-phase`, entrega el WAV PCM16 mono a
+48 kHz seguido de silencio y crea `files/voice-test-audio-complete` en ese mismo almacenamiento
+privado al terminar. La prueba espera ese marcador y la última frase antes de detener la captura;
+una alerta temprana por sí sola no termina el audio. No reutilices este mecanismo con audio real.
 
 WebRTC Android: [SDK y versiones oficiales](https://github.com/webrtc-sdk/android).
 

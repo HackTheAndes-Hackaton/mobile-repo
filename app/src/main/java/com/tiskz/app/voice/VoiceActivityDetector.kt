@@ -14,8 +14,9 @@ class VoiceActivityDetector {
             pending = true
             lastSpeech = nowMs
         }
-        val commit = pending && nowMs - startedAt > 400 &&
-            (nowMs - lastSpeech > 600 || (nowMs - startedAt > 6000 && nowMs - lastSpeech > 180))
+        // Deja margen entre la captura local y la entrega RTP antes del commit por DataChannel.
+        // Una pausa breve dentro de una frase larga no debe cortar su negación ni su última palabra.
+        val commit = pending && nowMs - startedAt > 400 && nowMs - lastSpeech > 1200
         if (commit) pending = false
         return commit
     }
