@@ -103,6 +103,7 @@ fun HomeScreen(
     onOpenSettings: () -> Unit,
     onOpenDialer: () -> Unit,
     onOpenRecord: (String) -> Unit,
+    onOpenVoice: () -> Unit,
 ) {
     val context = LocalContext.current
     val container = LocalAppContainer.current
@@ -168,6 +169,19 @@ fun HomeScreen(
                         onAllow = { contactsLauncher.launch(Manifest.permission.READ_CONTACTS) },
                         modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp),
                     )
+                }
+            }
+            item {
+                Surface(
+                    color = TiskzColors.Blue50,
+                    shape = RoundedCornerShape(24.dp),
+                    modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 16.dp),
+                ) {
+                    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text("Canal de voz en vivo", style = MaterialTheme.typography.titleMedium)
+                        Text("Envía el micrófono a los agentes y recibe transcripción y alertas reales.", style = MaterialTheme.typography.bodyMedium)
+                        Button(onClick = onOpenVoice, modifier = Modifier.fillMaxWidth()) { Text("Abrir canal de voz") }
+                    }
                 }
             }
             item { SectionTitle("Probar Tiskz", "Simula una llamada entrante") }
