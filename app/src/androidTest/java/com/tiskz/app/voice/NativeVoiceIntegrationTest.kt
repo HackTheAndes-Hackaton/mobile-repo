@@ -7,6 +7,9 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import com.tiskz.app.MainActivity
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import okhttp3.OkHttpClient
@@ -47,6 +50,8 @@ class NativeVoiceIntegrationTest {
                 .filter { scenario == null || it.first == scenario }
             for ((name, expected, needle) in cases) {
                 val session = WebRtcVoiceSession(context, client, "https://api.maritime.sh/a/ebf0eb81-42c0-4437-a044-1af84af1b755", code)
+                val rmsTimeline = JSONArray()
+                var sampleProbe: Job? = null
                 try {
                     session.start(true)
                     withTimeout(50000) {
@@ -56,6 +61,13 @@ class NativeVoiceIntegrationTest {
                         }
                     }
                     audioComplete.delete()
+                    val readyAt = android.os.SystemClock.elapsedRealtime()
+                    sampleProbe = launch {
+                        while (isActive) {
+                            rmsTimeline.put(JSONArray(listOf(android.os.SystemClock.elapsedRealtime() - readyAt, session.capturedLastRms)))
+                            delay(100)
+                        }
+                    }
                     phase.writeText("ready:$name")
                     // El inyector marca el final del WAV y de su silencio de cierre. No terminar
                     // la captura al recibir una alerta temprana mientras todavía se envía audio.
@@ -90,6 +102,7 @@ class NativeVoiceIntegrationTest {
                     File(context.filesDir, "voice-test-result.json").writeText(JSONObject()
                         .put("native_webrtc", true).put("complete", false).put("cases", results).toString(2))
                 } catch (e: Exception) {
+                    sampleProbe?.cancel()
                     val state = session.state.value
                     File(context.filesDir, "voice-test-result.json").writeText(JSONObject()
                         .put("native_webrtc", false).put("scenario", name)
@@ -97,12 +110,14 @@ class NativeVoiceIntegrationTest {
                         .put("last_rms", session.capturedLastRms)
                         .put("sample_age_ms", android.os.SystemClock.elapsedRealtime() - session.capturedLastSampleAtMs)
                         .put("speech_age_ms", android.os.SystemClock.elapsedRealtime() - session.capturedLastSpeechAtMs)
+                        .put("rms_timeline", rmsTimeline)
                         .put("captured_sample_rate", session.capturedSampleRate).put("captured_peak_rms", session.capturedPeakRms).put("committed_segments", session.committedSegments)
                         .put("alert", state.alert ?: JSONObject.NULL)
                         .put("transcript", state.transcript.joinToString(" ") { it.text })
                         .put("understanding", state.understanding?.summary ?: "").toString(2))
                     throw e
                 } finally {
+                    sampleProbe?.cancel()
                     instrumentation.runOnMainSync { session.close() }
                     assertEquals(WebRtcVoiceSession.Connection.ENDED, session.connection.value)
                     phase.writeText("closed:$name")
