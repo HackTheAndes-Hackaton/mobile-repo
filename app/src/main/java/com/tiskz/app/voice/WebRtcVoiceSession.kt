@@ -48,6 +48,7 @@ class WebRtcVoiceSession(
     private val client: OkHttpClient,
     baseUrl: String,
     private var accessCode: String,
+    private val assistant: Boolean = false,
 ) : AnalysisSession() {
     enum class Connection { CONNECTING, STREAMING, ENDED }
     private val _connection = MutableStateFlow(Connection.CONNECTING)
@@ -65,6 +66,13 @@ class WebRtcVoiceSession(
     private var audioSource: AudioSource? = null
     private var track: AudioTrack? = null
     private var channel: DataChannel? = null
+    private var remoteTrack: AudioTrack? = null
+    @Volatile internal var providerCloseConfirmed = false
+        private set
+    private val providerClosed = CompletableDeferred<Unit>()
+    private val providerReady = CompletableDeferred<Unit>()
+    @Volatile internal var assistantStarted = false
+        private set
     private val socketReady = CompletableDeferred<Unit>()
     private val iceReady = CompletableDeferred<Unit>()
     private val dataReady = CompletableDeferred<Unit>()
@@ -90,6 +98,13 @@ class WebRtcVoiceSession(
         onError = { dispatch(AnalysisEvent.Error(it)) },
     )
 
+    private val liveRelay = LiveEventRelay(
+        sendBackend = { event -> if (!closed.get() && socket?.send(event.toString()) != true) fail("Se perdió el canal de eventos.") },
+        onStarted = { assistantStarted = true; providerReady.complete(Unit) },
+        onClosed = { close() },
+        onError = { dispatch(AnalysisEvent.Error(it)) },
+    )
+
     fun start(consent: Boolean) {
         if (started || closed.get()) return
         started = true
@@ -100,7 +115,7 @@ class WebRtcVoiceSession(
                     "Permite el acceso al micrófono para iniciar."
                 }
                 withTimeout(45000) {
-                    room = api.createRoom(accessCode, consent)
+                    room = api.createRoom(accessCode, consent, assistant)
                     accessCode = ""
                     openEvents(requireNotNull(room))
                     socketReady.await()
@@ -113,6 +128,7 @@ class WebRtcVoiceSession(
                     setDescription(pc, SessionDescription(SessionDescription.Type.ANSWER, answer), local = false)
                     dataReady.await()
                     microphoneReady.await()
+                    if (assistant) providerReady.await()
                     _connection.value = Connection.STREAMING
                 }
             } catch (e: CancellationException) {
@@ -132,6 +148,7 @@ class WebRtcVoiceSession(
                 if (event is AnalysisEvent.Ended) scope.launch { close() }
             },
             onTerminated = ::fail,
+            onControl = { raw -> if (assistant) LiveEventRelay.contextCommand(raw)?.let { command -> scope.launch { sendData(command) } } },
         ))
     }
 
@@ -151,7 +168,7 @@ class WebRtcVoiceSession(
                     if (rms > 0.012) capturedLastSpeechAtMs = now
                     capturedPeakRms = maxOf(capturedPeakRms, rms)
                     val commit = vad.accept(rms, now)
-                    if (commit) scope.launch { committedSegments++; sendData(JSONObject().put("type", "input_audio_buffer.commit")) }
+                    if (commit && !assistant) scope.launch { committedSegments++; sendData(JSONObject().put("type", "input_audio_buffer.commit")) }
                 }
             }
             .setAudioRecordErrorCallback(object : JavaAudioDeviceModule.AudioRecordErrorCallback {
@@ -174,7 +191,11 @@ class WebRtcVoiceSession(
             override fun onRemoveStream(stream: MediaStream) = Unit
             override fun onDataChannel(channel: DataChannel) = Unit
             override fun onRenegotiationNeeded() = Unit
-            override fun onAddTrack(receiver: RtpReceiver, streams: Array<out MediaStream>) = Unit
+            override fun onAddTrack(receiver: RtpReceiver, streams: Array<out MediaStream>) {
+                if (assistant) (receiver.track() as? AudioTrack)?.let { audio ->
+                    remoteTrack = audio; audio.setEnabled(true); audio.setVolume(1.0)
+                }
+            }
             override fun onConnectionChange(state: PeerConnection.PeerConnectionState) {
                 if (state == PeerConnection.PeerConnectionState.FAILED) fail("No se pudo mantener la conexión WebRTC.")
                 if (state == PeerConnection.PeerConnectionState.DISCONNECTED) scope.launch {
@@ -203,12 +224,30 @@ class WebRtcVoiceSession(
                 }
             }
             override fun onMessage(buffer: DataChannel.Buffer) {
-                if (buffer.binary || closed.get() || buffer.data.remaining() > 20000) return
+                if (buffer.binary || (closed.get() && !assistant) || buffer.data.remaining() > 20000) return
                 val bytes = ByteArray(buffer.data.remaining())
                 buffer.data.get(bytes)
-                scope.launch { relay.accept(bytes.toString(Charsets.UTF_8)) }
+                val raw = bytes.toString(Charsets.UTF_8)
+                val ended = assistant && runCatching { JSONObject(raw).optString("type") == "session.closed" }.getOrDefault(false)
+                if (ended) {
+                    providerCloseConfirmed = true
+                    providerClosed.complete(Unit)
+                    socket?.send(JSONObject().put("type", "live.event").put("event", JSONObject(raw)).toString())
+                }
+                if (!closed.get()) scope.launch { if (assistant) liveRelay.accept(raw) else relay.accept(raw) }
             }
         })
+    }
+
+    /** Energía recibida, sin guardar muestras de audio. Solo diagnóstico de integración. */
+    internal suspend fun receivedAudioEnergy(): Double {
+        val result = CompletableDeferred<Double>()
+        val pc = peer ?: return 0.0
+        pc.getStats { report ->
+            result.complete(report.statsMap.values.filter { it.type == "inbound-rtp" }
+                .sumOf { (it.members["totalAudioEnergy"] as? Number)?.toDouble() ?: 0.0 })
+        }
+        return withTimeoutOrNull(2000) { result.await() } ?: 0.0
     }
 
     private fun sendData(event: JSONObject) {
@@ -231,18 +270,33 @@ class WebRtcVoiceSession(
         streaming.set(false)
         accessCode = ""
         track?.setEnabled(false)
+        remoteTrack?.setEnabled(false)
+        // Retira el emisor para detener la captura; conserva recepción hasta confirmar el cierre.
+        if (assistant) {
+            peer?.senders?.forEach { sender -> if (sender.track()?.kind() == "audio") runCatching { peer?.removeTrack(sender) } }
+            if (!providerClosed.isCompleted) sendData(JSONObject().put("type", "session.close"))
+        }
         scope.cancel()
         api.cancelPending()
+        val current = room
+        room = null
+        if (assistant) cleanupScope.launch(Dispatchers.Main.immediate) {
+            withTimeoutOrNull(2000) { providerClosed.await() }
+            releaseTransport()
+            current?.let { cleanupScope.launch { runCatching { withTimeout(6000) { api.end(it) } } } }
+        } else {
+            releaseTransport()
+            current?.let { cleanupScope.launch { runCatching { withTimeout(6000) { api.end(it) } } } }
+        }
+    }
+
+    private fun releaseTransport() {
         socket?.close(1000, "voice ended")
         runCatching { channel?.unregisterObserver(); channel?.close(); channel?.dispose() }
         runCatching { peer?.close(); peer?.dispose() }
         runCatching { track?.dispose(); audioSource?.dispose(); factory?.dispose(); audioModule?.release() }
-        channel = null; peer = null; track = null; audioSource = null; factory = null; audioModule = null; socket = null
+        remoteTrack = null; channel = null; peer = null; track = null; audioSource = null; factory = null; audioModule = null; socket = null
         _connection.value = Connection.ENDED
-        room?.let { current ->
-            cleanupScope.launch { runCatching { withTimeout(6000) { api.end(current) } } }
-        }
-        room = null
     }
 
     private suspend fun createOffer(pc: PeerConnection): SessionDescription = suspendCancellableCoroutine { continuation ->
