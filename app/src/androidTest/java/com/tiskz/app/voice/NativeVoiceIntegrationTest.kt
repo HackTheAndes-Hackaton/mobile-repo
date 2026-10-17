@@ -38,7 +38,11 @@ class NativeVoiceIntegrationTest {
         val client = OkHttpClient.Builder().pingInterval(20, TimeUnit.SECONDS).callTimeout(25, TimeUnit.SECONDS).build()
         val activity = instrumentation.startActivitySync(Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         try {
-            for ((name, expected, needle) in listOf(Triple("riesgo", true, "haré daño a tu familia"), Triple("legitimo", false, "No necesito pagos ni datos personales"))) {
+            val scenario = InstrumentationRegistry.getArguments().getString("voiceScenario")
+            require(scenario == null || scenario in setOf("riesgo", "legitimo"))
+            val cases = listOf(Triple("riesgo", true, "haré daño a tu familia"), Triple("legitimo", false, "No necesito pagos ni datos personales"))
+                .filter { scenario == null || it.first == scenario }
+            for ((name, expected, needle) in cases) {
                 val session = WebRtcVoiceSession(context, client, "https://api.maritime.sh/a/ebf0eb81-42c0-4437-a044-1af84af1b755", code)
                 try {
                     session.start(true)

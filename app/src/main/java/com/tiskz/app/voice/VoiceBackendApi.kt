@@ -22,7 +22,9 @@ class VoiceRoom(val id: String, val producerToken: String) {
 }
 
 /** Señalización del canal. Nunca almacena credenciales ni incluye tickets en mensajes de error. */
-class VoiceBackendApi(baseUrl: String, private val client: OkHttpClient) {
+class VoiceBackendApi(baseUrl: String, client: OkHttpClient) {
+    // El proxy no debe reenviar el código privado a otro destino mediante una redirección.
+    private val client = client.newBuilder().followRedirects(false).followSslRedirects(false).build()
     private val base: HttpUrl = baseUrl.trim().toHttpUrl().also {
         require(it.isHttps && it.username.isEmpty() && it.password.isEmpty() && it.query == null && it.fragment == null) {
             "El canal de voz requiere una URL HTTPS sin credenciales ni parámetros."

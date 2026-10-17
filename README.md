@@ -103,5 +103,7 @@ parciales, errores y pausas de voz. La prueba instrumentada opcional
 `NativeVoiceIntegrationTest` requiere un emulador con micrófono virtual, WAV sintético y el código
 en `files/voice-test-code` dentro del almacenamiento privado de la app. Se omite si falta ese archivo
 y lo elimina al terminar. No utiliza el micrófono del equipo anfitrión ni incorpora secretos al APK.
+El argumento de instrumentación `-e voiceScenario riesgo` o `-e voiceScenario legitimo` permite
+ejecutar cada caso en un arranque separado del emulador cuando su controlador de audio lo requiere.
 
 WebRTC Android: [SDK y versiones oficiales](https://github.com/webrtc-sdk/android).

@@ -88,6 +88,13 @@ class VoiceProtocolTest {
         assertEquals(1, server.requestCount)
     } }
 
+    @Test fun redirectsCannotForwardPrivateAccessCode() = server { server, api -> runBlocking {
+        server.enqueue(MockResponse().setResponseCode(302).setHeader("Location", server.url("/another-service")))
+        val error = runCatching { api.createRoom(master, true) }.exceptionOrNull()!!
+        assertTrue(error.message!!.contains("302"))
+        assertEquals(1, server.requestCount)
+    } }
+
     @Test fun parserRequiresBooleanAndRejectsInvalidProbability() {
         assertNull(EventParser.parse("""{"type":"alert.updated","alerta":"false","probability":0.1}"""))
         assertNull(EventParser.parse("""{"type":"alert.updated","alerta":false,"probability":4}"""))
