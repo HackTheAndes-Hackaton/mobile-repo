@@ -75,6 +75,12 @@ class WebRtcVoiceSession(
         private set
     @Volatile internal var capturedSampleRate = 0
         private set
+    @Volatile internal var capturedLastRms = 0.0
+        private set
+    @Volatile internal var capturedLastSampleAtMs = 0L
+        private set
+    @Volatile internal var capturedLastSpeechAtMs = 0L
+        private set
     @Volatile internal var committedSegments = 0
         private set
     private val relay = RealtimeTranscriptRelay(
@@ -139,8 +145,12 @@ class WebRtcVoiceSession(
                 microphoneReady.complete(Unit)
                 if (streaming.get() && samples.audioFormat == AudioFormat.ENCODING_PCM_16BIT) {
                     val rms = VoiceActivityDetector.pcm16Rms(samples.data)
+                    val now = SystemClock.elapsedRealtime()
+                    capturedLastRms = rms
+                    capturedLastSampleAtMs = now
+                    if (rms > 0.012) capturedLastSpeechAtMs = now
                     capturedPeakRms = maxOf(capturedPeakRms, rms)
-                    val commit = vad.accept(rms, SystemClock.elapsedRealtime())
+                    val commit = vad.accept(rms, now)
                     if (commit) scope.launch { committedSegments++; sendData(JSONObject().put("type", "input_audio_buffer.commit")) }
                 }
             }
