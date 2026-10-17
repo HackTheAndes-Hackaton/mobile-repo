@@ -126,6 +126,9 @@ fun VoiceScreen(onBack: () -> Unit) {
             if (understanding == null) item { Text("Sin análisis de comprensión todavía.") }
             else {
                 item { Text(understanding.summary) }
+                if (understanding.uncertainties.isNotEmpty()) item {
+                    Text(understanding.uncertainties.joinToString("\n"), style = MaterialTheme.typography.bodySmall)
+                }
                 items(understanding.evidence) { evidence ->
                     Column { Text("“${evidence.quote}”", style = MaterialTheme.typography.bodyLarge); Text(evidence.observation, style = MaterialTheme.typography.bodySmall) }
                 }

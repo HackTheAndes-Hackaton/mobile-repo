@@ -7,7 +7,6 @@ import android.media.AudioFormat
 import android.os.SystemClock
 import com.tiskz.app.analysis.AnalysisEvent
 import com.tiskz.app.analysis.AnalysisSession
-import com.tiskz.app.analysis.EventParser
 import com.tiskz.app.analysis.UserDecision
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -24,9 +23,7 @@ import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.Response
 import okhttp3.WebSocket
-import okhttp3.WebSocketListener
 import org.json.JSONObject
 import org.webrtc.AudioSource
 import org.webrtc.AudioTrack
@@ -76,6 +73,8 @@ class WebRtcVoiceSession(
     // Métricas sin contenido de audio para diagnosticar el micrófono virtual en pruebas.
     @Volatile internal var capturedPeakRms = 0.0
         private set
+    @Volatile internal var capturedSampleRate = 0
+        private set
     @Volatile internal var committedSegments = 0
         private set
     private val relay = RealtimeTranscriptRelay(
@@ -119,32 +118,24 @@ class WebRtcVoiceSession(
     }
 
     private fun openEvents(room: VoiceRoom) {
-        socket = client.newWebSocket(Request.Builder().url(api.eventsUrl(room)).build(), object : WebSocketListener() {
-            override fun onOpen(webSocket: WebSocket, response: Response) {
-                if (closed.get()) { webSocket.close(1000, "ended"); return }
-                webSocket.send(JSONObject().put("type", "session.start").toString())
-                socketReady.complete(Unit)
-            }
-            override fun onMessage(webSocket: WebSocket, text: String) {
-                if (closed.get()) return
-                EventParser.parse(text)?.let { event ->
-                    dispatch(event)
-                    if (event is AnalysisEvent.Ended) scope.launch { close() }
-                }
-            }
-            override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                fail("Sin conexión con los agentes. El micrófono se ha detenido.")
-            }
-            override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-                if (!closed.get()) fail("La sesión de voz terminó.")
-            }
-        })
+        socket = client.newWebSocket(Request.Builder().url(api.eventsUrl(room)).build(), VoiceEventsListener(
+            isClosed = { closed.get() },
+            onReady = { socketReady.complete(Unit) },
+            onEvent = { event ->
+                dispatch(event)
+                if (event is AnalysisEvent.Ended) scope.launch { close() }
+            },
+            onTerminated = ::fail,
+        ))
     }
 
     private fun preparePeer() {
         initializeWebRtc(context)
         audioModule = JavaAudioDeviceModule.builder(context)
+            // Evita el valor de 8 kHz del emulador; conserva banda de voz para transcripción.
+            .setInputSampleRate(48000)
             .setSamplesReadyCallback { samples ->
+                capturedSampleRate = samples.sampleRate
                 microphoneReady.complete(Unit)
                 if (streaming.get() && samples.audioFormat == AudioFormat.ENCODING_PCM_16BIT) {
                     val rms = VoiceActivityDetector.pcm16Rms(samples.data)

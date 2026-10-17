@@ -8,6 +8,12 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
+import okhttp3.WebSocket
+import okhttp3.WebSocketListener
+import okhttp3.Response
+import okhttp3.Request
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.atomic.AtomicBoolean
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
@@ -115,11 +121,12 @@ class VoiceProtocolTest {
     @Test fun understandingAndTranscriptReplacePartialWithoutDuplicatingLines() {
         var state = CallAnalysis().reduce(AnalysisEvent.Transcript("one", com.tiskz.app.model.Speaker.USER, "No necesito", false))
         state = state.reduce(AnalysisEvent.Transcript("one", com.tiskz.app.model.Speaker.USER, "No necesito pagos ni datos personales.", false))
-        val understood = EventParser.parse("""{"type":"understanding.update","revision":2,"analysis":{"rol":"comprension","resumen":"No se solicitan pagos.","evidencias":[{"cita":"No necesito pagos","observacion":"Negación"}],"limitaciones":["Identidad no verificada"]}}""")!!
+        val understood = EventParser.parse("""{"type":"understanding.update","revision":2,"analysis":{"rol":"comprension","resumen":"No se solicitan pagos.","modo":"extractivo_sin_identidades_v1","evidencias":[{"cita":"No necesito pagos","observacion":"Negación"}],"limitaciones":["Identidad no verificada"]}}""")!!
         state = state.reduce(understood)
         assertEquals(1, state.transcript.size)
         assertTrue(state.transcript.single().text.contains("ni datos"))
         assertEquals("No necesito pagos", state.understanding!!.evidence.single().quote)
+        assertEquals("extractivo_sin_identidades_v1", state.understanding!!.mode)
     }
 
     @Test fun relayPreservesOrderAndFinalDeduplication() {
@@ -153,4 +160,33 @@ class VoiceProtocolTest {
         assertEquals(1.0, VoiceActivityDetector.pcm16Rms(byteArrayOf(0, -128, 0, -128)), .00001)
         assertEquals(0.0, VoiceActivityDetector.pcm16Rms(byteArrayOf(0, 0)), .00001)
     }
+    @Test fun remoteCloseStopsCaptureHookWithoutCallEndedOrPingTimeout() {
+        val server = MockWebServer()
+        server.enqueue(MockResponse().withWebSocketUpgrade(object : WebSocketListener() {
+            override fun onOpen(webSocket: WebSocket, response: Response) { webSocket.close(1000, "remote shutdown") }
+        }))
+        server.start()
+        val client = OkHttpClient()
+        val closed = AtomicBoolean(false)
+        val terminated = CountDownLatch(1)
+        val socket = client.newWebSocket(Request.Builder().url(server.url("/events")).build(), VoiceEventsListener(
+            isClosed = closed::get, onReady = {}, onEvent = { fail("No se esperaba call.ended") },
+            onTerminated = { closed.set(true); terminated.countDown() },
+        ))
+        try { assertTrue("El cierre remoto debe detener la captura inmediatamente", terminated.await(3, TimeUnit.SECONDS)) }
+        finally { socket.cancel(); server.shutdown(); client.connectionPool.evictAll(); client.dispatcher.executorService.shutdown() }
+    }
+
+    @Test fun displayPreservesCommitOrderWhenFinalsArriveBackwards() {
+        var state = CallAnalysis()
+        for ((id, text, sequence) in listOf(Triple("second", "Ni datos personales.", 1), Triple("first", "No necesito pagos.", 0))) {
+            state = state.reduce(EventParser.parse(JSONObject().put("type", "transcript.update").put("id", id).put("text", text).put("sequence", sequence).toString())!!)
+        }
+        assertEquals(listOf("first", "second"), state.transcript.map { it.id })
+        assertEquals("No necesito pagos. Ni datos personales.", state.transcript.joinToString(" ") { it.text })
+        state = state.reduce(AnalysisEvent.Transcript("first", com.tiskz.app.model.Speaker.USER, "No necesito pagos.", false))
+        assertEquals(0, state.transcript.first().sequence)
+        assertEquals(2, state.transcript.size)
+    }
+
 }

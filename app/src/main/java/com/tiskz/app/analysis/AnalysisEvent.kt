@@ -17,6 +17,7 @@ sealed interface AnalysisEvent {
         val speaker: Speaker,
         val text: String,
         val flagged: Boolean,
+        val sequence: Int? = null,
     ) : AnalysisEvent
 
     data class Risk(
@@ -52,9 +53,10 @@ fun CallAnalysis.reduce(event: AnalysisEvent): CallAnalysis = when (event) {
     )
 
     is AnalysisEvent.Transcript -> {
-        val line = TranscriptLine(event.id, event.speaker, event.text, event.flagged)
         val index = transcript.indexOfFirst { it.id == event.id }
-        copy(transcript = if (index >= 0) transcript.toMutableList().also { it[index] = line } else transcript + line)
+        val line = TranscriptLine(event.id, event.speaker, event.text, event.flagged, event.sequence ?: transcript.getOrNull(index)?.sequence)
+        val next = if (index >= 0) transcript.toMutableList().also { it[index] = line } else transcript + line
+        copy(transcript = if (next.any { it.sequence != null }) next.sortedBy { it.sequence ?: Int.MAX_VALUE } else next)
     }
 
     is AnalysisEvent.Alert -> if (event.revision < alertRevision) this else copy(

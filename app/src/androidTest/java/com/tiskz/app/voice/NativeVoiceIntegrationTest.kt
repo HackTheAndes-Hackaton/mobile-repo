@@ -14,6 +14,8 @@ import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
+import org.junit.Assert.assertFalse
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -58,17 +60,22 @@ class NativeVoiceIntegrationTest {
                             val state = session.state.value
                             check(state.error == null) { state.error.orEmpty() }
                             val transcript = state.transcript.joinToString(" ") { it.text }
-                            if (state.alert == expected && state.understanding != null && transcript.contains(needle, ignoreCase = true)) break
+                            if (state.alert == expected && state.understanding?.mode == "extractivo_sin_identidades_v1" && state.understandingRevision == state.alertRevision && transcript.contains(needle, ignoreCase = true) && state.understanding.evidence.any { it.quote.contains(needle, ignoreCase = true) }) break
                             delay(100)
                         }
                     }
                     val state = session.state.value
                     assertEquals(expected, state.alert)
                     assertNotNull(state.understanding)
+                    assertEquals(48000, session.capturedSampleRate)
+                    assertTrue(state.understanding!!.evidence.all { state.transcript.joinToString(" ") { line -> line.text }.contains(it.quote) })
+                    assertFalse(Regex("\\b(Enrique|Ana)\\b", RegexOption.IGNORE_CASE).containsMatchIn(state.understanding!!.summary))
+                    if (name == "riesgo") assertTrue("Debe conservar Transfiere, sin sustituirlo por un nombre", state.transcript.joinToString(" ") { it.text }.startsWith("Transfiere", ignoreCase = true))
                     results.put(JSONObject().put("scenario", name).put("alert", state.alert)
                         .put("transcript", state.transcript.joinToString(" ") { it.text })
-                        .put("captured_peak_rms", session.capturedPeakRms).put("committed_segments", session.committedSegments)
-                        .put("understanding", state.understanding!!.summary))
+                        .put("captured_sample_rate", session.capturedSampleRate).put("captured_peak_rms", session.capturedPeakRms).put("committed_segments", session.committedSegments)
+                        .put("understanding", state.understanding!!.summary).put("mode", state.understanding!!.mode)
+                        .put("evidence", JSONArray(state.understanding!!.evidence.map { JSONObject().put("quote", it.quote).put("observation", it.observation) })))
                     File(context.filesDir, "voice-test-result.json").writeText(JSONObject()
                         .put("native_webrtc", true).put("complete", false).put("cases", results).toString(2))
                 } catch (e: Exception) {
@@ -76,7 +83,7 @@ class NativeVoiceIntegrationTest {
                     File(context.filesDir, "voice-test-result.json").writeText(JSONObject()
                         .put("native_webrtc", false).put("scenario", name)
                         .put("error", state.error ?: e.javaClass.simpleName)
-                        .put("captured_peak_rms", session.capturedPeakRms).put("committed_segments", session.committedSegments)
+                        .put("captured_sample_rate", session.capturedSampleRate).put("captured_peak_rms", session.capturedPeakRms).put("committed_segments", session.committedSegments)
                         .put("alert", state.alert ?: JSONObject.NULL)
                         .put("transcript", state.transcript.joinToString(" ") { it.text })
                         .put("understanding", state.understanding?.summary ?: "").toString(2))

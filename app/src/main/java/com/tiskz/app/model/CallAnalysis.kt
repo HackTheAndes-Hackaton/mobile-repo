@@ -7,6 +7,7 @@ data class TranscriptLine(
     val speaker: Speaker,
     val text: String,
     val flagged: Boolean = false,
+    val sequence: Int? = null,
 )
 
 /** Qué está haciendo el agente de Tiskz en este momento. */
@@ -38,6 +39,7 @@ data class Understanding(
     val observations: List<String>,
     val uncertainties: List<String>,
     val limitations: List<String>,
+    val mode: String? = null,
 )
 
 /** Estado acumulado del análisis de una llamada, sin importar si viene del backend o de la demo. */

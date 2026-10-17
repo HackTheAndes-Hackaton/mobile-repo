@@ -2,7 +2,7 @@
 
 ## Canal de micrófono WebRTC (Maritime)
 
-La pantalla **Canal de voz** captura el micrófono tras autorización y permiso de Android. El audio
+La pantalla **Canal de voz** captura el micrófono a 48 kHz tras autorización y permiso de Android. El audio
 viaja por WebRTC al proveedor de transcripción; los eventos de texto se reenvían por WebSocket a
 Maritime, que ejecuta comprensión y detección. El código de acceso nunca viaja al proveedor ni se
 incluye en la aplicación. El backend usa los créditos/modelos configurados en Maritime.
@@ -32,8 +32,12 @@ La app no persiste ni el código ni audio/texto de este canal. Cada sesión dura
 
 ```json
 {"type":"alert.updated","alerta":true,"probability":0.88,"threshold":0.5,"revision":2,"provisional":true}
-{"type":"understanding.update","revision":2,"analysis":{"rol":"comprension","resumen":"Se observa una amenaza condicionada a una transferencia.","evidencias":[{"cita":"Transfiere ahora","observacion":"Solicitud de transferencia"}],"datos_observados":[],"incertidumbres":[],"limitaciones":[]}}
+{"type":"understanding.update","revision":2,"analysis":{"rol":"comprension","modo":"extractivo_sin_identidades_v1","resumen":"Fragmentos seleccionados para revisar: peticiones. Las citas conservan el texto recibido; no se atribuyen identidades ni hablantes.","evidencias":[{"tipo":"solicitud","cita":"Transfiere ahora.","observacion":"Fragmento seleccionado sobre una petición; no identifica a su autor ni destinatario."}],"datos_observados":[],"incertidumbres":[],"limitaciones":[]}}
 ```
+
+La comprensión acepta solo tipos permitidos y citas de oraciones completas. El servidor descarta resumen, participantes y observaciones libres del modelo; genera las descripciones y limitaciones con texto controlado. Una mención «Soy Ana» puede aparecer literalmente como evidencia, pero nunca identifica a una persona. No se reparan palabras dudosas por conjetura.
+
+`transcript.update.sequence` conserva el orden de los turnos aunque los finales lleguen invertidos; la app lo usa para ordenar y reemplazar parciales. Un cierre remoto WebSocket termina la captura inmediatamente sin esperar el ping ni requerir `call.ended`.
 
 `alerta` es un booleano estricto. Antes de recibirlo el resultado es pendiente, nunca `false` por defecto.
 La pantalla muestra el booleano y la comprensión por separado. Las revisiones antiguas se descartan.

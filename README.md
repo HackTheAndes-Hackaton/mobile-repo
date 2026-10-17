@@ -1,7 +1,7 @@
 # Tiskz
 
 App Android con un canal de micrófono WebRTC que envía audio para transcripción y muestra en vivo
-el resultado de dos agentes: comprensión (resumen y citas) y detección (alerta booleana provisional).
+el resultado de dos agentes: comprensión (citas literales y categorías para revisar, sin atribuir identidades) y detección (alerta booleana provisional).
 El servicio está desplegado en Maritime. La interfaz de llamadas de operadora y sus escenarios de
 demo siguen disponibles como prototipo separado.
 
@@ -18,6 +18,8 @@ Diseño del proyecto: [`docs/ANALISIS_Y_FLUJO.md`](docs/ANALISIS_Y_FLUJO.md).
 
 URL incluida por defecto:
 `https://api.maritime.sh/a/ebf0eb81-42c0-4437-a044-1af84af1b755`.
+
+La captura solicita 48 kHz. La comprensión acepta oraciones completas y genera descripciones controladas; no convierte nombres mencionados o palabras dudosas en identidades ni hablantes. La pantalla muestra también incertidumbres y limitaciones.
 
 El código se mantiene solo en memoria durante la pantalla; no se incluye en el APK ni se guarda en
 ajustes. El audio se transmite al proveedor de transcripción por WebRTC y el texto final se envía
@@ -42,7 +44,7 @@ Por línea de comandos (Windows, Git Bash):
 
 ```bash
 export JAVA_HOME="/c/Program Files/Android/Android Studio/jbr"
-./gradlew assembleDebug        # APK en app/build/outputs/apk/debug/
+./gradlew assembleDebug        # APK por arquitectura y universal en app/build/outputs/apk/debug/
 ./gradlew installDebug         # instala en el dispositivo conectado
 ```
 
@@ -107,3 +109,5 @@ El argumento de instrumentación `-e voiceScenario riesgo` o `-e voiceScenario l
 ejecutar cada caso en un arranque separado del emulador cuando su controlador de audio lo requiere.
 
 WebRTC Android: [SDK y versiones oficiales](https://github.com/webrtc-sdk/android).
+
+Para teléfonos ARM64 y el emulador usado en las pruebas: `app-arm64-v8a-debug.apk`. Para otras arquitecturas se generan APK específicos y `app-universal-debug.apk`. `installDebug` selecciona la arquitectura del dispositivo conectado.

@@ -26,6 +26,7 @@ object EventParser {
             speaker = speakerOf(json.optString("speaker")),
             text = json.optString("text"),
             flagged = json.optBoolean("flagged"),
+            sequence = (json.opt("sequence") as? Number)?.toDouble()?.takeIf { it.isFinite() && it >= 0 && it <= Int.MAX_VALUE && it % 1 == 0.0 }?.toInt(),
         )
 
         "alert.updated" -> {
@@ -39,6 +40,7 @@ object EventParser {
             val evidence = a.optJSONArray("evidencias")
             AnalysisEvent.Understood(Understanding(
                 summary = a.optString("resumen"),
+                mode = a.optStringOrNull("modo"),
                 evidence = if (evidence == null) emptyList() else (0 until evidence.length()).mapNotNull { i ->
                     evidence.optJSONObject(i)?.let { Evidence(it.optString("cita"), it.optString("observacion")) }
                 },
