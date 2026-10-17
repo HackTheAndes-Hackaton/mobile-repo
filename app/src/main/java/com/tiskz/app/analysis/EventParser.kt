@@ -3,6 +3,8 @@ package com.tiskz.app.analysis
 import com.tiskz.app.model.AgentStatus
 import com.tiskz.app.model.Speaker
 import com.tiskz.app.model.VoiceMatch
+import com.tiskz.app.model.Evidence
+import com.tiskz.app.model.Understanding
 import com.tiskz.app.model.optStringOrNull
 import org.json.JSONException
 import org.json.JSONObject
@@ -26,11 +28,32 @@ object EventParser {
             flagged = json.optBoolean("flagged"),
         )
 
+        "alert.updated" -> {
+            val value = json.opt("alerta") as? Boolean
+            val probability = json.optDouble("probability", Double.NaN)
+            if (value == null || !probability.isFinite() || probability !in 0.0..1.0) null
+            else AnalysisEvent.Alert(value, probability, json.optInt("revision", 0))
+        }
+
+        "understanding.update" -> json.optJSONObject("analysis")?.takeIf { it.optString("rol") == "comprension" }?.let { a ->
+            val evidence = a.optJSONArray("evidencias")
+            AnalysisEvent.Understood(Understanding(
+                summary = a.optString("resumen"),
+                evidence = if (evidence == null) emptyList() else (0 until evidence.length()).mapNotNull { i ->
+                    evidence.optJSONObject(i)?.let { Evidence(it.optString("cita"), it.optString("observacion")) }
+                },
+                observations = strings(a, "datos_observados"), uncertainties = strings(a, "incertidumbres"), limitations = strings(a, "limitaciones"),
+            ), json.optInt("revision", 0))
+        }
+
         "risk.update" -> AnalysisEvent.Risk(
             percent = json.optInt("risk_percent"),
             reasons = json.optJSONArray("reasons")?.let { arr -> List(arr.length()) { arr.optString(it) } }.orEmpty(),
             scamType = json.optStringOrNull("scam_type"),
             impersonating = json.optStringOrNull("impersonating"),
+            alert = json.opt("alerta") as? Boolean,
+            scoreKind = json.optStringOrNull("score_kind"),
+            revision = if (json.has("revision")) json.optInt("revision") else null,
         )
 
         "voiceprint.match" -> AnalysisEvent.Voice(
@@ -51,6 +74,10 @@ object EventParser {
 
         else -> null
     }
+
+    private fun strings(json: JSONObject, key: String): List<String> = json.optJSONArray(key)?.let { a ->
+        List(a.length()) { a.optString(it) }
+    }.orEmpty()
 
     private fun statusOf(value: String): AgentStatus? = when (value) {
         "connecting" -> AgentStatus.CONNECTING

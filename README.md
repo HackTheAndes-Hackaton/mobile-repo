@@ -1,13 +1,32 @@
 # Tiskz
 
-App Android que reemplaza la app de teléfono (como Truecaller). Cuando entra una llamada, un agente
-de IA atiende primero, y Tiskz muestra en vivo **el porcentaje de riesgo de estafa**, la transcripción
-y la coincidencia de huella de voz. Si la llamada es segura, el usuario contesta; si es estafa, la bloquea.
+App Android con un canal de micrófono WebRTC que envía audio para transcripción y muestra en vivo
+el resultado de dos agentes: comprensión (resumen y citas) y detección (alerta booleana provisional).
+El servicio está desplegado en Maritime. La interfaz de llamadas de operadora y sus escenarios de
+demo siguen disponibles como prototipo separado.
 
-> La app es solo la interfaz. La voz, la transcripción y el análisis los hacen agentes externos;
-> el formato de los mensajes está en [`docs/CONTRATO_BACKEND.md`](docs/CONTRATO_BACKEND.md).
->
-> Análisis completo, estado del arte y flujo del proyecto: [`docs/ANALISIS_Y_FLUJO.md`](docs/ANALISIS_Y_FLUJO.md).
+Contrato de eventos: [`docs/CONTRATO_BACKEND.md`](docs/CONTRATO_BACKEND.md).
+Diseño del proyecto: [`docs/ANALISIS_Y_FLUJO.md`](docs/ANALISIS_Y_FLUJO.md).
+
+## Canal de voz real
+
+1. En **Inicio → Abrir canal de voz**, comprobar la URL HTTPS del servicio.
+2. Introducir el código privado de acceso facilitado por quien administra el backend.
+3. Confirmar la autorización de análisis y pulsar **Iniciar micrófono**. Android pedirá acceso al micrófono.
+4. Hablar y hacer una pausa: la transcripción, la alerta y el resumen se actualizan en la pantalla.
+5. Pulsar **Detener** para cerrar. Salir de la pantalla o enviar la app al fondo también detiene el micrófono.
+
+URL incluida por defecto:
+`https://api.maritime.sh/a/ebf0eb81-42c0-4437-a044-1af84af1b755`.
+
+El código se mantiene solo en memoria durante la pantalla; no se incluye en el APK ni se guarda en
+ajustes. El audio se transmite al proveedor de transcripción por WebRTC y el texto final se envía
+al backend para analizarlo. Esta pantalla no guarda audio ni transcripciones en el historial local.
+La alerta `false` significa que el detector no activó una alerta con el contexto recibido; no certifica seguridad.
+Los errores se muestran explícitamente y no se convierten en `false`.
+
+Este canal captura **el micrófono con autorización**, no el audio interno de llamadas de operadora.
+El modo demo de llamadas no afecta a esta pantalla: el canal de voz siempre utiliza el servicio real.
 
 ## Requisitos
 
@@ -38,7 +57,8 @@ tiskz.demoMode=false
 ```
 
 También se pueden cambiar en **Ajustes** dentro de la app, sin recompilar.
-Por defecto apunta a `10.0.2.2:8000`, que es el localhost de la PC visto desde el emulador.
+La URL HTTP del backend apunta por defecto a Maritime y se usa en el canal de voz. La URL WebSocket
+de llamadas de operadora conserva `10.0.2.2:8000` para el prototipo anterior; no es necesaria para el canal de voz.
 
 ## Modo demo
 
@@ -60,13 +80,28 @@ app/src/main/java/com/tiskz/app/
 ├── data/       Ajustes, historial y números bloqueados (SharedPreferences)
 ├── model/      Llamada, análisis, veredicto
 ├── ui/         Pantallas en Jetpack Compose (tema blanco y azul)
+├── voice/      Sesión WebRTC, API de salas, pausas de voz y puente de transcripción
 └── util/       Rol de app de teléfono, formato de números y fechas
 ```
 
 ## Limitaciones conocidas (MVP)
 
-- **El audio no sale del teléfono.** Android no deja que una app lea el audio de una llamada del
-  operador. El análisis depende de que la llamada pase por el backend (desvío de llamadas).
+- El canal de micrófono requiere conexión a Internet, autorización y acceso al servicio. No captura
+  llamadas de operadora; integrarlas requiere un proveedor o puente de telefonía separado.
 - Una llamada a la vez: una segunda llamada entrante se rechaza.
 - El historial y los bloqueos son locales al teléfono; aún no se sincronizan con el backend.
 - Sin cuenta de usuario todavía.
+
+## Validación
+
+```bash
+./gradlew :app:testDebugUnitTest :app:assembleDebug :app:lintDebug
+```
+
+Las pruebas unitarias cubren autenticación, rutas, cancelación, orden de eventos, reemplazo de
+parciales, errores y pausas de voz. La prueba instrumentada opcional
+`NativeVoiceIntegrationTest` requiere un emulador con micrófono virtual, WAV sintético y el código
+en `files/voice-test-code` dentro del almacenamiento privado de la app. Se omite si falta ese archivo
+y lo elimina al terminar. No utiliza el micrófono del equipo anfitrión ni incorpora secretos al APK.
+
+WebRTC Android: [SDK y versiones oficiales](https://github.com/webrtc-sdk/android).

@@ -23,6 +23,7 @@ private object Routes {
     const val ONBOARDING = "onboarding"
     const val HOME = "home"
     const val SETTINGS = "settings"
+    const val VOICE = "voice"
     const val DIALER = "dialer?number={number}"
     const val RECORD = "record/{id}"
 
@@ -47,6 +48,7 @@ fun TiskzNavHost(pendingDial: String?, onDialConsumed: () -> Unit) {
         }
         composable(Routes.HOME) {
             HomeScreen(
+                onOpenVoice = { navController.navigate(Routes.VOICE) },
                 onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                 onOpenDialer = { navController.navigate(Routes.dialer()) },
                 onOpenRecord = { id -> navController.navigate(Routes.record(id)) },
@@ -66,6 +68,9 @@ fun TiskzNavHost(pendingDial: String?, onDialConsumed: () -> Unit) {
                 recordId = entry.arguments?.getString("id").orEmpty(),
                 onBack = { navController.popBackStack() },
             )
+        }
+        composable(Routes.VOICE) {
+            com.tiskz.app.ui.voice.VoiceScreen(onBack = { navController.popBackStack() })
         }
         composable(Routes.SETTINGS) {
             SettingsScreen(onBack = { navController.popBackStack() })

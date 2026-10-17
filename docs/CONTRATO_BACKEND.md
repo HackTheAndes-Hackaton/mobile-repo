@@ -1,8 +1,52 @@
 # Contrato app ↔ backend de agentes
 
-La app Tiskz **no procesa audio**. Android no permite que una app lea el audio de una llamada
-del operador, así que el audio llega a los agentes por el backend (desvío de llamadas al número
-del servidor). La app solo **muestra** lo que los agentes publican y **envía** las decisiones del usuario.
+## Canal de micrófono WebRTC (Maritime)
+
+La pantalla **Canal de voz** captura el micrófono tras autorización y permiso de Android. El audio
+viaja por WebRTC al proveedor de transcripción; los eventos de texto se reenvían por WebSocket a
+Maritime, que ejecuta comprensión y detección. El código de acceso nunca viaja al proveedor ni se
+incluye en la aplicación. El backend usa los créditos/modelos configurados en Maritime.
+
+Base actual: `https://api.maritime.sh/a/ebf0eb81-42c0-4437-a044-1af84af1b755`.
+Todas las rutas siguientes conservan el prefijo `/a/<id>`.
+
+1. `POST /v1/sessions`, cabecera `X-Voice-Token: <código privado>`, cuerpo
+   `{"consentimiento_analisis":true}`. Devuelve `session_id`, `producer_token`, `observer_token` y caducidad.
+2. Abrir `wss://<host>/a/<id>/ws/calls?session=<session_id>&ticket=<producer_token>` y enviar
+   `{"type":"session.start"}`. Los tokens de sala son temporales y no deben registrarse en logs.
+3. Crear pista de audio y DataChannel `oai-events`, generar la oferta SDP y enviar
+   `POST /v1/sessions/<session_id>/offer`, con `X-Voice-Token: <producer_token>` y `{"sdp":"..."}`.
+   Aplicar el `sdp` de respuesta al PeerConnection.
+4. Al abrirse el DataChannel se habilita la pista. El detector local de pausas envía
+   `input_audio_buffer.commit` después del silencio; evita cortar una frase mientras hay voz continua.
+5. Reenviar los deltas/finales del proveedor como `transcript.update` por el WebSocket productor:
+   `{"type":"transcript.update","id":"item-1","speaker":"user","text":"...","final":true,"sequence":1}`.
+   Solo los segmentos finales activan los agentes; los parciales reemplazan el mismo `id` en pantalla.
+6. Detener cierra pista, PeerConnection y WebSocket y solicita
+   `POST /v1/sessions/<session_id>/end`, con el token productor. También se cierra al ir al fondo.
+
+Se usa `X-Voice-Token` porque el proxy de Maritime reserva `Authorization`.
+La app no persiste ni el código ni audio/texto de este canal. Cada sesión dura como máximo 15 minutos.
+
+### Resultados de los dos agentes
+
+```json
+{"type":"alert.updated","alerta":true,"probability":0.88,"threshold":0.5,"revision":2,"provisional":true}
+{"type":"understanding.update","revision":2,"analysis":{"rol":"comprension","resumen":"Se observa una amenaza condicionada a una transferencia.","evidencias":[{"cita":"Transfiere ahora","observacion":"Solicitud de transferencia"}],"datos_observados":[],"incertidumbres":[],"limitaciones":[]}}
+```
+
+`alerta` es un booleano estricto. Antes de recibirlo el resultado es pendiente, nunca `false` por defecto.
+La pantalla muestra el booleano y la comprensión por separado. Las revisiones antiguas se descartan.
+`risk.update` puede acompañar la alerta con `score_kind: "probabilidad_de_alerta_no_calibrada"`:
+ese valor no es una probabilidad calibrada de estafa y el nuevo canal no lo presenta como tal.
+Un evento `error` conserva la última alerta y añade un aviso; no significa ausencia de riesgo.
+No se confirma identidad o culpabilidad ni se realizan denuncias automáticas.
+
+## Prototipo de llamadas de operadora
+
+El flujo siguiente pertenece al prototipo anterior. Su modo demo usa eventos locales; para audio
+de operadora real requiere un puente externo. El nuevo canal de micrófono no usa `caller` ni
+necesita configurar manualmente una URL WebSocket.
 
 ## Conexión
 

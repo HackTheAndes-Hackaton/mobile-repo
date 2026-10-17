@@ -27,6 +27,9 @@ class AppContainer(private val context: Context) {
         Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID).orEmpty()
     }
 
+    fun openVoiceSession(baseUrl: String, accessCode: String) =
+        com.tiskz.app.voice.WebRtcVoiceSession(context.applicationContext, httpClient, baseUrl, accessCode)
+
     /**
      * Abre el análisis de una llamada entrante.
      * [forcedScenario] lo usan los botones "Simular llamada": siempre van por la demo.
