@@ -112,6 +112,9 @@ El inyector espera `ready:<escenario>` en `files/voice-test-phase`, entrega el W
 48 kHz seguido de silencio y crea `files/voice-test-audio-complete` en ese mismo almacenamiento
 privado al terminar. La prueba espera ese marcador y la última frase antes de detener la captura;
 una alerta temprana por sí sola no termina el audio. No reutilices este mecanismo con audio real.
+En el emulador de esta verificación se usa `MODE_REAL_TIME`, paquetes de 20 ms acompasados con
+reloj monotónico, un segundo de silencio inicial y cuatro al final. La inyección en ráfaga produjo
+capturas incompletas antes de WebRTC; el resultado de esos intentos no se contó como válido.
 
 WebRTC Android: [SDK y versiones oficiales](https://github.com/webrtc-sdk/android).
 
