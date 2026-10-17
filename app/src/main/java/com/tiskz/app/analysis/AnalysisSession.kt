@@ -23,6 +23,8 @@ abstract class AnalysisSession {
         _state.update { it.reduce(event) }
     }
 
+    protected fun resetAnalysis() { _state.value = CallAnalysis() }
+
     fun markNotScam() {
         dispatch(AnalysisEvent.MarkedSafeByUser)
         send(UserDecision.NOT_SCAM)
