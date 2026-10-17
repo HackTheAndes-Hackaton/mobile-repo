@@ -53,6 +53,13 @@ class VoiceBackendApi(baseUrl: String, client: OkHttpClient) {
         post("v1/sessions/${room.id}/end", room.producerToken, JSONObject())
     }
 
+    suspend fun phoneEventsUrl(accessCode: String): String {
+        val ticket = post("v1/phone/monitor", accessCode, JSONObject().put("consentimiento_analisis", true)).getString("ticket")
+        check(ticket.length in 12..256) { "Ticket de alertas inválido." }
+        return base.newBuilder().addPathSegments("ws/calls").addQueryParameter("channel", "phone")
+            .addQueryParameter("ticket", ticket).build().toString().replaceFirst("https://", "wss://")
+    }
+
     fun eventsUrl(room: VoiceRoom): String = base.newBuilder().addPathSegments("ws/calls")
         .addQueryParameter("session", room.id).addQueryParameter("ticket", room.producerToken)
         .build().toString().replaceFirst("https://", "wss://")

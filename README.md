@@ -6,6 +6,7 @@ El servicio está desplegado en Maritime. La interfaz de llamadas de operadora y
 demo siguen disponibles como prototipo separado.
 
 Contrato de eventos: [`docs/CONTRATO_BACKEND.md`](docs/CONTRATO_BACKEND.md).
+Alertas de llamadas atendidas por Vapi con voz marin: [`docs/LLAMADAS_VAPI.md`](docs/LLAMADAS_VAPI.md).
 Diseño del proyecto: [`docs/ANALISIS_Y_FLUJO.md`](docs/ANALISIS_Y_FLUJO.md).
 
 ## Canal de voz real
