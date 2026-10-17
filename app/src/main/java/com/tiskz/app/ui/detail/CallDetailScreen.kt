@@ -1,0 +1,116 @@
+package com.tiskz.app.ui.detail
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.tiskz.app.model.Verdict
+import com.tiskz.app.ui.LocalAppContainer
+import com.tiskz.app.ui.components.RiskGauge
+import com.tiskz.app.ui.components.StaticTranscript
+import com.tiskz.app.ui.components.VerdictBadge
+import com.tiskz.app.ui.theme.TiskzColors
+import com.tiskz.app.util.PhoneNumbers
+import com.tiskz.app.util.formatDuration
+import com.tiskz.app.util.formatWhen
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CallDetailScreen(recordId: String, onBack: () -> Unit) {
+    val records by LocalAppContainer.current.history.records.collectAsStateWithLifecycle()
+    val record = records.firstOrNull { it.id == recordId }
+
+    Scaffold(
+        containerColor = TiskzColors.White,
+        topBar = {
+            TopAppBar(
+                title = { Text("Detalle de la llamada") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = TiskzColors.White),
+            )
+        },
+    ) { padding ->
+        if (record == null) {
+            Text(
+                text = "No encontramos esta llamada.",
+                modifier = Modifier.padding(padding).padding(20.dp),
+                color = TiskzColors.Muted,
+            )
+            return@Scaffold
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(PhoneNumbers.display(record.number), style = MaterialTheme.typography.headlineMedium)
+            Text(
+                text = buildList {
+                    add(formatWhen(record.startedAt))
+                    if (record.durationSec > 0) add("Duración ${formatDuration(record.durationSec)}")
+                    if (record.blocked) add("Bloqueada")
+                    if (record.simulated) add("Simulación")
+                }.joinToString(" · "),
+                style = MaterialTheme.typography.bodyMedium,
+                color = TiskzColors.Muted,
+            )
+            VerdictBadge(record.verdict)
+
+            if (record.verdict != Verdict.NONE) {
+                RiskGauge(percent = record.riskPercent, size = 170.dp)
+            }
+
+            listOfNotNull(
+                record.scamType?.let { "Tipo: $it" },
+                record.impersonating?.let { "Se hizo pasar por: $it" },
+            ).forEach { Text(it, style = MaterialTheme.typography.titleMedium, color = TiskzColors.Ink) }
+
+            if (record.reasons.isNotEmpty()) {
+                Section("Por qué") {
+                    record.reasons.forEach { Text("• $it", style = MaterialTheme.typography.bodyLarge) }
+                }
+            }
+
+            if (record.transcript.isNotEmpty()) {
+                Section("Conversación") {
+                    StaticTranscript(record.transcript, Modifier.fillMaxWidth())
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun Section(title: String, content: @Composable () -> Unit) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(title, style = MaterialTheme.typography.titleMedium, color = TiskzColors.Blue700)
+        content()
+    }
+}

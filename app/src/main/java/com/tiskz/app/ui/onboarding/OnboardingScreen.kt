@@ -1,0 +1,136 @@
+package com.tiskz.app.ui.onboarding
+
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Fingerprint
+import androidx.compose.material.icons.rounded.Insights
+import androidx.compose.material.icons.rounded.SupportAgent
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import com.tiskz.app.ui.LocalAppContainer
+import com.tiskz.app.ui.components.TiskzLogo
+import com.tiskz.app.ui.theme.TiskzColors
+import com.tiskz.app.util.DialerRole
+
+@Composable
+fun OnboardingScreen(onFinished: () -> Unit) {
+    val context = LocalContext.current
+    val settings = LocalAppContainer.current.settings
+
+    fun finish() {
+        settings.update { it.copy(onboardingDone = true) }
+        onFinished()
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { finish() }
+
+    val roleLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { permissionLauncher.launch(DialerRole.runtimePermissions) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(TiskzColors.White)
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Spacer(Modifier.weight(0.6f))
+        TiskzLogo(size = 96.dp)
+        Spacer(Modifier.height(20.dp))
+        Text("Tiskz", style = MaterialTheme.typography.displayMedium, color = TiskzColors.Blue700)
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = "Contestamos por ti las llamadas sospechosas.",
+            style = MaterialTheme.typography.titleMedium,
+            color = TiskzColors.Ink,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(32.dp))
+
+        Column(verticalArrangement = Arrangement.spacedBy(18.dp), modifier = Modifier.fillMaxWidth()) {
+            Feature(Icons.Rounded.SupportAgent, "Un asistente atiende primero", "Pregunta quién llama y para qué, antes de que contestes.")
+            Feature(Icons.Rounded.Insights, "Riesgo en tiempo real", "Ves el porcentaje de estafa subir o bajar mientras hablan.")
+            Feature(Icons.Rounded.Fingerprint, "Reconoce voces de estafadores", "Compara la voz con estafas ya reportadas.")
+        }
+
+        Spacer(Modifier.weight(1f))
+
+        Button(
+            onClick = {
+                val roleIntent = DialerRole.requestIntent(context)
+                if (roleIntent != null && !DialerRole.isHeld(context)) {
+                    roleLauncher.launch(roleIntent)
+                } else {
+                    permissionLauncher.launch(DialerRole.runtimePermissions)
+                }
+            },
+            modifier = Modifier.fillMaxWidth().height(60.dp),
+            shape = RoundedCornerShape(20.dp),
+        ) {
+            Text("Activar protección", style = MaterialTheme.typography.titleMedium)
+        }
+        Text(
+            text = "Tiskz pasará a ser tu app de teléfono, igual que Truecaller.",
+            style = MaterialTheme.typography.bodySmall,
+            color = TiskzColors.Muted,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 8.dp),
+        )
+        TextButton(onClick = ::finish, modifier = Modifier.padding(top = 4.dp)) {
+            Text("Probar sin activar")
+        }
+        Text(
+            text = "Puedes crear una cuenta más adelante.",
+            style = MaterialTheme.typography.bodySmall,
+            color = TiskzColors.Muted,
+        )
+    }
+}
+
+@Composable
+private fun Feature(icon: ImageVector, title: String, body: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            Modifier.size(48.dp).background(TiskzColors.Blue50, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, null, tint = TiskzColors.Blue600)
+        }
+        Spacer(Modifier.size(14.dp))
+        Column {
+            Text(title, style = MaterialTheme.typography.titleMedium, color = TiskzColors.Ink)
+            Text(body, style = MaterialTheme.typography.bodyMedium, color = TiskzColors.Muted)
+        }
+    }
+}
