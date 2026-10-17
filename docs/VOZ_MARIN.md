@@ -30,3 +30,14 @@ Al terminar se retira el emisor, se envía `session.close` y se espera hasta dos
 `NativeLiveIntegrationTest` requiere un emulador aislado del audio del anfitrión y un inyector de WAV ficticio por gRPC. El código se suministra temporalmente en `files/voice-test-code`, nunca por argumentos ni en el APK. La prueba exige audio recibido con energía positiva, ambos agentes, evidencia literal, ausencia de identidades inventadas, cero commits antiguos, cierre confirmado y micrófono liberado.
 
 Casos sintéticos: amenaza con exigencia de transferencia (TRUE) y reunión con negación explícita de pagos/datos (FALSE). Los resultados de ejecución están en `docs/verificacion-marin.json`.
+
+
+## Desvío asistido desde la app
+
+En Voz en vivo, **Configurar desvío de llamadas** muestra una guía y abre los ajustes públicos de Android. Se intenta la página de llamadas, después cuentas telefónicas y, si el fabricante no las ofrece, redes inalámbricas. El acceso permanece deshabilitado durante la sesión de micrófono. No añade permisos ni marca códigos MMI/USSD; abrir ajustes no se presenta como un desvío activado.
+
+Para Entel Perú, selecciona la SIM Entel y busca **Desvío de llamadas**. Elige la condición e introduce el número receptor habilitado para el agente. La ruta exacta depende del fabricante; la operadora confirma activación, disponibilidad para tu línea y condiciones. Se puede desactivar desde esa misma configuración. El cupón Zavu y una URL HTTPS no son números receptores: todavía se necesita habilitar el número y verificar su puente de audio hacia GPT-Live/Maritime.
+
+Los manuales publicados por Entel describen el desvío desde ajustes, pero no verifican la elegibilidad actual de tu plan. No se ha activado ni probado un desvío SIM real.
+
+Fuentes: [Android: ajustes de llamadas](https://developer.android.com/reference/android/telecom/TelecomManager#ACTION_SHOW_CALL_SETTINGS), [Android: restricciones USSD](https://developer.android.com/reference/android/telephony/TelephonyManager#sendUssdRequest(java.lang.String,%20android.telephony.TelephonyManager.UssdResponseCallback,%20android.os.Handler)), [manual Android publicado por Entel](https://www.entel.pe/wp-content/files_mf/1492805984Manual_de_Usuario__HUAWEI_P102.pdf).
