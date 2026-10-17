@@ -32,10 +32,12 @@ class VoiceBackendApi(baseUrl: String, client: OkHttpClient) {
     }.let { it.newBuilder().encodedPath(it.encodedPath.trimEnd('/') + "/").build() }
     private val calls = ConcurrentHashMap.newKeySet<Call>()
 
-    suspend fun createRoom(accessCode: String, consent: Boolean): VoiceRoom {
+    suspend fun createRoom(accessCode: String, consent: Boolean, assistant: Boolean = false): VoiceRoom {
         require(consent) { "Se requiere autorización para analizar el audio." }
         require(accessCode.length in 12..512) { "Introduce el código privado del equipo." }
-        val json = post("v1/sessions", accessCode, JSONObject().put("consentimiento_analisis", true))
+        val body = JSONObject().put("consentimiento_analisis", true)
+        if (assistant) body.put("mode", "assistant").put("consentimiento_voz_ia", true)
+        val json = post("v1/sessions", accessCode, body)
         val id = json.getString("session_id")
         UUID.fromString(id)
         val token = json.getString("producer_token")

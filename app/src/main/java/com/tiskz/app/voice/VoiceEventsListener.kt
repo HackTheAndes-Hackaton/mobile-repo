@@ -12,6 +12,7 @@ internal class VoiceEventsListener(
     private val onReady: () -> Unit,
     private val onEvent: (AnalysisEvent) -> Unit,
     private val onTerminated: (String) -> Unit,
+    private val onControl: (String) -> Unit = {},
 ) : WebSocketListener() {
     override fun onOpen(webSocket: WebSocket, response: Response) {
         if (isClosed()) { webSocket.close(1000, "ended"); return }
@@ -19,7 +20,7 @@ internal class VoiceEventsListener(
         onReady()
     }
     override fun onMessage(webSocket: WebSocket, text: String) {
-        if (!isClosed()) EventParser.parse(text)?.let(onEvent)
+        if (!isClosed() && text.length <= 20000) { onControl(text); EventParser.parse(text)?.let(onEvent) }
     }
     override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
         webSocket.close(1000, "voice ended")
