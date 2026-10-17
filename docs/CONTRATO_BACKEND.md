@@ -46,11 +46,114 @@ ese valor no es una probabilidad calibrada de estafa y el nuevo canal no lo pres
 Un evento `error` conserva la última alerta y añade un aviso; no significa ausencia de riesgo.
 No se confirma identidad o culpabilidad ni se realizan denuncias automáticas.
 
+## Flujo objetivo: llamadas desconocidas (propuesta)
+
+> Pendiente de implementar en el backend. Describe el flujo de [`ANALISIS_Y_FLUJO.md`](ANALISIS_Y_FLUJO.md#4-flujo-principal):
+> los contactos suenan normal; los desconocidos se rechazan en silencio, el operador los desvía al
+> número de Tiskz y **un único agente** los atiende. No hay un modo honeypot aparte: si es estafa,
+> el mismo agente sigue la conversación. **El análisis es continuo** y cubre también la parte de la
+> llamada en que el usuario ya está conectado.
+
+Una llamada desconocida tiene dos tramos, y el WebSocket de la llamada cubre ambos:
+
+| Tramo | `call.phase` | Quién habla con quien llama |
+|---|---|---|
+| 1 | `agent` | El agente de IA |
+| 2 | `connected` | El usuario; Tiskz escucha en silencio |
+| 1 otra vez | `agent_retaken` | El agente retoma (el usuario pasó la llamada o colgó por alerta) |
+| — | `ended` | Nadie |
+
+### Backend → app
+
+**`call.phase`**: cambio de tramo.
+
+```json
+{ "type": "call.phase", "phase": "connected" }
+```
+
+**`call.verified`**: el agente terminó el tramo 1 y la llamada parece legítima. Llega **antes** de que el
+backend llame al usuario desde el número de Tiskz, para que la app muestre "Llamada verificada".
+
+```json
+{
+  "type": "call.verified",
+  "call_id": "c-8f2a",
+  "caller_number": "+51987654321",
+  "said_name": "Luis",
+  "said_company": "Claro",
+  "reason": "Ofrecer un cambio de plan",
+  "risk_percent": 12
+}
+```
+
+`said_name` y `said_company` son **lo que dijo quien llama**, no una identidad verificada. La app lo muestra así.
+
+**`insight.update`**: señal detectada en cualquiera de los dos tramos. Es lo que alimenta las alertas
+durante la llamada.
+
+```json
+{
+  "type": "insight.update",
+  "id": "i-3",
+  "kind": "identity_mismatch",
+  "message": "Dijo ser de Claro, ahora habla en nombre del BCP.",
+  "quotes": [
+    { "phase": "agent", "text": "Soy Luis, asesor de Claro." },
+    { "phase": "connected", "text": "Le hablo del área de seguridad del BCP." }
+  ],
+  "risk_percent": 82
+}
+```
+
+| `kind` | Significado |
+|---|---|
+| `identity_mismatch` | Dijo ser de una entidad y luego habla en nombre de otra. |
+| `tone_shift` | Cambio de tono entre tramos: verificable con el agente, urgente con el usuario. |
+| `sensitive_request` | Pide claves, códigos SMS, transferencias o instalar aplicaciones. |
+| `data_mismatch` | Nombre, empresa o motivo distintos a los que dio al agente. |
+| `voice_match` | La voz coincide con estafas confirmadas (detalle en `voiceprint.match`). |
+| `number_reputation` | El número tiene reportes en la base comunitaria. |
+
+`quotes` son citas literales con el tramo en que se dijeron. Un `id` repetido reemplaza el insight anterior.
+
+En el tramo 2, `transcript.update` usa `speaker: "user"` para el dueño del teléfono y `speaker: "caller"`
+para quien llama. `risk.update`, `voiceprint.match` y `error` siguen igual que en el prototipo.
+
+### App → backend
+
+`user.decision` agrega acciones para el tramo 2:
+
+| `action` | Cuándo | Efecto |
+|---|---|---|
+| `answer` | Llamada verificada o en el agente | Une al usuario con quien llama (`call.phase: connected`). |
+| `handoff_to_agent` | Tramo 2, tras una alerta | Saca al usuario; el agente retoma (`agent_retaken`). |
+| `legit` | Tramo 2, tras una alerta | El usuario indica que la llamada es legítima; se usa para corregir el análisis. |
+| `hang_up` | Cualquiera | Cuelga. |
+| `block` | Cualquiera | Reporta el número; si hay un tramo activo, el agente retiene la llamada. |
+| `not_scam` | Tras el tramo 1 | Corrección: no es estafa. |
+
+### Secuencia (estafador que cambia de rol)
+
+```
+App                                        Backend / agente
+ |<-- call.phase: agent ------------------------|  el agente atiende al desconocido
+ |<-- transcript.update (agent / caller) -------|  "Soy Luis, asesor de Claro"
+ |<-- risk.update 12% --------------------------|
+ |<-- call.verified ----------------------------|  la app muestra "Llamada verificada"
+ |--- user.decision: answer ------------------->|
+ |<-- call.phase: connected --------------------|  Tiskz escucha en silencio
+ |<-- transcript.update (caller) ---------------|  "…del área de seguridad del BCP"
+ |<-- insight.update identity_mismatch 82% -----|  alerta en pantalla
+ |--- user.decision: handoff_to_agent --------->|
+ |<-- call.phase: agent_retaken ----------------|  el mismo agente sigue con el estafador
+ |<-- call.phase: ended ------------------------|
+```
+
 ## Prototipo de llamadas de operadora
 
 El flujo siguiente pertenece al prototipo anterior. Su modo demo usa eventos locales; para audio
 de operadora real requiere un puente externo. El nuevo canal de micrófono no usa `caller` ni
-necesita configurar manualmente una URL WebSocket.
+necesita configurar manualmente una URL WebSocket. El flujo objetivo de la sección anterior lo extiende.
 
 ## Conexión
 
@@ -81,7 +184,7 @@ Cuando el usuario toca un botón:
 | `answer`   | El usuario contesta. El agente debe salir de la llamada. |
 | `reject`   | El usuario rechaza la llamada.                           |
 | `hang_up`  | El usuario cuelga una llamada ya contestada.             |
-| `block`    | El usuario bloquea el número (candidato a honeypot).     |
+| `block`    | El usuario bloquea el número; el mismo agente retiene la llamada si sigue activa. |
 | `not_scam` | El usuario corrige: no es estafa (dato para reentrenar). |
 
 ## Backend → app
@@ -160,7 +263,7 @@ App                                   Backend / agentes
  |<-- voiceprint.match 0.87 -------------|
  |<-- risk.update 93% -------------------|
  |<-- agent.status: scam ----------------|
- |--- user.decision: block ------------->|  → el backend puede pasar al honeypot
+ |--- user.decision: block ------------->|  → el mismo agente sigue la conversación y registra evidencia
 ```
 
 Ejemplo completo de esta secuencia (los mismos eventos que usa el modo demo):

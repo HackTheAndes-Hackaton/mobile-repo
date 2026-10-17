@@ -29,6 +29,11 @@ class VoiceProtocolTest {
     private val master = "master-test-code-only"
     private val producer = "producer-test-ticket-only"
 
+    // MockWebServer usa el nombre canónico de 127.0.0.1; con Docker Desktop en Windows es
+    // "kubernetes.docker.internal" y no coincide con el certificado de prueba emitido para "localhost".
+    private fun localUrl(server: MockWebServer, path: String): String =
+        server.url(path).newBuilder().host("localhost").build().toString()
+
     private fun server(block: (MockWebServer, VoiceBackendApi) -> Unit) {
         val cert = HeldCertificate.Builder().addSubjectAlternativeName("localhost").build()
         val serverTls = HandshakeCertificates.Builder().heldCertificate(cert).build()
@@ -37,7 +42,7 @@ class VoiceProtocolTest {
         server.useHttps(serverTls.sslSocketFactory(), false)
         server.start()
         val client = OkHttpClient.Builder().sslSocketFactory(clientTls.sslSocketFactory(), clientTls.trustManager).build()
-        try { block(server, VoiceBackendApi(server.url("/a/voice-id").toString(), client)) }
+        try { block(server, VoiceBackendApi(localUrl(server, "/a/voice-id"), client)) }
         finally { server.shutdown(); client.connectionPool.evictAll(); client.dispatcher.executorService.shutdown() }
     }
 
@@ -95,7 +100,7 @@ class VoiceProtocolTest {
     } }
 
     @Test fun redirectsCannotForwardPrivateAccessCode() = server { server, api -> runBlocking {
-        server.enqueue(MockResponse().setResponseCode(302).setHeader("Location", server.url("/another-service")))
+        server.enqueue(MockResponse().setResponseCode(302).setHeader("Location", localUrl(server, "/another-service")))
         val error = runCatching { api.createRoom(master, true) }.exceptionOrNull()!!
         assertTrue(error.message!!.contains("302"))
         assertEquals(1, server.requestCount)

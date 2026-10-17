@@ -1,5 +1,36 @@
 # Tiskz
 
+Tiskz es la app de teléfono que protege contra estafas telefónicas. Los contactos suenan normal; las
+llamadas desconocidas las atiende primero un agente de IA, y Tiskz analiza **toda la llamada**, también
+cuando el usuario ya está hablando.
+
+## Cómo funciona
+
+| Quién llama | Qué pasa |
+|---|---|
+| **Contacto guardado** | Suena normal. Sin filtro ni espera. |
+| **Número desconocido u oculto** | Tiskz la rechaza en silencio y el operador la desvía (desvío "si está ocupado") al número de Tiskz. Un agente de IA contesta con un saludo neutro ("Aló, ¿de parte de quién?"). |
+| **Estafa ya confirmada** | Va directo al agente. El usuario nunca se entera. |
+
+- **Un solo agente.** No hay un modo honeypot aparte: el agente atiende igual a todos los desconocidos, sin
+  distinguir de antemano entre una persona legítima y un estafador. Si resulta ser estafa, el mismo agente
+  sigue la conversación, retiene al estafador y registra evidencia.
+- **El agente no se delata, pero no suplanta al usuario.** No anuncia que es un filtro anti-estafas, nunca
+  dice ser el dueño del teléfono y, si le preguntan directamente si es una máquina, lo reconoce.
+- **Análisis continuo.** Si la llamada parece legítima, Tiskz llama al usuario ("Llamada verificada") y los
+  conecta, pero **sigue escuchando**. Un estafador que se portó bien con el agente y cambia de rol con el
+  usuario dispara una alerta con el motivo, por ejemplo: *"Dijo ser de Claro, ahora habla en nombre del BCP"*.
+  El usuario puede colgar o pasarle la llamada al agente.
+- **Base comunitaria.** Cada estafa alimenta una base de números y evidencia que, en el modelo B2G, valida la
+  autoridad (en Perú, conectada a lo que OSIPTEL ya hace con RENTESEG).
+
+Flujo completo, modelo B2G y referentes internacionales: [`docs/ANALISIS_Y_FLUJO.md`](docs/ANALISIS_Y_FLUJO.md).
+
+**Estado:** la app (pantallas, contactos, modo demo) y el canal de voz WebRTC están hechos. El rechazo
+silencioso, el desvío, el puente de telefonía, el agente de voz y la detección de incongruencias están pendientes.
+
+---
+
 App Android con un canal de micrófono WebRTC que envía audio para transcripción y muestra en vivo
 el resultado de dos agentes: comprensión (citas literales y categorías para revisar, sin atribuir identidades) y detección (alerta booleana provisional).
 El servicio está desplegado en Maritime. La interfaz de llamadas de operadora y sus escenarios de
