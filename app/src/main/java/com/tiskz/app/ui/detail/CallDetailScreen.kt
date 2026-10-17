@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -25,13 +23,15 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tiskz.app.model.Verdict
 import com.tiskz.app.ui.LocalAppContainer
-import com.tiskz.app.ui.components.RiskGauge
+import com.tiskz.app.ui.components.RiskBar
 import com.tiskz.app.ui.components.StaticTranscript
 import com.tiskz.app.ui.components.VerdictBadge
 import com.tiskz.app.ui.theme.TiskzColors
 import com.tiskz.app.util.PhoneNumbers
 import com.tiskz.app.util.formatDuration
 import com.tiskz.app.util.formatWhen
+import compose.icons.TablerIcons
+import compose.icons.tablericons.ArrowLeft
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,7 +46,7 @@ fun CallDetailScreen(recordId: String, onBack: () -> Unit) {
                 title = { Text("Detalle de la llamada") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
+                        Icon(TablerIcons.ArrowLeft, contentDescription = "Volver")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = TiskzColors.White),
@@ -70,9 +70,10 @@ fun CallDetailScreen(recordId: String, onBack: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(PhoneNumbers.display(record.number), style = MaterialTheme.typography.headlineMedium)
+            Text(record.title, style = MaterialTheme.typography.headlineMedium)
             Text(
                 text = buildList {
+                    if (record.callerName != null) add(PhoneNumbers.display(record.number))
                     add(formatWhen(record.startedAt))
                     if (record.durationSec > 0) add("Duración ${formatDuration(record.durationSec)}")
                     if (record.blocked) add("Bloqueada")
@@ -84,23 +85,19 @@ fun CallDetailScreen(recordId: String, onBack: () -> Unit) {
             VerdictBadge(record.verdict)
 
             if (record.verdict != Verdict.NONE) {
-                RiskGauge(percent = record.riskPercent, size = 170.dp)
-            }
-
-            listOfNotNull(
-                record.scamType?.let { "Tipo: $it" },
-                record.impersonating?.let { "Se hizo pasar por: $it" },
-            ).forEach { Text(it, style = MaterialTheme.typography.titleMedium, color = TiskzColors.Ink) }
-
-            if (record.reasons.isNotEmpty()) {
-                Section("Por qué") {
-                    record.reasons.forEach { Text("• $it", style = MaterialTheme.typography.bodyLarge) }
-                }
+                RiskBar(
+                    percent = record.riskPercent,
+                    headline = record.verdict.label,
+                    detail = listOfNotNull(
+                        record.scamType,
+                        record.impersonating?.let { "se hizo pasar por $it" },
+                    ).joinToString(" · ").ifEmpty { record.reasons.firstOrNull() },
+                )
             }
 
             if (record.transcript.isNotEmpty()) {
                 Section("Conversación") {
-                    StaticTranscript(record.transcript, Modifier.fillMaxWidth())
+                    StaticTranscript(record.transcript, record.callerName ?: "Quien llama", Modifier.fillMaxWidth())
                 }
             }
         }

@@ -17,10 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Fingerprint
-import androidx.compose.material.icons.rounded.Insights
-import androidx.compose.material.icons.rounded.SupportAgent
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -37,6 +33,10 @@ import com.tiskz.app.ui.LocalAppContainer
 import com.tiskz.app.ui.components.TiskzLogo
 import com.tiskz.app.ui.theme.TiskzColors
 import com.tiskz.app.util.DialerRole
+import compose.icons.TablerIcons
+import compose.icons.tablericons.Activity
+import compose.icons.tablericons.Fingerprint
+import compose.icons.tablericons.Headset
 
 @Composable
 fun OnboardingScreen(onFinished: () -> Unit) {
@@ -79,9 +79,9 @@ fun OnboardingScreen(onFinished: () -> Unit) {
         Spacer(Modifier.height(32.dp))
 
         Column(verticalArrangement = Arrangement.spacedBy(18.dp), modifier = Modifier.fillMaxWidth()) {
-            Feature(Icons.Rounded.SupportAgent, "Un asistente atiende primero", "Pregunta quién llama y para qué, antes de que contestes.")
-            Feature(Icons.Rounded.Insights, "Riesgo en tiempo real", "Ves el porcentaje de estafa subir o bajar mientras hablan.")
-            Feature(Icons.Rounded.Fingerprint, "Reconoce voces de estafadores", "Compara la voz con estafas ya reportadas.")
+            Feature(TablerIcons.Headset, "Un asistente atiende primero", "Pregunta quién llama y para qué, antes de que contestes.")
+            Feature(TablerIcons.Activity, "Riesgo en tiempo real", "Ves el porcentaje de estafa subir o bajar mientras hablan.")
+            Feature(TablerIcons.Fingerprint, "Reconoce voces de estafadores", "Compara la voz con estafas ya reportadas.")
         }
 
         Spacer(Modifier.weight(1f))

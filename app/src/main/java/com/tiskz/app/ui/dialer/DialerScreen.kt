@@ -20,10 +20,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.Backspace
-import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -46,6 +42,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.tiskz.app.ui.theme.TiskzColors
+import compose.icons.TablerIcons
+import compose.icons.tablericons.ArrowLeft
+import compose.icons.tablericons.Backspace
+import compose.icons.tablericons.Phone
 
 private val keys = listOf(
     "1" to "", "2" to "ABC", "3" to "DEF",
@@ -71,7 +71,7 @@ fun DialerScreen(initialNumber: String, onBack: () -> Unit) {
                 title = { Text("Marcar") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
+                        Icon(TablerIcons.ArrowLeft, contentDescription = "Volver")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = TiskzColors.White),
@@ -94,7 +94,7 @@ fun DialerScreen(initialNumber: String, onBack: () -> Unit) {
                 )
                 if (number.isNotEmpty()) {
                     IconButton(onClick = { number = number.dropLast(1) }) {
-                        Icon(Icons.AutoMirrored.Rounded.Backspace, contentDescription = "Borrar", tint = TiskzColors.Muted)
+                        Icon(TablerIcons.Backspace, contentDescription = "Borrar", tint = TiskzColors.Muted)
                     }
                 }
             }
@@ -122,7 +122,7 @@ fun DialerScreen(initialNumber: String, onBack: () -> Unit) {
                 modifier = Modifier.size(76.dp),
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Rounded.Call, contentDescription = "Llamar", tint = TiskzColors.White, modifier = Modifier.size(34.dp))
+                    Icon(TablerIcons.Phone, contentDescription = "Llamar", tint = TiskzColors.White, modifier = Modifier.size(34.dp))
                 }
             }
             Spacer(Modifier.height(32.dp))

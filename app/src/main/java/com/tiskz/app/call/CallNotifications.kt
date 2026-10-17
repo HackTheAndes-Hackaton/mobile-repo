@@ -1,5 +1,6 @@
 package com.tiskz.app.call
 
+import android.app.KeyguardManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -11,12 +12,14 @@ import com.tiskz.app.R
 import com.tiskz.app.model.ActiveCall
 import com.tiskz.app.model.CallDirection
 import com.tiskz.app.model.CallPhase
-import com.tiskz.app.util.PhoneNumbers
 
 /** Notificación de llamada: abre la pantalla de Tiskz, también con el teléfono bloqueado. */
 object CallNotifications {
 
+    /** Entrante con el teléfono bloqueado: aviso emergente y pantalla completa. */
     private const val CHANNEL_ID = "tiskz_calls"
+    /** Con la pantalla de Tiskz ya visible: solo un ícono discreto en la barra. */
+    private const val ONGOING_CHANNEL_ID = "tiskz_calls_ongoing"
     private const val NOTIFICATION_ID = 1001
 
     fun createChannel(context: Context) {
@@ -24,7 +27,10 @@ object CallNotifications {
             description = "Llamadas entrantes y en curso analizadas por Tiskz"
             setSound(null, null)
         }
-        context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+        val ongoing = NotificationChannel(ONGOING_CHANNEL_ID, "Llamada en curso", NotificationManager.IMPORTANCE_LOW).apply {
+            description = "Acceso rápido a la llamada mientras está en curso"
+        }
+        context.getSystemService(NotificationManager::class.java).createNotificationChannels(listOf(channel, ongoing))
     }
 
     fun show(context: Context, call: ActiveCall) {
@@ -38,16 +44,20 @@ object CallNotifications {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val incoming = call.direction == CallDirection.INCOMING
-        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+        // Si el teléfono está desbloqueado, CallManager ya abrió la pantalla de Tiskz:
+        // un aviso emergente encima solo taparía la cabecera.
+        val locked = context.getSystemService(KeyguardManager::class.java)?.isKeyguardLocked == true
+        val alert = incoming && call.phase == CallPhase.RINGING && locked
+        val builder = NotificationCompat.Builder(context, if (alert) CHANNEL_ID else ONGOING_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_tiskz_shield)
             .setColor(0xFF2563EB.toInt())
-            .setContentTitle(PhoneNumbers.display(call.number))
+            .setContentTitle(call.title)
             .setContentText(if (incoming) "Tiskz está analizando la llamada" else "Llamada en curso")
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setOngoing(true)
             .setContentIntent(openCall)
-        if (incoming && call.phase == CallPhase.RINGING) builder.setFullScreenIntent(openCall, true)
+        if (alert) builder.setFullScreenIntent(openCall, true)
 
         try {
             manager.notify(NOTIFICATION_ID, builder.build())

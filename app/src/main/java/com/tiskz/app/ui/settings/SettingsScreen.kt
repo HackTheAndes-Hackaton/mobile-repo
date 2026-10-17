@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -41,6 +39,8 @@ import com.tiskz.app.BuildConfig
 import com.tiskz.app.data.DemoScenario
 import com.tiskz.app.ui.LocalAppContainer
 import com.tiskz.app.ui.theme.TiskzColors
+import compose.icons.TablerIcons
+import compose.icons.tablericons.ArrowLeft
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -59,7 +59,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                 title = { Text("Ajustes") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
+                        Icon(TablerIcons.ArrowLeft, contentDescription = "Volver")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = TiskzColors.White),
@@ -101,7 +101,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                         }
                     }
                     Text(
-                        text = "Automático: número terminado en par = segura, impar = estafa.",
+                        text = "Automático: contactos guardados = segura; otros números terminados en par = segura, impar = estafa.",
                         style = MaterialTheme.typography.bodySmall,
                         color = TiskzColors.Muted,
                     )

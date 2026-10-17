@@ -1,5 +1,6 @@
 package com.tiskz.app.model
 
+import com.tiskz.app.util.PhoneNumbers
 import java.util.UUID
 
 enum class CallDirection { INCOMING, OUTGOING }
@@ -12,6 +13,8 @@ data class ActiveCall(
     val direction: CallDirection,
     val phase: CallPhase,
     val simulated: Boolean,
+    /** Nombre en los contactos del teléfono; null si el número no está guardado. */
+    val callerName: String? = null,
     val id: String = UUID.randomUUID().toString(),
     val startedAt: Long = System.currentTimeMillis(),
     val answeredAt: Long? = null,
@@ -19,4 +22,7 @@ data class ActiveCall(
     val muted: Boolean = false,
     val speaker: Boolean = false,
     val blocked: Boolean = false,
-)
+) {
+    /** Lo que se muestra en grande: el nombre del contacto o, si no está guardado, el número. */
+    val title: String get() = callerName ?: PhoneNumbers.display(number)
+}

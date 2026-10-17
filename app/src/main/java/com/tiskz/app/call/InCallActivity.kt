@@ -22,7 +22,7 @@ class InCallActivity : ComponentActivity() {
         setShowWhenLocked(true)
         setTurnScreenOn(true)
         enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.light(Color.WHITE, Color.WHITE),
+            statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.light(Color.WHITE, Color.WHITE),
         )
         val settings = (application as TiskzApp).container.settings

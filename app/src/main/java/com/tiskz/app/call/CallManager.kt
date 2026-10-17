@@ -7,9 +7,11 @@ import android.telecom.Call
 import android.telecom.CallAudioState
 import android.telecom.InCallService
 import android.telecom.VideoProfile
+import android.util.Log
 import com.tiskz.app.analysis.AnalysisSession
 import com.tiskz.app.analysis.UserDecision
 import com.tiskz.app.data.AppContainer
+import com.tiskz.app.data.ContactLookup
 import com.tiskz.app.data.DemoScenario
 import com.tiskz.app.model.ActiveCall
 import com.tiskz.app.model.CallAnalysis
@@ -30,6 +32,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Fuente única de verdad de la llamada en curso.
@@ -59,7 +62,21 @@ object CallManager {
 
     private val telecomCallback = object : Call.Callback() {
         override fun onStateChanged(call: Call, state: Int) {
-            updatePhase(phaseOf(call))
+            // El cierre lo hace finish(): si aquí solo se marcara DISCONNECTED,
+            // finish() lo vería como ya cerrado y no guardaría el historial.
+            val phase = phaseOf(call)
+            if (phase == CallPhase.DISCONNECTED) finish() else updatePhase(phase)
+        }
+
+        // Algunos equipos entregan el número después de que la llamada empieza a sonar.
+        override fun onDetailsChanged(call: Call, details: Call.Details) {
+            val number = numberOf(details)
+            val current = _activeCall.value ?: return
+            if (number.isNotEmpty() && number != current.number) {
+                Log.i(TAG, "Número actualizado por Telecom (…${number.takeLast(3)})")
+                _activeCall.value = current.copy(number = number, callerName = null)
+                resolveCallerName(current.id, number)
+            }
         }
     }
 
@@ -80,12 +97,17 @@ object CallManager {
             if (stateOf(call) == Call.STATE_RINGING) call.reject(false, null)
             return
         }
-        val number = call.details.handle?.schemeSpecificPart.orEmpty()
+        val number = numberOf(call.details)
         val direction = if (call.details.callDirection == Call.Details.DIRECTION_OUTGOING) {
             CallDirection.OUTGOING
         } else {
             CallDirection.INCOMING
         }
+        Log.i(
+            TAG,
+            "Llamada $direction · número ${if (number.isEmpty()) "vacío" else "…${number.takeLast(3)}"} " +
+                "· presentación ${call.details.handlePresentation}",
+        )
         if (direction == CallDirection.INCOMING && container.blocklist.isBlocked(number)) {
             call.reject(false, null)
             return
@@ -183,6 +205,7 @@ object CallManager {
     private fun start(call: ActiveCall, forcedScenario: DemoScenario?) {
         session.value?.close()
         _activeCall.value = call
+        resolveCallerName(call.id, call.number)
         session.value = if (call.direction == CallDirection.INCOMING) {
             container.openAnalysisSession(call.number, forcedScenario)
         } else {
@@ -192,6 +215,19 @@ object CallManager {
         appContext.startActivity(
             Intent(appContext, InCallActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         )
+    }
+
+    /** Busca el número en los contactos y, si aparece, muestra el nombre en vez del número. */
+    private fun resolveCallerName(callId: String, number: String) {
+        if (number.isEmpty()) return
+        scope.launch {
+            val name = withContext(Dispatchers.IO) { ContactLookup.findName(appContext, number) } ?: return@launch
+            val current = _activeCall.value
+            if (current?.id != callId || current.number != number) return@launch
+            val updated = current.copy(callerName = name)
+            _activeCall.value = updated
+            if (updated.phase != CallPhase.DISCONNECTED) CallNotifications.show(appContext, updated)
+        }
     }
 
     private fun updatePhase(phase: CallPhase) {
@@ -225,6 +261,9 @@ object CallManager {
         session.value = null
     }
 
+    private fun numberOf(details: Call.Details): String =
+        details.handle?.schemeSpecificPart.orEmpty()
+
     private fun stateOf(call: Call): Int =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) call.details.state else @Suppress("DEPRECATION") call.state
 
@@ -237,4 +276,5 @@ object CallManager {
     }
 
     private const val ENDED_SCREEN_MS = 2500L
+    private const val TAG = "Tiskz"
 }
