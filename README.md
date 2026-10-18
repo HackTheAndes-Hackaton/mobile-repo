@@ -158,3 +158,20 @@ capturas incompletas antes de WebRTC; el resultado de esos intentos no se contó
 WebRTC Android: [SDK y versiones oficiales](https://github.com/webrtc-sdk/android).
 
 Para teléfonos ARM64 y el emulador usado en las pruebas: `app-arm64-v8a-debug.apk`. Para otras arquitecturas se generan APK específicos y `app-universal-debug.apk`. `installDebug` selecciona la arquitectura del dispositivo conectado.
+# Fragmentos de audio y captura automática (0.4.0)
+
+En **Voz en vivo**, en modo WebRTC, se puede autorizar conservar y compartir con Red Vecinal Segura los últimos 10 segundos del micrófono. La autorización viene apagada. Al aparecer la primera alerta se intenta guardar un fragmento; también hay botones **Guardar últimos 10 s** y **Escuchar guardado**. La reproducción recupera el WAV del servidor y pausa el envío del micrófono mientras suena. El búfer local vive en memoria y se borra al cerrar la sesión. Un reintento de carga conserva el mismo identificador para evitar duplicados.
+
+Requiere el backend de agentes con `/v1/sessions/{id}/evidence` y el MCP del panel `/api/v1/mcp` desplegados. La clave `TISKZ_API_KEY` pertenece al backend y nunca se incluye en la APK. La reproducción desde esta pantalla utiliza el ticket de la sesión activa: no es un historial disponible después de cerrarla. Lo guardado permanece en el servidor hasta su eliminación, pendiente de revisión y sin reconocimiento de identidad.
+
+El modo **alertas de llamadas Vapi** sigue recibiendo transcripciones; no captura PCM de la conferencia Entel. Esta integración no guarda la voz remota de esa conferencia. El modo automático de conferencia y la confirmación de costos conservan sus valores por defecto apagados.
+
+
+La versión 0.4.0 captura automáticamente al recibir una orden `audio.capture_requested` del backend, en lugar de reaccionar por su cuenta a la alerta visual. Comprueba sesión, identificador, ventana y vencimiento; una orden repetida no provoca otra grabación. El resultado confirmado por el servidor se muestra en pantalla. Si la subida falla, el botón Guardar reintenta los mismos bytes con el mismo ID, evitando duplicados.
+
+El camino de almacenamiento preferido del servidor es la API HTTP del panel; MCP continúa disponible para las herramientas de agentes. La APK solo llama al backend con el ticket productor de su sesión. No se incrusta ninguna clave global. La autorización de conservación y el modo de conferencia automática siguen apagados por defecto.
+
+
+### Audio de Android (0.4.1)
+
+La sesión de micrófono configura el modo de comunicación de Android y solicita procesamiento de eco/ruido disponible, preservando auriculares y restaurando la configuración al terminar. El efecto sobre la calidad necesita validación en un dispositivo físico. Conversar con Tiskz ya solicita GPT-Live 1; comprensión y alertas procesan sus subtítulos. La prueba sintética no sustituye la prueba en el ambiente real del usuario.

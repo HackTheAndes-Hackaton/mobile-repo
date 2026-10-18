@@ -49,7 +49,17 @@ class WebRtcVoiceSession(
     baseUrl: String,
     private var accessCode: String,
     private val assistant: Boolean = false,
+    private val evidenceConsent: Boolean = false,
 ) : AnalysisSession() {
+    data class Evidence(val busy: Boolean = false, val saved: Boolean = false, val message: String = "")
+    private val excerptBuffer = AudioExcerptBuffer()
+    private val _evidence = MutableStateFlow(Evidence())
+    val evidence = _evidence.asStateFlow()
+    private var savedExcerptId: String? = null
+    private var captureProtocol: AudioCaptureProtocol? = null
+    private var pendingExcerpt: Pair<String, ByteArray>? = null
+    @Volatile private var playingExcerpt = false
+    private var excerptPlayer: android.media.AudioTrack? = null
     enum class Connection { CONNECTING, STREAMING, ENDED }
     private val _connection = MutableStateFlow(Connection.CONNECTING)
     val connection = _connection.asStateFlow()
@@ -63,6 +73,7 @@ class WebRtcVoiceSession(
     private var peer: PeerConnection? = null
     private var factory: PeerConnectionFactory? = null
     private var audioModule: JavaAudioDeviceModule? = null
+    private var audioRoute: VoiceAudioRoute? = null
     private var audioSource: AudioSource? = null
     private var track: AudioTrack? = null
     private var channel: DataChannel? = null
@@ -115,7 +126,7 @@ class WebRtcVoiceSession(
                     "Permite el acceso al micrófono para iniciar."
                 }
                 withTimeout(45000) {
-                    room = api.createRoom(accessCode, consent, assistant)
+                    room = api.createRoom(accessCode, consent, assistant, evidenceConsent)
                     accessCode = ""
                     openEvents(requireNotNull(room))
                     socketReady.await()
@@ -140,6 +151,7 @@ class WebRtcVoiceSession(
     }
 
     private fun openEvents(room: VoiceRoom) {
+        captureProtocol = AudioCaptureProtocol(room.id, evidenceConsent)
         socket = client.newWebSocket(Request.Builder().url(api.eventsUrl(room)).build(), VoiceEventsListener(
             isClosed = { closed.get() },
             onReady = { socketReady.complete(Unit) },
@@ -148,16 +160,28 @@ class WebRtcVoiceSession(
                 if (event is AnalysisEvent.Ended) scope.launch { close() }
             },
             onTerminated = ::fail,
-            onControl = { raw -> if (assistant) LiveEventRelay.contextCommand(raw)?.let { command -> scope.launch { sendData(command) } } },
+            onControl = { raw -> scope.launch {
+                handleCaptureControl(raw)
+                if (assistant) LiveEventRelay.contextCommand(raw)?.let(::sendData)
+            } },
         ))
     }
 
     private fun preparePeer() {
         initializeWebRtc(context)
+        audioRoute = VoiceAudioRoute(context)
+        audioRoute?.start()
         audioModule = JavaAudioDeviceModule.builder(context)
+            .setAudioSource(android.media.MediaRecorder.AudioSource.VOICE_COMMUNICATION)
+            .setUseStereoInput(false)
+            .setUseHardwareAcousticEchoCanceler(true)
+            .setUseHardwareNoiseSuppressor(true)
             // Evita el valor de 8 kHz del emulador; conserva banda de voz para transcripción.
             .setInputSampleRate(48000)
             .setSamplesReadyCallback { samples ->
+                if (evidenceConsent && streaming.get() && !playingExcerpt && samples.audioFormat == AudioFormat.ENCODING_PCM_16BIT) {
+                    excerptBuffer.accept(samples.data, samples.sampleRate, samples.channelCount)
+                }
                 capturedSampleRate = samples.sampleRate
                 microphoneReady.complete(Unit)
                 if (streaming.get() && samples.audioFormat == AudioFormat.ENCODING_PCM_16BIT) {
@@ -258,6 +282,103 @@ class WebRtcVoiceSession(
         if (!closed.get()) socket?.send(JSONObject().put("type", "user.decision").put("action", decision.wire).toString())
     }
 
+    private fun captureReply(type: String, requestId: String, reason: String? = null) {
+        val current = room ?: return
+        val event = JSONObject().put("type", type).put("session_id", current.id).put("request_id", requestId)
+        if (reason != null) event.put("reason", reason)
+        if (!closed.get()) socket?.send(event.toString())
+    }
+
+    private fun handleCaptureControl(raw: String) {
+        captureProtocol?.result(raw)?.let { result ->
+            if (result.saved) {
+                savedExcerptId = result.fragmentId
+                if (pendingExcerpt?.first == result.id) {
+                    pendingExcerpt?.second?.fill(0)
+                    pendingExcerpt = null
+                }
+                _evidence.value = _evidence.value.copy(saved = true, message = "Guardado automático confirmado por el servidor · pendiente de revisión.")
+            } else if (!_evidence.value.busy) {
+                _evidence.value = _evidence.value.copy(message = if (result.reason == "expired") "La solicitud de captura venció. Puedes guardar manualmente." else "La captura automática no se completó. Puedes volver a intentar.")
+            }
+        }
+        val request = captureProtocol?.request(raw) ?: return
+        if (closed.get() || _evidence.value.busy || pendingExcerpt != null) {
+            captureReply("audio.capture_failed", request.id, "busy")
+            return
+        }
+        captureReply("audio.capture_received", request.id)
+        captureAndSave(request.id)
+    }
+
+    fun saveExcerpt() = captureAndSave()
+
+    private fun captureAndSave(requestId: String? = null) {
+        if (!evidenceConsent || closed.get() || _evidence.value.busy) return
+        val current = room ?: return
+        val candidate = pendingExcerpt ?: excerptBuffer.snapshot()?.let { (requestId ?: java.util.UUID.randomUUID().toString()) to it }
+        val audio = candidate?.second
+        if (audio == null) {
+            _evidence.value = _evidence.value.copy(message = "No hay todavía un segundo de audio disponible para capturar.")
+            if (requestId != null) captureReply("audio.capture_failed", requestId, "no_audio")
+            return
+        }
+        pendingExcerpt = candidate
+        _evidence.value = _evidence.value.copy(busy = true, message = "Guardando fragmento autorizado…")
+        scope.launch {
+            try {
+                savedExcerptId = api.saveExcerpt(current, audio, requireNotNull(candidate).first)
+                pendingExcerpt = null
+                audio.fill(0)
+                _evidence.value = Evidence(saved = true, message = if (requestId != null) "Guardado automático confirmado · pendiente de revisión." else "Fragmento guardado · pendiente de revisión.")
+            } catch (e: Exception) {
+                if (!closed.get()) {
+                    val confirmed = captureProtocol?.savedFragment(requireNotNull(candidate).first)
+                    if (confirmed != null) {
+                        savedExcerptId = confirmed; pendingExcerpt = null; audio.fill(0)
+                        _evidence.value = Evidence(saved = true, message = "Guardado automático confirmado por el servidor · pendiente de revisión.")
+                    } else _evidence.value = Evidence(saved = savedExcerptId != null, message = "No se pudo confirmar el guardado. Puedes volver a intentar.")
+                }
+            } finally { if (closed.get()) audio.fill(0) }
+        }
+    }
+
+    fun playExcerpt() {
+        val id = savedExcerptId ?: return
+        val current = room ?: return
+        if (closed.get() || _evidence.value.busy) return
+        _evidence.value = _evidence.value.copy(busy = true, message = "Recuperando el fragmento del servidor…")
+        scope.launch {
+            var bytes: ByteArray? = null
+            var completed = false
+            try {
+                bytes = api.loadExcerpt(current, id)
+                playingExcerpt = true
+                track?.setEnabled(false)
+                val player = android.media.AudioTrack.Builder()
+                    .setAudioAttributes(android.media.AudioAttributes.Builder().setUsage(android.media.AudioAttributes.USAGE_MEDIA).build())
+                    .setAudioFormat(android.media.AudioFormat.Builder().setSampleRate(16000).setEncoding(AudioFormat.ENCODING_PCM_16BIT).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
+                    .setTransferMode(android.media.AudioTrack.MODE_STATIC).setBufferSizeInBytes(bytes.size - 44).build()
+                excerptPlayer = player
+                player.write(bytes, 44, bytes.size - 44)
+                player.play()
+                _evidence.value = _evidence.value.copy(message = "Reproduciendo · micrófono pausado.")
+                delay(((bytes.size - 44) * 1000L / 32000) + 100)
+                completed = true
+            } catch (e: Exception) {
+                if (!closed.get()) _evidence.value = _evidence.value.copy(message = "No se pudo reproducir el fragmento.")
+            } finally {
+                bytes?.fill(0)
+                runCatching { excerptPlayer?.stop(); excerptPlayer?.release() }
+                excerptPlayer = null; playingExcerpt = false
+                if (!closed.get()) {
+                    track?.setEnabled(true)
+                    _evidence.value = _evidence.value.copy(busy = false, message = if (completed) "Fragmento reproducido · micrófono activo." else _evidence.value.message)
+                }
+            }
+        }
+    }
+
     private fun fail(message: String) {
         if (closed.get()) return
         scope.launch {
@@ -268,9 +389,16 @@ class WebRtcVoiceSession(
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         streaming.set(false)
+        excerptBuffer.clear()
+        captureProtocol = null
+        pendingExcerpt?.second?.fill(0); pendingExcerpt = null
+        runCatching { excerptPlayer?.stop(); excerptPlayer?.release() }
+        excerptPlayer = null
         accessCode = ""
         track?.setEnabled(false)
         remoteTrack?.setEnabled(false)
+        runCatching { audioRoute?.close() }
+        audioRoute = null
         // Retira el emisor para detener la captura; conserva recepción hasta confirmar el cierre.
         if (assistant) {
             peer?.senders?.forEach { sender -> if (sender.track()?.kind() == "audio") runCatching { peer?.removeTrack(sender) } }

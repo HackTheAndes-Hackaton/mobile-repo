@@ -72,6 +72,28 @@ class VoiceProtocolTest {
         }
     } }
 
+    @Test fun evidenceUsesRoomTicketAndExplicitStorageConsent() = server { server, api -> runBlocking {
+        server.enqueue(MockResponse().setResponseCode(201).setBody(JSONObject().put("session_id", id).put("producer_token", producer).toString()))
+        val room = api.createRoom(master, true, evidenceConsent = true)
+        val authorization = JSONObject(server.takeRequest().body.readUtf8())
+        assertTrue(authorization.getBoolean("consentimiento_conservacion"))
+        assertEquals(1, authorization.getInt("audio_capture_protocol"))
+        val fragment = "clip_" + "a".repeat(48)
+        server.enqueue(MockResponse().setResponseCode(201).setBody(JSONObject().put("data", JSONObject().put("id", fragment)).toString()))
+        assertEquals(fragment, api.saveExcerpt(room, byteArrayOf(1, 2, 3), java.util.UUID.randomUUID().toString()))
+        val upload = server.takeRequest()
+        assertEquals(producer, upload.getHeader("X-Voice-Token"))
+        assertEquals("/a/voice-id/v1/sessions/$id/evidence", upload.path)
+        assertFalse(upload.body.clone().readUtf8().contains(master))
+        val wave = ByteArray(32044)
+        "RIFF".toByteArray().copyInto(wave)
+        server.enqueue(MockResponse().setHeader("Content-Type", "audio/wav").setBody(okio.Buffer().write(wave)))
+        assertArrayEquals(wave, api.loadExcerpt(room, fragment))
+        val download = server.takeRequest()
+        assertEquals(producer, download.getHeader("X-Voice-Token"))
+        assertTrue(download.path!!.endsWith("/evidence/$fragment"))
+    } }
+
     @Test fun consentAndHttpsAreRequiredBeforeAnyRequest() = server { server, api -> runBlocking {
         assertTrue(runCatching { api.createRoom(master, false) }.isFailure)
         assertEquals(0, server.requestCount)
