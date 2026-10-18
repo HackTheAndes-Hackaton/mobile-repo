@@ -6,6 +6,7 @@ import com.tiskz.app.model.Speaker
 import com.tiskz.app.model.TranscriptLine
 import com.tiskz.app.model.VoiceMatch
 import com.tiskz.app.model.Understanding
+import kotlin.math.roundToInt
 
 /** Eventos que llegan de los agentes. El formato JSON está en docs/CONTRATO_BACKEND.md. */
 sealed interface AnalysisEvent {
@@ -61,6 +62,7 @@ fun CallAnalysis.reduce(event: AnalysisEvent): CallAnalysis = when (event) {
 
     is AnalysisEvent.Alert -> if (event.revision < alertRevision) this else copy(
         alert = event.value, alertProbability = event.probability, alertRevision = event.revision,
+        riskPercent = (event.probability * 100).roundToInt().coerceIn(0, 100),
     )
 
     is AnalysisEvent.Understood -> if (event.revision < understandingRevision) this else copy(

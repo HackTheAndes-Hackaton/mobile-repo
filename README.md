@@ -182,3 +182,7 @@ La sesión de micrófono configura el modo de comunicación de Android y solicit
 El monitor de llamadas telefónicas autoriza el corte de Vapi cuando el backend detecta riesgo. En la conferencia automática administrada por Tiskz, una orden autenticada `call.hangup_requested` desconecta también las dos patas y su padre mediante Telecom. Se verifican llamada, sesión, revisión y UUID; los duplicados y órdenes obsoletas se ignoran. Una alerta visual aislada no ejecuta comandos. Si la conferencia se unió manualmente fuera de Tiskz, este monitor solo solicita el cierre de Vapi.
 
 Antes de conectar una nueva prueba, cierra otros monitores del equipo. Se admite un único monitor automático y no se adopta una llamada que ya estaba activa. La autorización del canal telefónico explica el corte por riesgo. El modo automático de conferencia conserva sus requisitos de SIM, permisos y costos confirmados, y sigue desactivado por defecto.
+
+### Conversación por turnos (0.4.3)
+
+El servidor telefónico envía por separado cada intervención del interlocutor y del agente, con secuencia e ID estable. La conversación sigue también las actualizaciones de texto, no solo el número de burbujas. El porcentaje se actualiza junto a la alerta y la pantalla de conferencia muestra «—» hasta el primer análisis; se etiqueta como estimación de alerta, no como certeza de fraude. No se cambian la autorización de costos ni el modo automático por defecto.

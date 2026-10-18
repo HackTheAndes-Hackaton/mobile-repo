@@ -132,6 +132,7 @@ fun LiveCallScreen(
             CompactHero(call, mood)
             RiskBar(
                 percent = analysis!!.riskPercent,
+                assessed = !automatic || analysis.alertProbability != null,
                 headline = if (automatic) when {
                     conference.phase == ConferencePhase.FAILED -> "Sin monitoreo del agente"
                     analysis.alert == true -> "Alerta detectada"
@@ -144,7 +145,8 @@ fun LiveCallScreen(
                     analysis.error != null -> analysis.error
                     conference.phase == ConferencePhase.FAILED -> conference.message
                     analysis.alert == true -> analysis.reasons.firstOrNull()
-                    else -> null
+                    analysis.alertProbability != null -> "Estimación del modelo; no confirma ni descarta una estafa."
+                    else -> "Esperando la primera evaluación de lo que dice quien llama."
                 } else riskDetail(analysis, answerThreshold),
                 headlineColor = if (mood == Mood.NEUTRAL && analysis.riskPercent < 30) TiskzColors.Blue600 else null,
                 modifier = Modifier
