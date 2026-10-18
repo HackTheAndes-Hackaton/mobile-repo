@@ -259,7 +259,7 @@ private fun ProtectionHero(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 TiskzLogo(size = 38.dp, onDark = true)
                 Spacer(Modifier.size(10.dp))
-                Text("Tiskz", style = MaterialTheme.typography.titleLarge, color = Color.White, modifier = Modifier.weight(1f))
+                Text("PhoneWard", style = MaterialTheme.typography.titleLarge, color = Color.White, modifier = Modifier.weight(1f))
                 IconButton(onClick = onOpenContacts) {
                     Icon(TablerIcons.Users, contentDescription = "Contactos", tint = Color.White)
                 }

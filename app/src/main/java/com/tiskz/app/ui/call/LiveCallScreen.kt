@@ -390,7 +390,7 @@ private fun riskDetail(analysis: CallAnalysis, threshold: Int): String? = when {
     ).joinToString(" · ").ifEmpty { null }
     analysis.isSafeToAnswer(threshold) -> "No hay alerta actual; la identidad no está verificada."
     analysis.status == AgentStatus.OFFLINE -> analysis.error ?: "Contesta con precaución."
-    else -> analysis.reasons.firstOrNull() ?: "Tiskz está analizando lo que dice quien llama."
+    else -> analysis.reasons.firstOrNull() ?: "PhoneWard está analizando lo que dice quien llama."
 }
 
 // --- Controles ---

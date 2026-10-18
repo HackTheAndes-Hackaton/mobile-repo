@@ -72,7 +72,7 @@ fun LiveTranscript(
                         ) {
                             WaveBars(TiskzColors.Blue600)
                             Spacer(Modifier.size(8.dp))
-                            Text("Tiskz IA está atendiendo", style = MaterialTheme.typography.labelLarge, color = TiskzColors.Blue700)
+                            Text("PhoneWard IA está atendiendo", style = MaterialTheme.typography.labelLarge, color = TiskzColors.Blue700)
                         }
                     }
                 }
@@ -118,7 +118,7 @@ private fun TranscriptBubble(line: TranscriptLine, callerLabel: String) {
                 fromAgent -> {
                     Icon(painterResource(R.drawable.ic_tiskz_shield), null, tint = TiskzColors.Blue600, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.size(4.dp))
-                    Text("Tiskz IA", style = MaterialTheme.typography.labelLarge, color = TiskzColors.Blue600)
+                    Text("PhoneWard IA", style = MaterialTheme.typography.labelLarge, color = TiskzColors.Blue600)
                 }
                 line.flagged -> {
                     Icon(TablerIcons.AlertTriangle, null, tint = TiskzColors.Red, modifier = Modifier.size(15.dp))

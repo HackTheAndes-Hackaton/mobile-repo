@@ -125,7 +125,7 @@ fun SettingsScreen(onBack: () -> Unit) {
             Column {
                 Text("Umbral para contestar: ${settings.answerThreshold}%", style = MaterialTheme.typography.titleMedium)
                 Text(
-                    text = "Tiskz destaca \"Contestar\" solo si el riesgo es menor a este valor.",
+                    text = "PhoneWard destaca \"Contestar\" solo si el riesgo es menor a este valor.",
                     style = MaterialTheme.typography.bodySmall,
                     color = TiskzColors.Muted,
                 )
@@ -149,7 +149,7 @@ fun SettingsScreen(onBack: () -> Unit) {
             }
 
             Text(
-                text = "Tiskz ${BuildConfig.VERSION_NAME}",
+                text = "PhoneWard ${BuildConfig.VERSION_NAME}",
                 style = MaterialTheme.typography.bodySmall,
                 color = TiskzColors.Muted,
             )

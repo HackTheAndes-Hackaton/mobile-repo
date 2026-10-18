@@ -51,7 +51,7 @@ fun PanelSettings() {
             Column(Modifier.weight(1f)) {
                 Text("Historial en el panel", style = MaterialTheme.typography.titleMedium)
                 Text(
-                    "Al colgar, Tiskz guarda la conversación de la llamada (tu asistente, quien llama y tú) en el panel de la organización.",
+                    "Al colgar, PhoneWard guarda la conversación de la llamada (tu asistente, quien llama y tú) en el panel de la organización.",
                     style = MaterialTheme.typography.bodySmall,
                     color = TiskzColors.Muted,
                 )
