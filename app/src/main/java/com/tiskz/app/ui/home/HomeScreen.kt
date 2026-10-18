@@ -87,6 +87,7 @@ import com.tiskz.app.util.DialerRole
 import com.tiskz.app.util.PhoneNumbers
 import com.tiskz.app.util.formatWhen
 import compose.icons.TablerIcons
+import compose.icons.tablericons.Users
 import compose.icons.tablericons.Activity
 import compose.icons.tablericons.AlertTriangle
 import compose.icons.tablericons.GridDots
@@ -97,7 +98,6 @@ import compose.icons.tablericons.Settings
 import compose.icons.tablericons.ShieldCheck
 import compose.icons.tablericons.ShieldOff
 import compose.icons.tablericons.ShieldX
-import compose.icons.tablericons.Users
 
 private val STATS_OVERLAP = 44.dp
 
@@ -105,6 +105,7 @@ private val STATS_OVERLAP = 44.dp
 fun HomeScreen(
     onOpenSettings: () -> Unit,
     onOpenDialer: () -> Unit,
+    onOpenContacts: () -> Unit,
     onOpenRecord: (String) -> Unit,
     onOpenVoice: () -> Unit,
 ) {
@@ -158,6 +159,7 @@ fun HomeScreen(
                     demoMode = settings.demoMode,
                     automatic = settings.automaticConferenceEnabled,
                     onOpenSettings = onOpenSettings,
+                    onOpenContacts = onOpenContacts,
                     onActivate = { DialerRole.requestIntent(context)?.let(roleLauncher::launch) },
                 )
             }
@@ -171,11 +173,11 @@ fun HomeScreen(
                 Surface(color = TiskzColors.Blue50, shape = RoundedCornerShape(24.dp),
                     modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 16.dp)) {
                     Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("Marin contesta por ti", style = MaterialTheme.typography.titleMedium)
+                        Text("Filtro de llamadas", style = MaterialTheme.typography.titleMedium)
                         Text(if (settings.automaticConferenceEnabled)
-                            "Modo automático activado. La conexión depende de la SIM y la conferencia de tu operadora."
-                            else "Prepara una vez los permisos, la SIM y el acceso. La protección está apagada hasta confirmar los costos de tu operadora.")
-                        Button(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth()) { Text("Configurar protección automática") }
+                            "Activo. Cuando llama un número que no está en tus contactos, tu asistente contesta primero y te avisa si es seguro antes de que entres."
+                            else "Tu asistente puede contestar primero a los números desconocidos y avisarte si es una estafa. Se configura una sola vez con tu SIM.")
+                        Button(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth()) { Text(if (settings.automaticConferenceEnabled) "Ajustes del filtro" else "Activar filtro de llamadas") }
                     }
                 }
             }
@@ -194,9 +196,9 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 16.dp),
                 ) {
                     Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("Canal de voz en vivo", style = MaterialTheme.typography.titleMedium)
-                        Text("Envía el micrófono a los agentes y recibe transcripción y alertas reales.", style = MaterialTheme.typography.bodyMedium)
-                        Button(onClick = onOpenVoice, modifier = Modifier.fillMaxWidth()) { Text("Abrir canal de voz") }
+                        Text("Analizar una conversación", style = MaterialTheme.typography.titleMedium)
+                        Text("Usa el micrófono para revisar en vivo una conversación y recibir alertas al instante.", style = MaterialTheme.typography.bodyMedium)
+                        Button(onClick = onOpenVoice, modifier = Modifier.fillMaxWidth()) { Text("Empezar a analizar") }
                     }
                 }
             }
@@ -237,6 +239,7 @@ private fun ProtectionHero(
     demoMode: Boolean,
     automatic: Boolean,
     onOpenSettings: () -> Unit,
+    onOpenContacts: () -> Unit,
     onActivate: () -> Unit,
 ) {
     val brush = if (active) {
@@ -257,6 +260,9 @@ private fun ProtectionHero(
                 TiskzLogo(size = 38.dp, onDark = true)
                 Spacer(Modifier.size(10.dp))
                 Text("Tiskz", style = MaterialTheme.typography.titleLarge, color = Color.White, modifier = Modifier.weight(1f))
+                IconButton(onClick = onOpenContacts) {
+                    Icon(TablerIcons.Users, contentDescription = "Contactos", tint = Color.White)
+                }
                 IconButton(onClick = onOpenSettings) {
                     Icon(TablerIcons.Settings, contentDescription = "Ajustes", tint = Color.White)
                 }
@@ -288,21 +294,22 @@ private fun ProtectionHero(
                     }
                 }
                 Text(
-                    text = when { active && automatic -> "Modo automático activado"; active -> "Tiskz es tu teléfono"; else -> "Protección desactivada" },
+                    text = when { active && automatic -> "Llamadas protegidas"; active -> "Tu teléfono está listo"; else -> "Protección desactivada" },
                     style = MaterialTheme.typography.headlineSmall,
                     color = Color.White,
                 )
                 Text(
-                    text = when { active && automatic -> "Intentará conectar a marin con tu SIM y operadora confirmadas"; active -> "Configura y activa la conferencia para que marin atienda"; else -> "Prepara Tiskz para atender con marin" },
+                    text = when { active && automatic -> "Los números desconocidos se revisan antes de que contestes"; active -> "Activa el filtro para revisar las llamadas de desconocidos"; else -> "Úsala como tu app de teléfono para detectar estafas" },
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.White.copy(alpha = 0.82f),
+                    textAlign = TextAlign.Center,
                     modifier = Modifier.padding(top = 4.dp),
                 )
                 Spacer(Modifier.height(14.dp))
                 if (active) {
                     Surface(color = Color.White.copy(alpha = 0.18f), shape = RoundedCornerShape(50)) {
                         Text(
-                            text = if (demoMode) "Modo demo" else "Conectado a los agentes",
+                            text = when { demoMode -> "Modo demo"; automatic -> "Filtro de llamadas activo"; else -> "Filtro de llamadas apagado" },
                             style = MaterialTheme.typography.labelLarge,
                             color = Color.White,
                             modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
@@ -467,7 +474,7 @@ private fun EmptyRecents() {
         }
         Spacer(Modifier.height(12.dp))
         Text("Aún no hay llamadas", style = MaterialTheme.typography.titleMedium, color = TiskzColors.Ink)
-        Text("Prueba una simulación para ver a Tiskz en acción.", style = MaterialTheme.typography.bodySmall, color = TiskzColors.Muted)
+        Text("Aquí verás tus llamadas y qué tan seguras fueron.", style = MaterialTheme.typography.bodySmall, color = TiskzColors.Muted)
     }
 }
 

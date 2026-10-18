@@ -101,10 +101,10 @@ fun AutomaticConferenceSettings() {
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("Marin contesta por ti", style = MaterialTheme.typography.titleLarge)
-        Text("Cuando actives la protección, Tiskz contestará, llamará al agente y pedirá unir la conferencia. Las alertas aparecerán en la pantalla de llamada.")
+        Text("Filtro de llamadas", style = MaterialTheme.typography.titleLarge)
+        Text("Cuando llame un número desconocido, tu asistente contestará primero y las alertas aparecerán en la pantalla de llamada.")
         Text("Preparación inicial · no se realizará ninguna llamada al configurar esto.", style = MaterialTheme.typography.bodySmall)
-        Text("Mientras marin atiende, tu micrófono queda silenciado. Entras cuando marin confirma que es seguro, y sigue escuchando hasta que cuelguen.", style = MaterialTheme.typography.bodySmall)
+        Text("Mientras tu asistente atiende, tu micrófono queda silenciado. Entras cuando se confirma que es seguro, y sigue escuchando hasta que cuelguen.", style = MaterialTheme.typography.bodySmall)
         if (!defaultDialer || !permitted) {
             Button(onClick = {
                 if (!defaultDialer) DialerRole.requestIntent(context)?.let(role::launch)

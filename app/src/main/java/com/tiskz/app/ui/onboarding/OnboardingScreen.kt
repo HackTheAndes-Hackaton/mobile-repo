@@ -71,7 +71,7 @@ fun OnboardingScreen(onFinished: () -> Unit) {
         Text("Tiskz", style = MaterialTheme.typography.displayMedium, color = TiskzColors.Blue700)
         Spacer(Modifier.height(8.dp))
         Text(
-            text = "Prepara a marin para atender tus llamadas.",
+            text = "Tu teléfono, con protección contra estafas.",
             style = MaterialTheme.typography.titleMedium,
             color = TiskzColors.Ink,
             textAlign = TextAlign.Center,
@@ -79,9 +79,9 @@ fun OnboardingScreen(onFinished: () -> Unit) {
         Spacer(Modifier.height(32.dp))
 
         Column(verticalArrangement = Arrangement.spacedBy(18.dp), modifier = Modifier.fillMaxWidth()) {
-            Feature(TablerIcons.Headset, "Un agente en la conferencia", "Puede conversar cuando tu operadora permite unir las llamadas.")
-            Feature(TablerIcons.Activity, "Alertas durante la conversación", "Revisa transcripciones y señales de riesgo; no confirman identidades.")
-            Feature(TablerIcons.Fingerprint, "Una configuración inicial", "Elige tu SIM y confirma los costos antes de activar la atención automática.")
+            Feature(TablerIcons.Headset, "Un asistente contesta primero", "Atiende a los números desconocidos antes que tú.")
+            Feature(TablerIcons.Activity, "Alertas durante la llamada", "Te avisa si piden claves, códigos o dinero.")
+            Feature(TablerIcons.Fingerprint, "Una configuración inicial", "Elige tu SIM y confirma los costos antes de activar el filtro.")
         }
 
         Spacer(Modifier.weight(1f))

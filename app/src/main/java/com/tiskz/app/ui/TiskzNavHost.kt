@@ -11,6 +11,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.tiskz.app.data.AppContainer
+import com.tiskz.app.ui.contacts.ContactsScreen
 import com.tiskz.app.ui.detail.CallDetailScreen
 import com.tiskz.app.ui.dialer.DialerScreen
 import com.tiskz.app.ui.home.HomeScreen
@@ -26,6 +27,7 @@ private object Routes {
     const val VOICE = "voice"
     const val DIALER = "dialer?number={number}"
     const val RECORD = "record/{id}"
+    const val CONTACTS = "contacts"
 
     fun dialer(number: String = "") = "dialer?number=${Uri.encode(number)}"
     fun record(id: String) = "record/$id"
@@ -51,6 +53,7 @@ fun TiskzNavHost(pendingDial: String?, onDialConsumed: () -> Unit) {
                 onOpenVoice = { navController.navigate(Routes.VOICE) },
                 onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                 onOpenDialer = { navController.navigate(Routes.dialer()) },
+                onOpenContacts = { navController.navigate(Routes.CONTACTS) },
                 onOpenRecord = { id -> navController.navigate(Routes.record(id)) },
             )
         }
@@ -61,6 +64,13 @@ fun TiskzNavHost(pendingDial: String?, onDialConsumed: () -> Unit) {
             DialerScreen(
                 initialNumber = entry.arguments?.getString("number").orEmpty(),
                 onBack = { navController.popBackStack() },
+                onOpenContacts = { navController.navigate(Routes.CONTACTS) { launchSingleTop = true } },
+            )
+        }
+        composable(Routes.CONTACTS) {
+            ContactsScreen(
+                onBack = { navController.popBackStack() },
+                onOpenDialer = { navController.navigate(Routes.dialer()) },
             )
         }
         composable(Routes.RECORD) { entry ->

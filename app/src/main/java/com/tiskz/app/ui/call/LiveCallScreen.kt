@@ -273,7 +273,7 @@ private fun FullHero(call: ActiveCall, modifier: Modifier) {
 @Composable
 private fun CallerText(call: ActiveCall, modifier: Modifier = Modifier, centered: Boolean = false) {
     val now by rememberNow()
-    val status = if (call.screening && call.phase != CallPhase.DISCONNECTED) "Marin está atendiendo"
+    val status = if (call.screening && call.phase != CallPhase.DISCONNECTED) "Tu asistente está atendiendo"
     else when (call.phase) {
         CallPhase.RINGING -> "Llamada entrante"
         CallPhase.DIALING -> "Llamando…"
@@ -457,7 +457,7 @@ private fun ActionBar(
 
             else -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
               if (conference.phase == ConferencePhase.CONNECTED) {
-                  Text("Marin sigue escuchando y analizando la llamada", style = MaterialTheme.typography.bodySmall,
+                  Text("Tu asistente sigue escuchando la llamada", style = MaterialTheme.typography.bodySmall,
                       color = TiskzColors.Muted, modifier = Modifier.padding(bottom = 12.dp))
               }
               Row(
@@ -504,7 +504,7 @@ private fun ScreeningActions(
             noAgent -> "Si entras, hablarás sin protección"
             scam -> "Posible estafa · mejor no entres"
             safe -> "Es seguro · ya puedes entrar"
-            else -> "Podrás entrar cuando Marin confirme que es seguro"
+            else -> "Podrás entrar cuando se confirme que es seguro"
         },
         style = MaterialTheme.typography.bodySmall,
         color = if (scam) TiskzColors.Red else TiskzColors.Muted,

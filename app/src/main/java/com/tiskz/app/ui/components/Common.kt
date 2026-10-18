@@ -108,7 +108,8 @@ fun CallerAvatar(
 ) {
     val initials = name
         ?.split(' ')
-        ?.filter { it.isNotBlank() }
+        // Solo palabras que empiezan con letra o número: un emoji no sirve como inicial.
+        ?.filter { it.isNotBlank() && it.first().isLetterOrDigit() }
         ?.take(2)
         ?.joinToString("") { it.first().uppercase() }
         ?.takeIf { it.isNotEmpty() }

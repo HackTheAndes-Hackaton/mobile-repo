@@ -78,6 +78,9 @@ object CallManager {
     private val _guard = MutableStateFlow<GuardAlert?>(null)
     val guard: StateFlow<GuardAlert?> = _guard.asStateFlow()
     private val guardedKinds = mutableSetOf<GuardKind>()
+    private val guardChecked = HashMap<String, String>()
+    /** Veces que se volvió a silenciar en esta llamada: evita un ida y vuelta sin fin con el sistema. */
+    private var remutes = 0
 
     private val telecomCallback = object : Call.Callback() {
         override fun onStateChanged(call: Call, state: Int) {
@@ -194,7 +197,10 @@ object CallManager {
     internal fun onAudioStateChanged(muted: Boolean, speaker: Boolean) {
         _activeCall.update { it?.copy(muted = muted, speaker = speaker) }
         // Unir la conferencia puede reactivar el micrófono: mientras atiende marin, sigue silenciado.
-        if (!muted && _activeCall.value?.screening == true) inCallService?.setMuted(true)
+        if (!muted && _activeCall.value?.screening == true && remutes < MAX_REMUTES) {
+            remutes++
+            inCallService?.setMuted(true)
+        }
     }
 
     // --- Demo ---
@@ -283,6 +289,9 @@ object CallManager {
         if (call.direction != CallDirection.INCOMING || call.phase == CallPhase.DISCONNECTED) return
         for (line in analysis.transcript) {
             if (line.speaker != Speaker.CALLER) continue
+            // Cada actualización trae toda la conversación: solo se revisa lo nuevo o lo que cambió
+            // (una transcripción parcial que se completa), así una llamada larga no se vuelve más lenta.
+            if (guardChecked.put(line.id, line.text) == line.text) continue
             val kind = CallGuard.check(line.text) ?: continue
             if (!guardedKinds.add(kind)) continue
             val alert = GuardAlert(kind, line.text, line.id)
@@ -335,6 +344,8 @@ object CallManager {
         _conference.value = ConferenceState()
         _guard.value = null
         guardedKinds.clear()
+        guardChecked.clear()
+        remutes = 0
         resolveCallerName(call.id, call.number)
         if (call.direction == CallDirection.INCOMING && call.callerName == null) checkReputation(call)
         session.value = if (call.direction == CallDirection.INCOMING && !automaticCall && !call.simulated) {
@@ -478,5 +489,6 @@ object CallManager {
 
     private const val ENDED_SCREEN_MS = 2500L
     private const val SIMULATED_RING_MS = 4000L
+    private const val MAX_REMUTES = 20
     private const val TAG = "Tiskz"
 }
