@@ -109,7 +109,7 @@ fun VoiceScreen(onBack: () -> Unit) {
             item {
                 Row {
                     Checkbox(checked = consent, onCheckedChange = { consent = it }, enabled = !active)
-                    Text(if (phone) "Tengo autorización para analizar estas llamadas de prueba. Vapi procesa la voz; los agentes de Maritime analizan la transcripción. Esta app no guarda audio ni transcripciones en disco." else if (assistant) "Autorizo enviar este audio a OpenAI, analizarlo y recibir respuestas con voz de IA. La app no guarda grabaciones ni transcripciones en disco." else "Tengo autorización para analizar este audio. OpenAI lo procesa; la app no guarda grabaciones ni transcripciones en disco.", modifier = Modifier.weight(1f))
+                    Text(if (phone) "Autorizo analizar estas llamadas y cortar Vapi al detectar riesgo. La conferencia automática de Tiskz cierra también la llamada del celular. Esta app no guarda audio ni transcripciones en disco." else if (assistant) "Autorizo enviar este audio a OpenAI, analizarlo y recibir respuestas con voz de IA. La app no guarda grabaciones ni transcripciones en disco." else "Tengo autorización para analizar este audio. OpenAI lo procesa; la app no guarda grabaciones ni transcripciones en disco.", modifier = Modifier.weight(1f))
                 }
             }
             item {

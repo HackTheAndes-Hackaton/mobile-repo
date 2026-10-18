@@ -175,3 +175,10 @@ El camino de almacenamiento preferido del servidor es la API HTTP del panel; MCP
 ### Audio de Android (0.4.1)
 
 La sesión de micrófono configura el modo de comunicación de Android y solicita procesamiento de eco/ruido disponible, preservando auriculares y restaurando la configuración al terminar. El efecto sobre la calidad necesita validación en un dispositivo físico. Conversar con Tiskz ya solicita GPT-Live 1; comprensión y alertas procesan sus subtítulos. La prueba sintética no sustituye la prueba en el ambiente real del usuario.
+
+
+### Corte por riesgo (0.4.2)
+
+El monitor de llamadas telefónicas autoriza el corte de Vapi cuando el backend detecta riesgo. En la conferencia automática administrada por Tiskz, una orden autenticada `call.hangup_requested` desconecta también las dos patas y su padre mediante Telecom. Se verifican llamada, sesión, revisión y UUID; los duplicados y órdenes obsoletas se ignoran. Una alerta visual aislada no ejecuta comandos. Si la conferencia se unió manualmente fuera de Tiskz, este monitor solo solicita el cierre de Vapi.
+
+Antes de conectar una nueva prueba, cierra otros monitores del equipo. Se admite un único monitor automático y no se adopta una llamada que ya estaba activa. La autorización del canal telefónico explica el corte por riesgo. El modo automático de conferencia conserva sus requisitos de SIM, permisos y costos confirmados, y sigue desactivado por defecto.
