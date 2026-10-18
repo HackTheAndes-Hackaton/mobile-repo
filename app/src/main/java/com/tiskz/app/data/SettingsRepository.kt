@@ -2,6 +2,7 @@ package com.tiskz.app.data
 
 import android.content.Context
 import com.tiskz.app.BuildConfig
+import com.tiskz.app.call.CarrierDialPlan
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,6 +22,11 @@ data class TiskzSettings(
     val wsUrl: String,
     /** Bajo este porcentaje de riesgo se destaca el botón "Contestar". */
     val answerThreshold: Int,
+    val automaticConferenceEnabled: Boolean = false,
+    val conferenceCostsConfirmed: Boolean = false,
+    val conferenceAccount: String = "",
+    val conferenceDestination: String = CarrierDialPlan.DEFAULT_AGENT,
+    val conferenceConfirmedRoute: String = "",
 )
 
 class SettingsRepository(context: Context) {
@@ -31,7 +37,17 @@ class SettingsRepository(context: Context) {
     val current: TiskzSettings get() = _settings.value
 
     fun update(transform: (TiskzSettings) -> TiskzSettings) {
-        val updated = transform(_settings.value)
+        val proposed = transform(_settings.value)
+        val sameRoute = proposed.conferenceAccount == current.conferenceAccount &&
+            proposed.conferenceDestination == current.conferenceDestination
+        val sameSetup = proposed.backendUrl == current.backendUrl && sameRoute
+        val updated = proposed.copy(
+            automaticConferenceEnabled = proposed.automaticConferenceEnabled && proposed.conferenceCostsConfirmed && proposed.conferenceConfirmedRoute.isNotBlank() &&
+                proposed.conferenceAccount.isNotBlank() && sameSetup,
+            conferenceCostsConfirmed = proposed.conferenceCostsConfirmed && proposed.conferenceAccount.isNotBlank() &&
+                sameRoute,
+            conferenceConfirmedRoute = if (sameRoute) proposed.conferenceConfirmedRoute else "",
+        )
         _settings.value = updated
         prefs.edit()
             .putBoolean(KEY_ONBOARDING, updated.onboardingDone)
@@ -40,6 +56,11 @@ class SettingsRepository(context: Context) {
             .putString(KEY_BACKEND, updated.backendUrl)
             .putString(KEY_WS, updated.wsUrl)
             .putInt(KEY_THRESHOLD, updated.answerThreshold)
+            .putBoolean("auto_conference_enabled", updated.automaticConferenceEnabled)
+            .putBoolean("conference_costs_confirmed", updated.conferenceCostsConfirmed)
+            .putString("conference_account", updated.conferenceAccount)
+            .putString("conference_destination", updated.conferenceDestination)
+            .putString("conference_confirmed_route", updated.conferenceConfirmedRoute)
             .apply()
     }
 
@@ -52,6 +73,11 @@ class SettingsRepository(context: Context) {
         backendUrl = prefs.getString(KEY_BACKEND, null) ?: BuildConfig.BACKEND_URL,
         wsUrl = prefs.getString(KEY_WS, null) ?: BuildConfig.WS_URL,
         answerThreshold = prefs.getInt(KEY_THRESHOLD, 40),
+        automaticConferenceEnabled = prefs.getBoolean("auto_conference_enabled", false),
+        conferenceCostsConfirmed = prefs.getBoolean("conference_costs_confirmed", false),
+        conferenceAccount = prefs.getString("conference_account", "").orEmpty(),
+        conferenceDestination = prefs.getString("conference_destination", null) ?: CarrierDialPlan.DEFAULT_AGENT,
+        conferenceConfirmedRoute = prefs.getString("conference_confirmed_route", "").orEmpty(),
     )
 
     private companion object {

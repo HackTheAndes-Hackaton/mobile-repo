@@ -153,6 +153,7 @@ fun HomeScreen(
                 ProtectionHero(
                     active = roleHeld,
                     demoMode = settings.demoMode,
+                    automatic = settings.automaticConferenceEnabled,
                     onOpenSettings = onOpenSettings,
                     onActivate = { DialerRole.requestIntent(context)?.let(roleLauncher::launch) },
                 )
@@ -162,6 +163,18 @@ fun HomeScreen(
                     records = records,
                     modifier = Modifier.padding(horizontal = 20.dp).overlapUp(STATS_OVERLAP),
                 )
+            }
+            item {
+                Surface(color = TiskzColors.Blue50, shape = RoundedCornerShape(24.dp),
+                    modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 16.dp)) {
+                    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text("Marin contesta por ti", style = MaterialTheme.typography.titleMedium)
+                        Text(if (settings.automaticConferenceEnabled)
+                            "Modo automático activado. La conexión depende de la SIM y la conferencia de tu operadora."
+                            else "Prepara una vez los permisos, la SIM y el acceso. La protección está apagada hasta confirmar los costos de tu operadora.")
+                        Button(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth()) { Text("Configurar protección automática") }
+                    }
+                }
             }
             if (!contactsAllowed) {
                 item {
@@ -250,6 +263,7 @@ private fun LightStatusBarIcons() {
 private fun ProtectionHero(
     active: Boolean,
     demoMode: Boolean,
+    automatic: Boolean,
     onOpenSettings: () -> Unit,
     onActivate: () -> Unit,
 ) {
@@ -302,12 +316,12 @@ private fun ProtectionHero(
                     }
                 }
                 Text(
-                    text = if (active) "Protección activa" else "Protección desactivada",
+                    text = when { active && automatic -> "Modo automático activado"; active -> "Tiskz es tu teléfono"; else -> "Protección desactivada" },
                     style = MaterialTheme.typography.headlineSmall,
                     color = Color.White,
                 )
                 Text(
-                    text = if (active) "Tiskz IA contesta primero y te avisa si es estafa" else "Haz de Tiskz tu app de teléfono para protegerte",
+                    text = when { active && automatic -> "Intentará conectar a marin con tu SIM y operadora confirmadas"; active -> "Configura y activa la conferencia para que marin atienda"; else -> "Prepara Tiskz para atender con marin" },
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.White.copy(alpha = 0.82f),
                     modifier = Modifier.padding(top = 4.dp),

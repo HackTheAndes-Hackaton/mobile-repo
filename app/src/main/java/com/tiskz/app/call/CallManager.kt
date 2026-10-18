@@ -3,6 +3,7 @@ package com.tiskz.app.call
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.os.SystemClock
 import android.telecom.Call
 import android.telecom.CallAudioState
 import android.telecom.InCallService
@@ -59,6 +60,10 @@ object CallManager {
 
     private var telecomCall: Call? = null
     private var inCallService: InCallService? = null
+    private var automatic: TelecomConferenceRuntime? = null
+    private val retired = mutableListOf<Pair<Long, TelecomConferenceRuntime>>()
+    private val _conference = MutableStateFlow(ConferenceState())
+    val conference: StateFlow<ConferenceState> = _conference.asStateFlow()
 
     private val telecomCallback = object : Call.Callback() {
         override fun onStateChanged(call: Call, state: Int) {
@@ -88,10 +93,17 @@ object CallManager {
     // --- Entrada desde Telecom ---
 
     internal fun attachService(service: InCallService?) {
+        if (service == null && automatic != null) {
+            automatic?.cancelAutomation()
+            finish()
+        }
         inCallService = service
     }
 
     internal fun onTelecomCallAdded(call: Call) {
+        retired.removeAll { it.first < SystemClock.elapsedRealtime() }
+        if (retired.any { it.second.disconnectLateAgent(call) }) return
+        automatic?.let { it.add(call); return }
         if (telecomCall != null || _activeCall.value?.phase?.let { it != CallPhase.DISCONNECTED } == true) {
             // Llamada en espera: el MVP solo muestra una llamada; la segunda se rechaza.
             if (stateOf(call) == Call.STATE_RINGING) call.reject(false, null)
@@ -113,11 +125,36 @@ object CallManager {
             return
         }
         telecomCall = call
-        call.registerCallback(telecomCallback)
-        start(ActiveCall(number = number, direction = direction, phase = phaseOf(call), simulated = false), null)
+        val attempt = direction == CallDirection.INCOMING && stateOf(call) == Call.STATE_RINGING &&
+            ConferenceTelecom.gate(appContext, container, call.details.accountHandle).allowed
+        start(ActiveCall(number = number, direction = direction, phase = phaseOf(call), simulated = false), null,
+            attempt || (direction == CallDirection.INCOMING && container.settings.current.automaticConferenceEnabled))
+        if (attempt) {
+            try {
+                automatic = TelecomConferenceRuntime(appContext, container, call,
+                    sessionOpened = { session.value = it },
+                    stateChanged = { _conference.value = it },
+                    phaseChanged = { if (it == CallPhase.DISCONNECTED) finish() else updatePhase(it) },
+                    ended = ::finish,
+                )
+                automatic?.start()
+            } catch (_: Exception) {
+                automatic?.dispose()
+                automatic = null
+                _conference.value = ConferenceState(ConferencePhase.FAILED, "Cambió la SIM o la conexión. Contesta manualmente.")
+                call.registerCallback(telecomCallback)
+            }
+        } else {
+            call.registerCallback(telecomCallback)
+            if (direction == CallDirection.INCOMING && container.settings.current.automaticConferenceEnabled) {
+                _conference.value = ConferenceState(ConferencePhase.FAILED,
+                    "Protección automática no disponible para esta SIM. Revisa la configuración; contesta manualmente.")
+            }
+        }
     }
 
     internal fun onTelecomCallRemoved(call: Call) {
+        automatic?.let { it.remove(call); return }
         if (call != telecomCall) return
         call.unregisterCallback(telecomCallback)
         telecomCall = null
@@ -142,12 +179,17 @@ object CallManager {
     // --- Acciones de la UI ---
 
     fun answer() {
+        // Si el titular toma la llamada mientras se prepara, no se añade al agente más tarde.
+        automatic?.cancelPreparation()
         session.value?.send(UserDecision.ANSWER)
         val call = _activeCall.value ?: return
-        if (call.simulated) updatePhase(CallPhase.ACTIVE) else telecomCall?.answer(VideoProfile.STATE_AUDIO_ONLY)
+        if (call.simulated) updatePhase(CallPhase.ACTIVE)
+        else if (telecomCall?.let(::stateOf) == Call.STATE_HOLDING) telecomCall?.unhold()
+        else telecomCall?.answer(VideoProfile.STATE_AUDIO_ONLY)
     }
 
     fun reject() {
+        automatic?.cancelPreparation()
         session.value?.send(UserDecision.REJECT)
         val call = _activeCall.value ?: return
         if (call.simulated) finish() else telecomCall?.reject(false, null)
@@ -156,7 +198,7 @@ object CallManager {
     fun hangUp() {
         session.value?.send(UserDecision.HANG_UP)
         val call = _activeCall.value ?: return
-        if (call.simulated) finish() else telecomCall?.disconnect()
+        if (call.simulated) finish() else automatic?.let { it.hangUp(); finish() } ?: telecomCall?.disconnect()
     }
 
     fun blockAndHangUp() {
@@ -166,6 +208,7 @@ object CallManager {
         _activeCall.value = call.copy(blocked = true)
         when {
             call.simulated -> finish()
+            automatic != null -> { automatic?.hangUp(); finish() }
             call.phase == CallPhase.RINGING -> telecomCall?.reject(false, null)
             else -> telecomCall?.disconnect()
         }
@@ -202,11 +245,12 @@ object CallManager {
 
     // --- Interno ---
 
-    private fun start(call: ActiveCall, forcedScenario: DemoScenario?) {
+    private fun start(call: ActiveCall, forcedScenario: DemoScenario?, automaticCall: Boolean = false) {
         session.value?.close()
         _activeCall.value = call
+        _conference.value = ConferenceState()
         resolveCallerName(call.id, call.number)
-        session.value = if (call.direction == CallDirection.INCOMING) {
+        session.value = if (call.direction == CallDirection.INCOMING && !automaticCall) {
             container.openAnalysisSession(call.number, forcedScenario)
         } else {
             null
@@ -248,7 +292,16 @@ object CallManager {
         _activeCall.value = ended
         val finalAnalysis = session.value?.state?.value
         session.value?.close()
-        container.history.add(CallRecord.from(ended, finalAnalysis))
+        // La conversación real de la conferencia se muestra en vivo, sin guardarla por defecto.
+        container.history.add(CallRecord.from(ended, if (automatic != null) null else finalAnalysis))
+        automatic?.let {
+            it.dispose()
+            retired.add(SystemClock.elapsedRealtime() + 60_000 to it)
+            while (retired.size > 8) retired.removeAt(0)
+            automatic = null
+        }
+        telecomCall?.unregisterCallback(telecomCallback)
+        telecomCall = null
         CallNotifications.cancel(appContext)
         scope.launch {
             delay(ENDED_SCREEN_MS)

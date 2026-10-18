@@ -1,5 +1,12 @@
 # Tiskz
 
+**Nueva prueba de telefonía:** la APK principal incorpora el flujo de conferencia automática
+del prototipo `tiskz-call-probe`, con operadora/prefijo detectados por SIM, destino configurable,
+voz marin mediante Vapi y alertas en la pantalla de llamada. Viene **desactivado** y bloqueado
+hasta confirmar costos. Preparación y límites: [Conferencia automática](docs/CONFERENCIA_AUTOMATICA.md).
+La conferencia completa y el audio remoto de esta APK aún requieren prueba física. El flujo
+de desvío descrito a continuación es el diseño objetivo; no se activa con esta integración.
+
 Tiskz es la app de teléfono que protege contra estafas telefónicas. Los contactos suenan normal; las
 llamadas desconocidas las atiende primero un agente de IA, y Tiskz analiza **toda la llamada**, también
 cuando el usuario ya está hablando.

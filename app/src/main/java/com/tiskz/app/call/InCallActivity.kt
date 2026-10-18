@@ -31,6 +31,7 @@ class InCallActivity : ComponentActivity() {
             TiskzTheme {
                 val call by CallManager.activeCall.collectAsStateWithLifecycle()
                 val analysis by CallManager.analysis.collectAsStateWithLifecycle()
+                val conference by CallManager.conference.collectAsStateWithLifecycle()
                 val currentSettings by settings.settings.collectAsStateWithLifecycle()
 
                 LaunchedEffect(call == null) {
@@ -42,6 +43,7 @@ class InCallActivity : ComponentActivity() {
                         call = it,
                         analysis = analysis,
                         answerThreshold = currentSettings.answerThreshold,
+                        conference = conference,
                         actions = LiveCallActions(
                             onAnswer = CallManager::answer,
                             onReject = CallManager::reject,
