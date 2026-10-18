@@ -61,6 +61,16 @@
             android:taskAffinity="com.tiskz.app.incall"
             android:turnScreenOn="true" />
 
+        <!-- Ventana invisible mientras suena: evita que HyperOS pase la llamada al teléfono del sistema. -->
+        <activity
+            android:name=".call.RingingAnchorActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:noHistory="true"
+            android:taskAffinity="com.tiskz.app.ringing"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
         <!-- Interfaz de llamadas: Telecom nos entrega cada llamada entrante y saliente. -->
         <service
             android:name=".call.TiskzInCallService"

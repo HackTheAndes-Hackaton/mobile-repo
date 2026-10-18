@@ -1,13 +1,18 @@
 package com.tiskz.app.ui.call
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -37,10 +42,12 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.tiskz.app.model.audioEvidenceMessage
 import com.tiskz.app.model.ActiveCall
 import com.tiskz.app.analysis.GuardAlert
@@ -51,22 +58,24 @@ import com.tiskz.app.model.AssessmentState
 import com.tiskz.app.model.CallAnalysis
 import com.tiskz.app.model.CallDirection
 import com.tiskz.app.model.CallPhase
+import com.tiskz.app.model.RiskLevel
 import com.tiskz.app.ui.components.CallerAvatar
-import com.tiskz.app.ui.components.AssessmentCard
 import com.tiskz.app.ui.components.LiveTranscript
 import com.tiskz.app.ui.components.ScribeComparisonCard
 import com.tiskz.app.ui.components.PulsingRings
-import com.tiskz.app.ui.components.RiskBar
 import com.tiskz.app.ui.components.overlapUp
 import com.tiskz.app.ui.components.rememberNow
 import com.tiskz.app.ui.components.softShadow
 import com.tiskz.app.ui.theme.TiskzBrushes
 import com.tiskz.app.ui.theme.TiskzColors
+import com.tiskz.app.ui.theme.color
 import com.tiskz.app.util.PhoneNumbers
 import com.tiskz.app.util.formatDuration
 import compose.icons.TablerIcons
 import compose.icons.tablericons.AlertTriangle
 import compose.icons.tablericons.Ban
+import compose.icons.tablericons.ChevronDown
+import compose.icons.tablericons.ChevronUp
 import compose.icons.tablericons.Microphone
 import compose.icons.tablericons.MicrophoneOff
 import compose.icons.tablericons.Phone
@@ -142,9 +151,11 @@ fun LiveCallScreen(
     ) {
         if (screened) {
             CompactHero(call, mood)
-            RiskBar(
-                percent = analysis!!.riskPercent,
+            CallStatusPanel(
+                analysis = analysis!!,
                 assessed = !automatic || analysis.alertProbability != null,
+                guard = guard,
+                onDismissGuard = actions.onDismissGuard,
                 headline = if (automatic) when {
                     conference.phase == ConferencePhase.FAILED -> "Sin monitoreo del agente"
                     analysis.alert == true -> "Alerta detectada"
@@ -164,13 +175,15 @@ fun LiveCallScreen(
                 } else riskDetail(analysis, answerThreshold),
                 headlineColor = if (mood == Mood.NEUTRAL && analysis.riskPercent < 30) TiskzColors.Blue600 else null,
                 modifier = Modifier
-                    .padding(horizontal = 20.dp)
+                    .padding(horizontal = 16.dp)
                     .overlapUp(HERO_OVERLAP),
             )
-            guard?.let { GuardBanner(it, actions.onDismissGuard, Modifier.padding(start = 20.dp, end = 20.dp, top = 10.dp)) }
-            AssessmentCard(analysis, compact = true, modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
-            audioEvidenceMessage(analysis.audioEvidenceStatus)?.let { Text(it, modifier = Modifier.padding(horizontal = 20.dp), style = MaterialTheme.typography.bodySmall) }
-            ScribeComparisonCard(analysis.scribe, compact = true, modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
+            audioEvidenceMessage(analysis.audioEvidenceStatus)?.let {
+                Text(it, modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp), style = MaterialTheme.typography.bodySmall,
+                    color = TiskzColors.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            ScribeComparisonCard(analysis.scribe, compact = true, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+            // La conversación es lo principal: ocupa todo el espacio que dejan el panel y los botones.
             LiveTranscript(
                 lines = analysis.transcript,
                 callerLabel = call.callerName ?: "Quien llama",
@@ -178,7 +191,7 @@ fun LiveCallScreen(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
+                    .padding(horizontal = 16.dp),
             )
         } else {
             FullHero(call, Modifier.weight(1f))
@@ -223,14 +236,14 @@ private fun CompactHero(call: ActiveCall, mood: Mood) {
             .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
             .background(heroBrush(mood))
             .statusBarsPadding()
-            .padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 20.dp + HERO_OVERLAP),
+            .padding(start = 20.dp, end = 20.dp, top = 6.dp, bottom = 10.dp + HERO_OVERLAP),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(84.dp), contentAlignment = Alignment.Center) {
-                if (call.phase == CallPhase.RINGING) PulsingRings(Color.White, Modifier.size(84.dp))
+            Box(Modifier.size(56.dp), contentAlignment = Alignment.Center) {
+                if (call.phase == CallPhase.RINGING) PulsingRings(Color.White, Modifier.size(56.dp))
                 CallerAvatar(
                     name = call.callerName,
-                    size = 60.dp,
+                    size = 44.dp,
                     background = Brush.linearGradient(listOf(Color.White.copy(alpha = 0.3f), Color.White.copy(alpha = 0.15f))),
                     content = Color.White,
                 )
@@ -325,30 +338,93 @@ private fun ReputationChip(text: String) {
     }
 }
 
-/** Quien llama pidió algo peligroso: se frena al titular en el momento, con la frase exacta. */
+/**
+ * Panel único y compacto: porcentaje, una línea de aviso (riesgo pedido o recomendación) y,
+ * al tocarlo, el detalle. Así la conversación conserva casi toda la pantalla.
+ */
 @Composable
-private fun GuardBanner(alert: GuardAlert, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
+private fun CallStatusPanel(
+    analysis: CallAnalysis,
+    assessed: Boolean,
+    guard: GuardAlert?,
+    onDismissGuard: () -> Unit,
+    headline: String,
+    detail: String?,
+    headlineColor: Color?,
+    modifier: Modifier = Modifier,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val percent = analysis.riskPercent
+    val progress by animateFloatAsState(percent.coerceIn(0, 100) / 100f, tween(700), label = "risk")
+    val riskColor by animateColorAsState(RiskLevel.of(percent).color(), tween(500), label = "riskColor")
+    val assessment = analysis.currentAssessment
+    val voice = analysis.voiceMatch
+    val (noticeColor, noticeText) = when {
+        guard != null -> TiskzColors.Red to guard.kind.title
+        analysis.voiceCollecting == "started" -> TiskzColors.Red to "Estafa confirmada · guardando su voz"
+        voice != null -> TiskzColors.Red to (voice.label + if (voice.reports > 0) " · ${voice.reports} ${if (voice.reports == 1) "caso" else "casos"}" else "")
+        assessment?.state == AssessmentState.ALERT || (assessment == null && analysis.alert == true) ->
+            TiskzColors.Red to (assessment?.state?.label ?: "Alerta preventiva")
+        assessment?.state == AssessmentState.VERIFY -> TiskzColors.AmberDark to assessment.state.label
+        else -> null to null
+    }
+    val shape = RoundedCornerShape(20.dp)
     Surface(
-        color = TiskzColors.Red,
-        shape = RoundedCornerShape(20.dp),
-        modifier = modifier.fillMaxWidth().softShadow(RoundedCornerShape(20.dp), 12.dp),
+        color = TiskzColors.White,
+        shape = shape,
+        modifier = modifier
+            .fillMaxWidth()
+            .softShadow(shape, 12.dp)
+            .clip(shape)
+            .clickable { expanded = !expanded }
+            .animateContentSize(),
     ) {
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(TablerIcons.AlertTriangle, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
-                Spacer(Modifier.size(8.dp))
-                Text(alert.kind.title, style = MaterialTheme.typography.titleMedium, color = Color.White, modifier = Modifier.weight(1f))
-                TextButton(onClick = onDismiss) { Text("Entendido", color = Color.White) }
+                Text(headline, style = MaterialTheme.typography.titleMedium, color = headlineColor ?: riskColor,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                Text(if (assessed) "${(progress * 100).roundToInt()}%" else "—", fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold, color = riskColor)
+                Icon(if (expanded) TablerIcons.ChevronUp else TablerIcons.ChevronDown, contentDescription = "Ver detalle",
+                    tint = TiskzColors.Muted, modifier = Modifier.padding(start = 6.dp).size(18.dp))
             }
-            Text(alert.kind.advice, style = MaterialTheme.typography.bodyMedium, color = Color.White)
-            Text(
-                "Te dijeron: “${alert.quote}”",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.White.copy(alpha = 0.85f),
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 4.dp),
-            )
+            Box(
+                Modifier.padding(top = 6.dp).fillMaxWidth().height(5.dp).clip(RoundedCornerShape(50)).background(TiskzColors.Surface),
+            ) {
+                Box(Modifier.fillMaxHeight().fillMaxWidth(progress).clip(RoundedCornerShape(50)).background(riskColor))
+            }
+            if (noticeText != null && noticeColor != null) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
+                    Icon(TablerIcons.AlertTriangle, contentDescription = null, tint = noticeColor, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.size(6.dp))
+                    Text(noticeText, style = MaterialTheme.typography.labelLarge, color = noticeColor,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                    if (!expanded) Text("Ver", style = MaterialTheme.typography.labelMedium, color = TiskzColors.Muted)
+                }
+            }
+            if (expanded) {
+                Column(Modifier.padding(top = 6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    guard?.let {
+                        Text(it.kind.advice, style = MaterialTheme.typography.bodySmall, color = TiskzColors.Ink)
+                        Text("Te dijeron: “${it.quote}”", style = MaterialTheme.typography.bodySmall, color = TiskzColors.Muted)
+                        TextButton(onClick = onDismissGuard, contentPadding = PaddingValues(0.dp)) {
+                            Text("Entendido", color = TiskzColors.Red)
+                        }
+                    }
+                    voice?.let {
+                        Text("Similitud de voz ${(it.similarity * 100).roundToInt()} %. Es una pista: no identifica a una persona.",
+                            style = MaterialTheme.typography.bodySmall, color = TiskzColors.Ink)
+                    }
+                    when (analysis.voiceCollecting) {
+                        "started" -> "Tu asistente sigue la conversación para guardar la voz; luego corta la llamada."
+                        "saved" -> "Voz guardada: se reconocerá si vuelve a llamar desde otro número."
+                        "failed", "insufficient_audio" -> "No se pudo guardar la voz de esta llamada."
+                        else -> null
+                    }?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = TiskzColors.Muted) }
+                    assessment?.let { Text(it.guidance, style = MaterialTheme.typography.bodySmall, color = TiskzColors.Ink) }
+                    if (!detail.isNullOrBlank()) Text(detail, style = MaterialTheme.typography.bodySmall, color = TiskzColors.Muted)
+                }
+            }
         }
     }
 }
@@ -365,8 +441,8 @@ private fun GlassChip(text: String) {
     }
 }
 
-private val HERO_OVERLAP = 40.dp
-private val SCREENING_BUTTON = 56.dp
+private val HERO_OVERLAP = 28.dp
+private val SCREENING_BUTTON = 48.dp
 
 // --- Riesgo: una línea de titular y una de detalle ---
 
@@ -411,7 +487,7 @@ private fun ActionBar(
             .clip(shape)
             .background(TiskzColors.White)
             .navigationBarsPadding()
-            .padding(horizontal = 24.dp, vertical = 16.dp),
+            .padding(horizontal = 24.dp, vertical = if (call.screening) 10.dp else 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         when {
@@ -508,7 +584,7 @@ private fun ScreeningActions(
         },
         style = MaterialTheme.typography.bodySmall,
         color = if (scam) TiskzColors.Red else TiskzColors.Muted,
-        modifier = Modifier.padding(bottom = 10.dp),
+        modifier = Modifier.padding(bottom = 6.dp),
     )
     Row(
         Modifier.fillMaxWidth(),
@@ -582,7 +658,7 @@ private fun CircleAction(
                 Icon(icon, contentDescription = label, tint = content, modifier = Modifier.size(size * 0.42f))
             }
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(if (size < 56.dp) 4.dp else 8.dp))
         Text(label, style = MaterialTheme.typography.labelLarge, color = TiskzColors.Ink)
     }
 }

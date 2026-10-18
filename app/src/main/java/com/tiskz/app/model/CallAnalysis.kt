@@ -90,6 +90,8 @@ data class CallAnalysis(
     val impersonating: String? = null,
     val transcript: List<TranscriptLine> = emptyList(),
     val voiceMatch: VoiceMatch? = null,
+    /** Estado de la recolección de la voz de una estafa confirmada; no identifica a nadie. */
+    val voiceCollecting: String? = null,
     /** El servidor permite incorporarse después de la revisión inicial; no implica identidad verificada. */
     val readyToAnswer: Boolean = false,
     val markedSafeByUser: Boolean = false,
@@ -125,7 +127,8 @@ enum class Verdict(val label: String) {
 fun CallAnalysis?.verdict(): Verdict = when {
     this == null -> Verdict.NONE
     markedSafeByUser -> Verdict.SAFE
-    isScam -> Verdict.SCAM
+    // La alerta del detector cuenta como estafa en la reputación comunitaria del número.
+    isScam || alert == true -> Verdict.SCAM
     transcript.isEmpty() && status in setOf(AgentStatus.CONNECTING, AgentStatus.OFFLINE) -> Verdict.NONE
     riskPercent >= 30 -> Verdict.SUSPICIOUS
     else -> Verdict.SAFE

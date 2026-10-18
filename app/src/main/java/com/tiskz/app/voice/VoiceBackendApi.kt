@@ -93,9 +93,13 @@ class VoiceBackendApi(baseUrl: String, client: OkHttpClient) {
         })
     }
 
-    suspend fun phoneEventsUrl(accessCode: String, evidenceConsent: Boolean = false): String {
-        val ticket = post("v1/phone/monitor", accessCode, JSONObject().put("consentimiento_analisis", true)
-            .put("consentimiento_corte_automatico", true).put("consentimiento_conservacion", evidenceConsent)).getString("ticket")
+    suspend fun phoneEventsUrl(accessCode: String, evidenceConsent: Boolean = false, voiceprintConsent: Boolean = false, callerNumber: String? = null): String {
+        val body = JSONObject().put("consentimiento_analisis", true)
+            .put("consentimiento_corte_automatico", true).put("consentimiento_conservacion", evidenceConsent)
+            .put("consentimiento_huella_voz", voiceprintConsent)
+        // Solo dígitos: el servidor lo asocia a la voz guardada si la estafa se confirma.
+        callerNumber?.filter { it.isDigit() || it == '+' }?.takeIf { it.count(Char::isDigit) in 6..15 }?.let { body.put("numero_llamante", it) }
+        val ticket = post("v1/phone/monitor", accessCode, body).getString("ticket")
         check(ticket.length in 12..256) { "Ticket de alertas inválido." }
         return base.newBuilder().addPathSegments("ws/calls").addQueryParameter("channel", "phone")
             .addQueryParameter("ticket", ticket).build().toString().replaceFirst("https://", "wss://")
