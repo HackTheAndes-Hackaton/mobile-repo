@@ -51,12 +51,15 @@ class PhoneAlertSession(client: OkHttpClient, baseUrl: String, accessCode: Strin
             override fun onMessage(webSocket: WebSocket, text: String) {
                 if (closed.get() || text.length > 20000) return
                 val json = runCatching { JSONObject(text) }.getOrNull() ?: return
+                val type = json.optString("type")
+                if (type !in setOf("phone.ready", "phone.call") && json.optString("session_id") != callId) return
                 callControl.accept(json)?.let { _hangupRequests.value = it }
                 if (BuildConfig.DEBUG) runCatching {
                     // Solo forma del evento, sin texto: sirve para revisar etiquetas e ids de la transcripción.
                     Log.d("TiskzPhone", "${json.optString("type")} speaker=${json.optString("speaker")} " +
                         "id=${json.optString("id")} seq=${json.opt("sequence")} final=${json.opt("final")} " +
-                        "len=${json.optString("text").length} lines=${json.optString("text").count { it == '\n' } + 1}")
+                        "len=${json.optString("text").length} lines=${json.optString("text").count { it == '\n' } + 1} " +
+                        "source=${json.optString("source")} serverSentMs=${json.optLong("server_sent_at_ms")} receivedMs=${System.currentTimeMillis()}")
                 }
                 when (json.optString("type")) {
                     "phone.ready" -> _connection.value = WebRtcVoiceSession.Connection.STREAMING
@@ -70,8 +73,13 @@ class PhoneAlertSession(client: OkHttpClient, baseUrl: String, accessCode: Strin
                     "call.hangup_result" -> if (json.optString("session_id") == callId && json.optString("status") == "failed") {
                         dispatch(AnalysisEvent.Error("No se confirmó el corte de Vapi. Cuelga desde el teléfono."))
                     }
+                    "call.ready_to_answer" -> if (json.optString("session_id") == callId) EventParser.parse(text)?.let(::dispatch)
                     "assessment.update" -> if (json.optString("session_id") == callId) EventParser.parse(text)?.let(::dispatch)
                     else -> EventParser.parse(text)?.let(::dispatch)
+                }
+                if (type in setOf("alert.updated", "comparison.alert") && json.optString("event_id").isNotBlank()) {
+                    webSocket.send(JSONObject().put("type", "event.received").put("session_id", callId)
+                        .put("event_id", json.optString("event_id")).toString())
                 }
             }
             override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {

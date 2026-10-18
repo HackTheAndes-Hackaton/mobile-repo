@@ -25,6 +25,7 @@ import com.tiskz.app.voice.WebRtcVoiceSession
 import com.tiskz.app.voice.PhoneAlertSession
 import com.tiskz.app.analysis.AnalysisSession
 import com.tiskz.app.ui.components.AssessmentCard
+import com.tiskz.app.ui.components.ScribeComparisonCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -148,6 +149,7 @@ fun VoiceScreen(onBack: () -> Unit) {
             item {
                 AssessmentCard(analysis)
             }
+            if (phone) item { ScribeComparisonCard(analysis.scribe) }
             item { Text(if (phone) "Interlocutor · llamada atendida por Vapi" else if (assistant) "Conversación · subtítulos parciales" else "Audio del micrófono · transcripción", style = MaterialTheme.typography.titleMedium) }
             if (analysis.transcript.isEmpty()) item { Text(if (phone) "La llamada debe entrar al número configurado en Vapi, directamente o mediante un desvío de la operadora. Esta pantalla no activa el desvío." else if (assistant) "El asistente saludará al conectar. Los dos agentes analizan progresivamente lo que tú dices; los subtítulos pueden contener errores." else "Los fragmentos aparecerán al hablar. Los agentes analizan al cerrar una pausa de voz.") }
             items(analysis.transcript, key = { it.id }) { line ->
