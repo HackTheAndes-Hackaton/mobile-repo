@@ -42,6 +42,20 @@ data class Understanding(
     val mode: String? = null,
 )
 
+enum class AssessmentState(val wireValue: String, val label: String) {
+    OBSERVE("observar", "Observar"),
+    VERIFY("verificar", "Verificar"),
+    ALERT("alertar", "Alertar"),
+    INCONCLUSIVE("inconcluso", "Inconcluso"),
+}
+
+/** Orientación provisional del servidor; no autoriza acciones ni verifica identidades. */
+data class CallAssessment(
+    val state: AssessmentState,
+    val guidance: String,
+    val evidence: List<Evidence>,
+)
+
 /** Estado acumulado del análisis de una llamada, sin importar si viene del backend o de la demo. */
 data class CallAnalysis(
     val status: AgentStatus = AgentStatus.CONNECTING,
@@ -60,7 +74,13 @@ data class CallAnalysis(
     val readyToAnswer: Boolean = false,
     val markedSafeByUser: Boolean = false,
     val error: String? = null,
+    val assessment: CallAssessment? = null,
+    val assessmentRevision: Int = -1,
 ) {
+    /** Una orientación anterior no describe el último fragmento ya analizado. */
+    val currentAssessment: CallAssessment?
+        get() = assessment?.takeIf { assessmentRevision >= maxOf(alertRevision, understandingRevision) }
+
     val riskLevel: RiskLevel get() = RiskLevel.of(riskPercent)
 
     val isScam: Boolean

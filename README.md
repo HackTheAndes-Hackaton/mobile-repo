@@ -186,3 +186,11 @@ Antes de conectar una nueva prueba, cierra otros monitores del equipo. Se admite
 ### Conversación por turnos (0.4.3)
 
 El servidor telefónico envía por separado cada intervención del interlocutor y del agente, con secuencia e ID estable. La conversación sigue también las actualizaciones de texto, no solo el número de burbujas. El porcentaje se actualiza junto a la alerta y la pantalla de conferencia muestra «—» hasta el primer análisis; se etiqueta como estimación de alerta, no como certeza de fraude. No se cambian la autorización de costos ni el modo automático por defecto.
+
+### Orientación durante la llamada (0.4.4)
+
+La APK muestra **Observar, Verificar, Alertar o Inconcluso**, con la recomendación del servidor, en Voz en vivo y en la pantalla de llamada. El resultado llega por `assessment.update`; no se deduce del porcentaje. Mientras se espera comprensión, una alerta del detector sigue visible. Si llega un análisis más reciente, la orientación anterior se oculta hasta recibir la nueva. Los estados desconocidos o mensajes inválidos no se convierten en «seguro».
+
+La tarjeta no autoriza ni ejecuta cortes. La conferencia automática y la confirmación de costos siguen apagadas por defecto; una actualización conserva las preferencias que ya hubieras elegido. El origen de la voz y la identidad no se verifican en esta entrega.
+
+Para probar sin llamadas de operadora: instala la APK 0.4.4 sobre la anterior, abre **Inicio → Voz en vivo**, conserva el canal HTTPS de Maritime, introduce el código privado y activa la autorización de análisis. Usa **Conversar** o desactiva la voz del asistente para probar solo el micrófono. «Necesito dinero» debería pedir **Verificar**; una amenaza explícita para exigir dinero puede producir **Alertar**. La decisión concreta depende del contexto y no confirma un delito. Para observar una llamada atendida por Vapi, activa **Recibir alertas de llamadas que atiende Vapi**; ese canal no activa por sí solo una conferencia o desvío de Entel.

@@ -13,9 +13,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.liveRegion
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -27,6 +24,7 @@ import com.tiskz.app.ui.LocalAppContainer
 import com.tiskz.app.voice.WebRtcVoiceSession
 import com.tiskz.app.voice.PhoneAlertSession
 import com.tiskz.app.analysis.AnalysisSession
+import com.tiskz.app.ui.components.AssessmentCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -148,12 +146,7 @@ fun VoiceScreen(onBack: () -> Unit) {
                 (formError ?: analysis.error)?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             }
             item {
-                Surface(color = if (analysis.alert == true) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer, shape = MaterialTheme.shapes.large) {
-                    Column(Modifier.fillMaxWidth().padding(20.dp).semantics { liveRegion = LiveRegionMode.Assertive }) {
-                        Text(when (analysis.alert) { true -> "TRUE · Revisar posible riesgo"; false -> "FALSE · Sin alerta en este fragmento"; null -> "Esperando decisión" }, style = MaterialTheme.typography.titleLarge)
-                        Text("Resultado provisional. TRUE no confirma una estafa y FALSE no garantiza seguridad.", style = MaterialTheme.typography.bodySmall)
-                    }
-                }
+                AssessmentCard(analysis)
             }
             item { Text(if (phone) "Interlocutor · llamada atendida por Vapi" else if (assistant) "Conversación · subtítulos parciales" else "Audio del micrófono · transcripción", style = MaterialTheme.typography.titleMedium) }
             if (analysis.transcript.isEmpty()) item { Text(if (phone) "La llamada debe entrar al número configurado en Vapi, directamente o mediante un desvío de la operadora. Esta pantalla no activa el desvío." else if (assistant) "El asistente saludará al conectar. Los dos agentes analizan progresivamente lo que tú dices; los subtítulos pueden contener errores." else "Los fragmentos aparecerán al hablar. Los agentes analizan al cerrar una pausa de voz.") }

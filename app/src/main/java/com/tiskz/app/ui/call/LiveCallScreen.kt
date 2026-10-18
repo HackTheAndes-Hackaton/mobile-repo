@@ -45,10 +45,12 @@ import com.tiskz.app.model.ActiveCall
 import com.tiskz.app.call.ConferencePhase
 import com.tiskz.app.call.ConferenceState
 import com.tiskz.app.model.AgentStatus
+import com.tiskz.app.model.AssessmentState
 import com.tiskz.app.model.CallAnalysis
 import com.tiskz.app.model.CallDirection
 import com.tiskz.app.model.CallPhase
 import com.tiskz.app.ui.components.CallerAvatar
+import com.tiskz.app.ui.components.AssessmentCard
 import com.tiskz.app.ui.components.LiveTranscript
 import com.tiskz.app.ui.components.PulsingRings
 import com.tiskz.app.ui.components.RiskBar
@@ -114,6 +116,10 @@ fun LiveCallScreen(
     val screened = call.direction == CallDirection.INCOMING && analysis != null
     val mood = when {
         analysis == null -> Mood.NEUTRAL
+        analysis.alert == true -> Mood.DANGER
+        analysis.currentAssessment?.state == AssessmentState.ALERT -> Mood.DANGER
+        analysis.currentAssessment != null -> Mood.NEUTRAL
+        analysis.assessment != null -> Mood.NEUTRAL
         automatic && analysis.alert != true && analysis.isSafeToAnswer(answerThreshold) -> Mood.SAFE
         automatic && (conference.phase != ConferencePhase.CONNECTED || analysis.alert == null) -> Mood.NEUTRAL
         automatic && analysis.alert == true -> Mood.DANGER
@@ -136,6 +142,8 @@ fun LiveCallScreen(
                 headline = if (automatic) when {
                     conference.phase == ConferencePhase.FAILED -> "Sin monitoreo del agente"
                     analysis.alert == true -> "Alerta detectada"
+                    analysis.currentAssessment != null -> "Evaluación provisional"
+                    analysis.assessment != null -> "Actualizando análisis"
                     analysis.isSafeToAnswer(answerThreshold) -> "Espacio seguro · puedes entrar"
                     analysis.alert == false -> "Sin señales de alerta detectadas"
                     else -> "Esperando análisis real"
@@ -153,6 +161,7 @@ fun LiveCallScreen(
                     .padding(horizontal = 20.dp)
                     .overlapUp(HERO_OVERLAP),
             )
+            AssessmentCard(analysis, compact = true, modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
             LiveTranscript(
                 lines = analysis.transcript,
                 callerLabel = call.callerName ?: "Quien llama",
@@ -308,6 +317,8 @@ private val SCREENING_BUTTON = 56.dp
 // --- Riesgo: una línea de titular y una de detalle ---
 
 private fun riskHeadline(analysis: CallAnalysis, threshold: Int): String = when {
+    analysis.currentAssessment != null -> "Evaluación provisional"
+    analysis.assessment != null -> "Actualizando análisis"
     analysis.isScam -> "Posible estafa"
     analysis.markedSafeByUser -> "Marcada como segura"
     analysis.isSafeToAnswer(threshold) -> "Llamada segura"
@@ -317,14 +328,15 @@ private fun riskHeadline(analysis: CallAnalysis, threshold: Int): String = when 
 }
 
 private fun riskDetail(analysis: CallAnalysis, threshold: Int): String? = when {
+    analysis.assessment != null -> "Estimación provisional; no verifica la identidad ni confirma una estafa."
     analysis.isScam -> listOfNotNull(
         analysis.scamType,
         analysis.impersonating?.let { "se hace pasar por $it" },
         analysis.voiceMatch?.let { "voz reportada ${it.reports} veces (${(it.similarity * 100).roundToInt()}%)" },
     ).joinToString(" · ").ifEmpty { null }
-    analysis.isSafeToAnswer(threshold) -> "Tiskz verificó quién llama y para qué."
+    analysis.isSafeToAnswer(threshold) -> "No hay alerta actual; la identidad no está verificada."
     analysis.status == AgentStatus.OFFLINE -> analysis.error ?: "Contesta con precaución."
-    else -> analysis.reasons.firstOrNull() ?: "Tiskz está verificando quién llama."
+    else -> analysis.reasons.firstOrNull() ?: "Tiskz está analizando lo que dice quien llama."
 }
 
 // --- Controles ---

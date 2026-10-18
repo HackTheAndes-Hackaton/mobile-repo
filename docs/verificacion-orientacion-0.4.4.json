@@ -1,0 +1,47 @@
+{
+  "date_lima": "2026-10-17",
+  "apk_version": "0.4.4",
+  "version_code": 8,
+  "apk_file": "tiskz-voz-0.4.4.apk",
+  "apk_sha256": "e3bc50a9b7373630e8e0b6a7dc448c21e93c8ab1dc851af528e06ec5ef69be0a",
+  "apk_bytes": 80692413,
+  "backend": "https://api.maritime.sh/a/ebf0eb81-42c0-4437-a044-1af84af1b755",
+  "backend_prs": [
+    4,
+    5
+  ],
+  "mobile_pr": 8,
+  "android_unit_tests": {
+    "tests": 55,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "instrumented_ui": {
+    "emulator": "Pixel_6 / Android 12 (API 31), ARM64",
+    "test": "AssessmentDisplayTest.fourStatesRenderOnVoiceCardAndLiveCallWithoutTriggeringActions",
+    "result": "passed",
+    "states": [
+      "observar",
+      "verificar",
+      "alertar",
+      "inconcluso"
+    ],
+    "screens": [
+      "tarjeta de voz",
+      "pantalla de llamada"
+    ],
+    "rendered_combinations": 8,
+    "triggered_call_actions": 0,
+    "input": "Fixtures JSON sintéticos, sin micrófono ni llamadas"
+  },
+  "lint": "passed; advertencias no bloqueantes de dependencias/API y estilo existentes",
+  "automatic_conference_default": false,
+  "carrier_costs_confirmed_default": false,
+  "limitations": [
+    "No valida una llamada de Entel, calidad de ASR ni conferencia real.",
+    "No se instaló en el teléfono físico del usuario; no está conectado.",
+    "Una actualización conserva preferencias anteriores.",
+    "APK de depuración para pruebas, firmada con la misma clave local de las APK anteriores."
+  ]
+}
