@@ -73,6 +73,7 @@ class WebRtcVoiceSession(
     private var peer: PeerConnection? = null
     private var factory: PeerConnectionFactory? = null
     private var audioModule: JavaAudioDeviceModule? = null
+    private var audioRoute: VoiceAudioRoute? = null
     private var audioSource: AudioSource? = null
     private var track: AudioTrack? = null
     private var channel: DataChannel? = null
@@ -168,7 +169,13 @@ class WebRtcVoiceSession(
 
     private fun preparePeer() {
         initializeWebRtc(context)
+        audioRoute = VoiceAudioRoute(context)
+        audioRoute?.start()
         audioModule = JavaAudioDeviceModule.builder(context)
+            .setAudioSource(android.media.MediaRecorder.AudioSource.VOICE_COMMUNICATION)
+            .setUseStereoInput(false)
+            .setUseHardwareAcousticEchoCanceler(true)
+            .setUseHardwareNoiseSuppressor(true)
             // Evita el valor de 8 kHz del emulador; conserva banda de voz para transcripción.
             .setInputSampleRate(48000)
             .setSamplesReadyCallback { samples ->
@@ -390,6 +397,8 @@ class WebRtcVoiceSession(
         accessCode = ""
         track?.setEnabled(false)
         remoteTrack?.setEnabled(false)
+        runCatching { audioRoute?.close() }
+        audioRoute = null
         // Retira el emisor para detener la captura; conserva recepción hasta confirmar el cierre.
         if (assistant) {
             peer?.senders?.forEach { sender -> if (sender.track()?.kind() == "audio") runCatching { peer?.removeTrack(sender) } }
