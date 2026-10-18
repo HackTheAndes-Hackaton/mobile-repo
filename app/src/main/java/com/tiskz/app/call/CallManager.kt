@@ -165,6 +165,7 @@ object CallManager {
                     stateChanged = { _conference.value = it },
                     phaseChanged = { if (it == CallPhase.DISCONNECTED) finish() else updatePhase(it) },
                     ended = ::finish,
+                    showCallScreen = ::showCallScreen,
                 )
                 automatic?.start()
             } catch (_: Exception) {
@@ -381,8 +382,21 @@ object CallManager {
         }
     }
 
+    /**
+     * Mientras suena basta el aviso, pero una llamada contestada necesita la pantalla de Tiskz al frente:
+     * si no, HyperOS (Xiaomi) cree que la app de teléfono no tiene interfaz y pasa la llamada al sistema.
+     */
+    private fun showCallScreen() {
+        if (CallNotifications.screenVisible) return
+        runCatching {
+            appContext.startActivity(Intent(appContext, InCallActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        }
+    }
+
     private fun updatePhase(phase: CallPhase) {
         val current = _activeCall.value
+        // Contestada desde fuera de la app (auricular, Bluetooth): igual se muestra Tiskz.
+        if (phase == CallPhase.ACTIVE && current?.phase == CallPhase.RINGING && !current.simulated) showCallScreen()
         if (current?.screening == true && !current.simulated && phase != CallPhase.RINGING) {
             // Contestó marin, no el titular: no se le escucha ni oye la conversación hasta que entre.
             inCallService?.setMuted(true)
