@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.tiskz.app.data.ArchiveState
 import com.tiskz.app.model.Verdict
 import com.tiskz.app.ui.LocalAppContainer
 import com.tiskz.app.ui.components.RiskBar
@@ -36,7 +37,9 @@ import compose.icons.tablericons.ArrowLeft
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CallDetailScreen(recordId: String, onBack: () -> Unit) {
-    val records by LocalAppContainer.current.history.records.collectAsStateWithLifecycle()
+    val container = LocalAppContainer.current
+    val records by container.history.records.collectAsStateWithLifecycle()
+    val archived by container.archive.states.collectAsStateWithLifecycle()
     val record = records.firstOrNull { it.id == recordId }
 
     Scaffold(
@@ -83,6 +86,21 @@ fun CallDetailScreen(recordId: String, onBack: () -> Unit) {
                 color = TiskzColors.Muted,
             )
             VerdictBadge(record.verdict)
+            archived[record.id]?.let { state ->
+                Text(
+                    text = when (state) {
+                        ArchiveState.SAVED -> "✓ Conversación guardada en el panel"
+                        ArchiveState.PENDING -> "Guardando en el panel…"
+                        ArchiveState.FAILED -> "No se pudo guardar en el panel. Revisa Ajustes."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = when (state) {
+                        ArchiveState.SAVED -> TiskzColors.EmeraldDark
+                        ArchiveState.PENDING -> TiskzColors.Muted
+                        ArchiveState.FAILED -> TiskzColors.Red
+                    },
+                )
+            }
 
             if (record.verdict != Verdict.NONE) {
                 RiskBar(

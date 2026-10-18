@@ -102,6 +102,22 @@ También se pueden cambiar en **Ajustes** dentro de la app, sin recompilar.
 La URL HTTP del backend apunta por defecto a Maritime y se usa en el canal de voz. La URL WebSocket
 de llamadas de operadora conserva `10.0.2.2:8000` para el prototipo anterior; no es necesaria para el canal de voz.
 
+## Historial en el panel web
+
+Al colgar, la app guarda en el panel la llamada con su conversación (asistente, quien llama y
+titular) mediante `PUT /api/v1/calls/{id}` del panel (ver su `openapi.json`). Reenviar la misma
+llamada la actualiza sin duplicarla; sin conexión queda en cola y se reintenta. El panel la muestra
+en el caso, pestaña **Conversación**, y se puede recuperar con `GET /api/v1/calls/{id}`.
+
+```properties
+tiskz.panelUrl=https://web-repo-xi.vercel.app/api/v1
+tiskz.panelOrg=org_uav
+```
+
+La **API key** del panel no va en `local.properties` ni en el APK: se crea en el panel
+(**Integraciones → Nueva clave**) y se ingresa una vez en **Ajustes → Historial en el panel**,
+donde queda cifrada con el Keystore de Android. Desde ahí también se puede desactivar el guardado.
+
 ## Modo demo
 
 Viene **activado**: las llamadas se analizan con guiones locales (`analysis/DemoScripts.kt`), sin backend.

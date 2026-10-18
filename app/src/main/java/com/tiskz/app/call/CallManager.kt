@@ -21,6 +21,7 @@ import com.tiskz.app.model.CallAnalysis
 import com.tiskz.app.model.CallDirection
 import com.tiskz.app.model.CallPhase
 import com.tiskz.app.model.CallRecord
+import com.tiskz.app.model.Speaker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -97,6 +98,8 @@ object CallManager {
                 CallNotifications.noticeFor(call, analysis, conference, settings.answerThreshold)
             }.collect { CallNotifications.render(appContext, it) }
         }
+        // Llamadas que no se pudieron enviar al panel la vez anterior.
+        container.archive.flush()
     }
 
     // --- Entrada desde Telecom ---
@@ -350,8 +353,13 @@ object CallManager {
         restoreCallVolume()
         val finalAnalysis = session.value?.state?.value
         session.value?.close()
-        // La conversación real de la conferencia se muestra en vivo, sin guardarla por defecto.
-        container.history.add(CallRecord.from(ended, if (automatic != null) null else finalAnalysis))
+        // La conversación queda en Recientes y se guarda en el panel (si la persona no lo desactivó en Ajustes),
+        // también la de las llamadas que atendió el asistente.
+        val screened = call.screening || automatic != null ||
+            finalAnalysis?.transcript?.any { it.speaker == Speaker.AGENT } == true
+        val record = CallRecord.from(ended, finalAnalysis, screened)
+        container.history.add(record)
+        if (call.direction == CallDirection.INCOMING) container.archive.upload(record)
         automatic?.let {
             it.dispose()
             retired.add(SystemClock.elapsedRealtime() + 60_000 to it)

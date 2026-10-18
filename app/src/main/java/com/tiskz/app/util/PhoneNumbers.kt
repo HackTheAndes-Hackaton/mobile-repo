@@ -22,6 +22,10 @@ object PhoneNumbers {
     /** Últimos 9 dígitos: iguala "+51 987 654 321" con "987654321". */
     fun matchKey(number: String): String = digits(number).takeLast(9)
 
+    /** Formato internacional (+51987654321) según el país de la SIM; null si no es un número válido. */
+    fun e164(number: String): String? =
+        PhoneNumberUtils.formatNumberToE164(number, countryIso)?.takeIf { Regex("^\\+[1-9]\\d{1,14}$").matches(it) }
+
     fun display(number: String): String {
         if (number.isBlank()) return "Número oculto"
         return PhoneNumberUtils.formatNumber(number, countryIso) ?: number

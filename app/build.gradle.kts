@@ -31,6 +31,12 @@ android {
         buildConfigField("String", "BACKEND_URL", "\"${localProp("tiskz.backendUrl", "https://api.maritime.sh/a/ebf0eb81-42c0-4437-a044-1af84af1b755")}\"")
         buildConfigField("String", "WS_URL", "\"${localProp("tiskz.wsUrl", "ws://10.0.2.2:8000/ws/calls")}\"")
         buildConfigField("boolean", "DEMO_MODE_DEFAULT", localProp("tiskz.demoMode", "true"))
+        // Panel web donde se guarda la conversación de cada llamada. La API key NO va aquí:
+        // se ingresa una vez en Ajustes y queda cifrada en el teléfono.
+        //   tiskz.panelUrl=https://web-repo-xi.vercel.app/api/v1
+        //   tiskz.panelOrg=org_uav
+        buildConfigField("String", "PANEL_URL", "\"${localProp("tiskz.panelUrl", "https://web-repo-xi.vercel.app/api/v1")}\"")
+        buildConfigField("String", "PANEL_ORG", "\"${localProp("tiskz.panelOrg", "org_uav")}\"")
     }
 
     buildTypes {
