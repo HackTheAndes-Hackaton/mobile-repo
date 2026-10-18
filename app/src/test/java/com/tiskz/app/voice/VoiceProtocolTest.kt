@@ -75,7 +75,9 @@ class VoiceProtocolTest {
     @Test fun evidenceUsesRoomTicketAndExplicitStorageConsent() = server { server, api -> runBlocking {
         server.enqueue(MockResponse().setResponseCode(201).setBody(JSONObject().put("session_id", id).put("producer_token", producer).toString()))
         val room = api.createRoom(master, true, evidenceConsent = true)
-        assertTrue(JSONObject(server.takeRequest().body.readUtf8()).getBoolean("consentimiento_conservacion"))
+        val authorization = JSONObject(server.takeRequest().body.readUtf8())
+        assertTrue(authorization.getBoolean("consentimiento_conservacion"))
+        assertEquals(1, authorization.getInt("audio_capture_protocol"))
         val fragment = "clip_" + "a".repeat(48)
         server.enqueue(MockResponse().setResponseCode(201).setBody(JSONObject().put("data", JSONObject().put("id", fragment)).toString()))
         assertEquals(fragment, api.saveExcerpt(room, byteArrayOf(1, 2, 3), java.util.UUID.randomUUID().toString()))

@@ -36,7 +36,7 @@ class VoiceBackendApi(baseUrl: String, client: OkHttpClient) {
         require(consent) { "Se requiere autorización para analizar el audio." }
         require(accessCode.length in 12..512) { "Introduce el código privado del equipo." }
         val body = JSONObject().put("consentimiento_analisis", true)
-        if (evidenceConsent) body.put("consentimiento_conservacion", true)
+        if (evidenceConsent) body.put("consentimiento_conservacion", true).put("audio_capture_protocol", 1)
         if (assistant) body.put("mode", "assistant").put("consentimiento_voz_ia", true)
         val json = post("v1/sessions", accessCode, body)
         val id = json.getString("session_id")

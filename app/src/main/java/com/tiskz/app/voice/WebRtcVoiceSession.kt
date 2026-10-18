@@ -56,7 +56,7 @@ class WebRtcVoiceSession(
     private val _evidence = MutableStateFlow(Evidence())
     val evidence = _evidence.asStateFlow()
     private var savedExcerptId: String? = null
-    private var autoSaveAttempted = false
+    private var captureProtocol: AudioCaptureProtocol? = null
     private var pendingExcerpt: Pair<String, ByteArray>? = null
     @Volatile private var playingExcerpt = false
     private var excerptPlayer: android.media.AudioTrack? = null
@@ -150,19 +150,19 @@ class WebRtcVoiceSession(
     }
 
     private fun openEvents(room: VoiceRoom) {
+        captureProtocol = AudioCaptureProtocol(room.id, evidenceConsent)
         socket = client.newWebSocket(Request.Builder().url(api.eventsUrl(room)).build(), VoiceEventsListener(
             isClosed = { closed.get() },
             onReady = { socketReady.complete(Unit) },
             onEvent = { event ->
                 dispatch(event)
-                if (evidenceConsent && state.value.alert == true && !autoSaveAttempted && excerptBuffer.snapshot() != null) {
-                    autoSaveAttempted = true
-                    saveExcerpt()
-                }
                 if (event is AnalysisEvent.Ended) scope.launch { close() }
             },
             onTerminated = ::fail,
-            onControl = { raw -> if (assistant) LiveEventRelay.contextCommand(raw)?.let { command -> scope.launch { sendData(command) } } },
+            onControl = { raw -> scope.launch {
+                handleCaptureControl(raw)
+                if (assistant) LiveEventRelay.contextCommand(raw)?.let(::sendData)
+            } },
         ))
     }
 
@@ -275,12 +275,43 @@ class WebRtcVoiceSession(
         if (!closed.get()) socket?.send(JSONObject().put("type", "user.decision").put("action", decision.wire).toString())
     }
 
-    fun saveExcerpt() {
+    private fun captureReply(type: String, requestId: String, reason: String? = null) {
+        val current = room ?: return
+        val event = JSONObject().put("type", type).put("session_id", current.id).put("request_id", requestId)
+        if (reason != null) event.put("reason", reason)
+        if (!closed.get()) socket?.send(event.toString())
+    }
+
+    private fun handleCaptureControl(raw: String) {
+        captureProtocol?.result(raw)?.let { result ->
+            if (result.saved) {
+                savedExcerptId = result.fragmentId
+                _evidence.value = _evidence.value.copy(saved = true, message = "Guardado automático confirmado por el servidor · pendiente de revisión.")
+            } else if (!_evidence.value.busy) {
+                _evidence.value = _evidence.value.copy(message = if (result.reason == "expired") "La solicitud de captura venció. Puedes guardar manualmente." else "La captura automática no se completó. Puedes volver a intentar.")
+            }
+        }
+        val request = captureProtocol?.request(raw) ?: return
+        if (closed.get() || _evidence.value.busy || pendingExcerpt != null) {
+            captureReply("audio.capture_failed", request.id, "busy")
+            return
+        }
+        captureReply("audio.capture_received", request.id)
+        captureAndSave(request.id)
+    }
+
+    fun saveExcerpt() = captureAndSave()
+
+    private fun captureAndSave(requestId: String? = null) {
         if (!evidenceConsent || closed.get() || _evidence.value.busy) return
         val current = room ?: return
-        val candidate = pendingExcerpt ?: excerptBuffer.snapshot()?.let { java.util.UUID.randomUUID().toString() to it }
+        val candidate = pendingExcerpt ?: excerptBuffer.snapshot()?.let { (requestId ?: java.util.UUID.randomUUID().toString()) to it }
         val audio = candidate?.second
-        if (audio == null) { _evidence.value = _evidence.value.copy(message = "Habla al menos un segundo antes de guardar."); return }
+        if (audio == null) {
+            _evidence.value = _evidence.value.copy(message = "No hay todavía un segundo de audio disponible para capturar.")
+            if (requestId != null) captureReply("audio.capture_failed", requestId, "no_audio")
+            return
+        }
         pendingExcerpt = candidate
         _evidence.value = _evidence.value.copy(busy = true, message = "Guardando fragmento autorizado…")
         scope.launch {
@@ -288,9 +319,15 @@ class WebRtcVoiceSession(
                 savedExcerptId = api.saveExcerpt(current, audio, requireNotNull(candidate).first)
                 pendingExcerpt = null
                 audio.fill(0)
-                _evidence.value = Evidence(saved = true, message = "Fragmento guardado · pendiente de revisión.")
+                _evidence.value = Evidence(saved = true, message = if (requestId != null) "Guardado automático confirmado · pendiente de revisión." else "Fragmento guardado · pendiente de revisión.")
             } catch (e: Exception) {
-                if (!closed.get()) _evidence.value = Evidence(saved = savedExcerptId != null, message = "No se pudo guardar el audio. Puedes volver a intentar.")
+                if (!closed.get()) {
+                    val confirmed = captureProtocol?.savedFragment(requireNotNull(candidate).first)
+                    if (confirmed != null) {
+                        savedExcerptId = confirmed; pendingExcerpt = null; audio.fill(0)
+                        _evidence.value = Evidence(saved = true, message = "Guardado automático confirmado por el servidor · pendiente de revisión.")
+                    } else _evidence.value = Evidence(saved = savedExcerptId != null, message = "No se pudo confirmar el guardado. Puedes volver a intentar.")
+                }
             } finally { if (closed.get()) audio.fill(0) }
         }
     }
@@ -342,6 +379,7 @@ class WebRtcVoiceSession(
         if (!closed.compareAndSet(false, true)) return
         streaming.set(false)
         excerptBuffer.clear()
+        captureProtocol = null
         pendingExcerpt?.second?.fill(0); pendingExcerpt = null
         runCatching { excerptPlayer?.stop(); excerptPlayer?.release() }
         excerptPlayer = null
