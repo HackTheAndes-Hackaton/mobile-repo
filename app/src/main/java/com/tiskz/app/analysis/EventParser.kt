@@ -5,6 +5,8 @@ import com.tiskz.app.model.Speaker
 import com.tiskz.app.model.VoiceMatch
 import com.tiskz.app.model.Evidence
 import com.tiskz.app.model.Understanding
+import com.tiskz.app.model.CallAssessment
+import com.tiskz.app.model.AssessmentState
 import com.tiskz.app.model.optStringOrNull
 import org.json.JSONException
 import org.json.JSONObject
@@ -48,6 +50,8 @@ object EventParser {
             ), json.optInt("revision", 0))
         }
 
+        "assessment.update" -> assessment(json)
+
         "risk.update" -> AnalysisEvent.Risk(
             percent = json.optInt("risk_percent"),
             reasons = json.optJSONArray("reasons")?.let { arr -> List(arr.length()) { arr.optString(it) } }.orEmpty(),
@@ -75,6 +79,23 @@ object EventParser {
         "error" -> AnalysisEvent.Error(json.optString("message", "Error en el análisis"))
 
         else -> null
+    }
+
+    private fun assessment(json: JSONObject): AnalysisEvent.Assessed? {
+        val revision = (json.opt("revision") as? Number)?.toDouble()
+            ?.takeIf { it.isFinite() && it >= 0 && it <= Int.MAX_VALUE && it % 1 == 0.0 }?.toInt() ?: return null
+        val a = json.optJSONObject("assessment") ?: return null
+        if (a.optString("version") != "orientacion_v1") return null
+        val state = AssessmentState.entries.find { it.wireValue == a.opt("estado") } ?: return null
+        val guidance = (a.opt("orientacion") as? String)?.takeIf { it.isNotBlank() && it.length <= 2000 } ?: return null
+        val quotes = a.optJSONArray("evidencia_textual")
+        if (quotes != null && quotes.length() > 8) return null
+        val evidence = if (quotes == null) emptyList() else (0 until quotes.length()).map { i ->
+            val item = quotes.optJSONObject(i) ?: return null
+            val quote = (item.opt("cita") as? String)?.takeIf { it.isNotBlank() && it.length <= 600 } ?: return null
+            Evidence(quote, item.optString("tipo"))
+        }
+        return AnalysisEvent.Assessed(CallAssessment(state, guidance, evidence), revision)
     }
 
     private fun strings(json: JSONObject, key: String): List<String> = json.optJSONArray(key)?.let { a ->

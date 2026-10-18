@@ -4,6 +4,7 @@ import android.app.KeyguardManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -13,6 +14,7 @@ import androidx.core.app.NotificationManagerCompat
 import com.tiskz.app.MainActivity
 import com.tiskz.app.R
 import com.tiskz.app.util.PhoneNumbers
+import com.tiskz.app.util.DialerRole
 import com.tiskz.app.model.ActiveCall
 import com.tiskz.app.model.CallDirection
 import com.tiskz.app.model.CallPhase
@@ -120,8 +122,14 @@ object CallNotifications {
     }
 
     /** Al abrir Tiskz se dan por vistas: se quita nuestro aviso y se reinicia el contador de Telecom. */
+    @SuppressLint("MissingPermission") // Telecom admite al marcador predeterminado; el rol se comprueba abajo.
     fun cancelMissed(context: Context) {
         NotificationManagerCompat.from(context).cancel(MISSED_NOTIFICATION_ID)
-        runCatching { context.getSystemService(TelecomManager::class.java).cancelMissedCallsNotification() }
+        if (!DialerRole.isHeld(context)) return
+        try {
+            context.getSystemService(TelecomManager::class.java)?.cancelMissedCallsNotification()
+        } catch (_: SecurityException) {
+            // El rol puede revocarse entre la comprobación y la llamada al sistema.
+        }
     }
 }

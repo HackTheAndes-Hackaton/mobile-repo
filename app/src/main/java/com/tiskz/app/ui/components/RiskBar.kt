@@ -39,6 +39,7 @@ fun RiskBar(
     detail: String? = null,
     /** Color del titular; por defecto el del nivel de riesgo. */
     headlineColor: Color? = null,
+    assessed: Boolean = true,
 ) {
     val progress by animateFloatAsState(percent.coerceIn(0, 100) / 100f, tween(700), label = "risk")
     val color by animateColorAsState(RiskLevel.of(percent).color(), tween(500), label = "riskColor")
@@ -48,7 +49,7 @@ fun RiskBar(
             Row(verticalAlignment = Alignment.Bottom) {
                 Column(Modifier.weight(1f)) {
                     Text(
-                        text = "RIESGO DE ESTAFA",
+                        text = "ESTIMACIÓN DE ALERTA",
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.SemiBold,
                         letterSpacing = 1.sp,
@@ -57,7 +58,7 @@ fun RiskBar(
                     Text(headline, style = MaterialTheme.typography.titleLarge, color = headlineColor ?: color)
                 }
                 Text(
-                    text = "${(progress * 100).roundToInt()}%",
+                    text = if (assessed) "${(progress * 100).roundToInt()}%" else "—",
                     fontSize = 34.sp,
                     fontWeight = FontWeight.Bold,
                     color = color,

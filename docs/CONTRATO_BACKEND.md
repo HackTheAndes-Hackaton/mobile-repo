@@ -40,11 +40,23 @@ La comprensión acepta solo tipos permitidos y citas de oraciones completas. El 
 `transcript.update.sequence` conserva el orden de los turnos aunque los finales lleguen invertidos; la app lo usa para ordenar y reemplazar parciales. Un cierre remoto WebSocket termina la captura inmediatamente sin esperar el ping ni requerir `call.ended`.
 
 `alerta` es un booleano estricto. Antes de recibirlo el resultado es pendiente, nunca `false` por defecto.
-La pantalla muestra el booleano y la comprensión por separado. Las revisiones antiguas se descartan.
+La pantalla conserva la alerta y la comprensión por separado, y presenta la orientación descrita abajo. Las revisiones antiguas se descartan.
 `risk.update` puede acompañar la alerta con `score_kind: "probabilidad_de_alerta_no_calibrada"`:
 ese valor no es una probabilidad calibrada de estafa y el nuevo canal no lo presenta como tal.
 Un evento `error` conserva la última alerta y añade un aviso; no significa ausencia de riesgo.
 No se confirma identidad o culpabilidad ni se realizan denuncias automáticas.
+
+### Orientación por revisión (APK 0.4.4)
+
+```json
+{"type":"assessment.update","session_id":"id-de-sesion","revision":2,"assessment":{"version":"orientacion_v1","estado":"verificar","orientacion":"Antes de pagar, verifica por un canal que ya conoces.","alerta":false,"evidencia_textual":[{"tipo":"peticion_pago","cita":"Necesito dinero."}],"voz_sintetica":{"estado":"no_evaluada"},"identidades_verificadas":[],"acciones_automaticas":false}}
+```
+
+Los estados admitidos son `observar`, `verificar`, `alertar` e `inconcluso`. La APK muestra el texto como texto, con nombre de estado además del color y anuncio accesible; no ejecuta instrucciones del campo `orientacion`. Requiere versión conocida, revisión entera no negativa, estado conocido y orientación no vacía. Las citas tienen hasta 8 elementos de hasta 600 caracteres. Un evento inválido se ignora, sin crear un resultado seguro.
+
+El servidor combina los dos agentes de la misma revisión. El cliente rechaza una orientación anterior a sus últimas revisiones de alerta o comprensión; cuando llega una de estas más reciente, oculta la orientación vieja y muestra «Actualizando orientación». En telefonía también exige que el `session_id` coincida con la llamada activa y borra el análisis al empezar otra llamada.
+
+La presentación no cambia `alerta`, `risk_percent`, `readyToAnswer`, consentimiento ni controles de la llamada. El corte sigue usando `call.hangup_requested`, no este evento. Sin `assessment.update`, la orientación aparece pendiente; una alerta previa del detector puede mostrarse mientras se espera la explicación. Los clientes anteriores siguen recibiendo los eventos de riesgo y comprensión.
 
 ## Flujo objetivo: llamadas desconocidas (propuesta)
 

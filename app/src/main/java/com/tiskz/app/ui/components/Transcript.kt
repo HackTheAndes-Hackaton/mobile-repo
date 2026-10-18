@@ -53,7 +53,7 @@ fun LiveTranscript(
 ) {
     val listState = rememberLazyListState()
     val lastIndex = lines.lastIndex + if (live) 1 else 0
-    LaunchedEffect(lines.size) {
+    LaunchedEffect(lines, live) {
         if (lastIndex >= 0) listState.animateScrollToItem(lastIndex)
     }
     LazyColumn(

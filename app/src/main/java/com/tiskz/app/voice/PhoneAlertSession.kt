@@ -70,6 +70,7 @@ class PhoneAlertSession(client: OkHttpClient, baseUrl: String, accessCode: Strin
                     "call.hangup_result" -> if (json.optString("session_id") == callId && json.optString("status") == "failed") {
                         dispatch(AnalysisEvent.Error("No se confirmó el corte de Vapi. Cuelga desde el teléfono."))
                     }
+                    "assessment.update" -> if (json.optString("session_id") == callId) EventParser.parse(text)?.let(::dispatch)
                     else -> EventParser.parse(text)?.let(::dispatch)
                 }
             }
