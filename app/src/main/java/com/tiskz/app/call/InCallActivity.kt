@@ -34,6 +34,7 @@ class InCallActivity : ComponentActivity() {
                 val call by CallManager.activeCall.collectAsStateWithLifecycle()
                 val analysis by CallManager.analysis.collectAsStateWithLifecycle()
                 val conference by CallManager.conference.collectAsStateWithLifecycle()
+                val guard by CallManager.guard.collectAsStateWithLifecycle()
                 val currentSettings by settings.settings.collectAsStateWithLifecycle()
 
                 LaunchedEffect(call == null) {
@@ -46,6 +47,7 @@ class InCallActivity : ComponentActivity() {
                         analysis = analysis,
                         answerThreshold = currentSettings.answerThreshold,
                         conference = conference,
+                        guard = guard,
                         actions = LiveCallActions(
                             onAnswer = CallManager::answer,
                             onJoin = CallManager::join,
@@ -55,6 +57,7 @@ class InCallActivity : ComponentActivity() {
                             onNotScam = CallManager::markNotScam,
                             onToggleMute = CallManager::toggleMute,
                             onToggleSpeaker = CallManager::toggleSpeaker,
+                            onDismissGuard = CallManager::dismissGuard,
                             onClose = {
                                 CallManager.dismissEnded()
                                 finish()

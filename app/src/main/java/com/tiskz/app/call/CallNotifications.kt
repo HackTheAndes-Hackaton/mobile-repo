@@ -17,6 +17,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.Person
 import com.tiskz.app.MainActivity
 import com.tiskz.app.R
+import com.tiskz.app.analysis.GuardAlert
 import com.tiskz.app.model.ActiveCall
 import com.tiskz.app.model.CallAnalysis
 import com.tiskz.app.model.CallDirection
@@ -76,6 +77,7 @@ object CallNotifications {
     private const val ONGOING_CHANNEL_ID = "tiskz_calls_ongoing"
     private const val ALERT_ID = 1001
     private const val QUIET_ID = 1003
+    private const val GUARD_ID = 1004
     private const val MISSED_CHANNEL_ID = "tiskz_missed"
     private const val MISSED_NOTIFICATION_ID = 1002
 
@@ -139,6 +141,12 @@ object CallNotifications {
                 "Ya puedes entrar a la llamada. La identidad de quien llama no está verificada.", risk)
             conference.phase == ConferencePhase.FAILED -> screened(CallStage.SAFE, "● Sin protección", NoticeTone.WARN,
                 "No pudimos analizar esta llamada.", "Puedes entrar, pero sin protección ni verificación de identidad.")
+            // La comunidad ya reportó este número: se avisa antes de que el asistente termine.
+            call.reputation?.flagged == true -> screened(
+                if (agentAnswered) CallStage.DANGER else CallStage.INCOMING, "● Número reportado", NoticeTone.DANGER,
+                "${call.reputation.headline}.",
+                if (agentAnswered) "Tu asistente está hablando con quien llama. Te recomendamos no entrar."
+                else "Tu asistente va a contestar por ti.", risk)
             !agentAnswered -> screened(CallStage.INCOMING, "● Llamada entrante", NoticeTone.INFO,
                 "Tu asistente va a contestar por ti.", "Te avisamos cuando termine la revisión inicial.")
             else -> screened(CallStage.SCREENING, "● Analizando", NoticeTone.INFO,
@@ -241,6 +249,35 @@ object CallNotifications {
             }
         }
         return builder.build()
+    }
+
+    /** Pop-up rojo cuando quien llama pide algo peligroso; también con el titular ya en la llamada. */
+    fun showGuard(context: Context, alert: GuardAlert) {
+        val manager = NotificationManagerCompat.from(context)
+        if (!manager.areNotificationsEnabled()) return
+        val text = alert.kind.advice
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_tiskz_shield)
+            .setColor(NoticeTone.DANGER.color)
+            .setContentTitle("⚠ ${alert.kind.title}")
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText("$text\n\nTe dijeron: “${alert.quote.take(160)}”"))
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setAutoCancel(true)
+            .setTimeoutAfter(30_000)
+            .setContentIntent(activityIntent(context, 0, null))
+            .build()
+        try {
+            manager.notify(GUARD_ID, notification)
+        } catch (e: SecurityException) {
+            // Sin permiso de notificaciones: la alerta se ve igual en la pantalla de llamada.
+        }
+    }
+
+    fun cancelGuard(context: Context) {
+        NotificationManagerCompat.from(context).cancel(GUARD_ID)
     }
 
     /** Vista propia del aviso: estado en color, quién llama, barra de riesgo y qué hacer. */

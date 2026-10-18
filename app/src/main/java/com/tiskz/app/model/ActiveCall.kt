@@ -24,7 +24,27 @@ data class ActiveCall(
     val blocked: Boolean = false,
     /** Marin atiende y el titular todavía no entró: micrófono silenciado, solo Cancelar o Entrar. */
     val screening: Boolean = false,
+    /** Reportes de la comunidad sobre este número; null si no se consultó o no hay panel. */
+    val reputation: NumberReputation? = null,
 ) {
     /** Lo que se muestra en grande: el nombre del contacto o, si no está guardado, el número. */
     val title: String get() = callerName ?: PhoneNumbers.display(number)
+}
+
+/** Lo que la comunidad sabe del número: solo totales, nunca quién lo reportó. */
+data class NumberReputation(
+    val reports: Int,
+    val scam: Int,
+    val mentionedIn: Int,
+    val scamType: String?,
+    val impersonating: String?,
+) {
+    val flagged: Boolean get() = reports > 0 || mentionedIn > 0
+
+    /** "Reportado 3 veces · se hace pasar por BCP" */
+    val headline: String get() = buildList {
+        if (reports > 0) add(if (reports == 1) "Reportado 1 vez" else "Reportado $reports veces")
+        else if (mentionedIn > 0) add("Mencionado en ${if (mentionedIn == 1) "1 estafa" else "$mentionedIn estafas"}")
+        impersonating?.let { add("se hace pasar por $it") } ?: scamType?.let { add(it) }
+    }.joinToString(" · ")
 }

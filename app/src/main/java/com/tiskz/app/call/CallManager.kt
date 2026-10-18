@@ -3,6 +3,11 @@ package com.tiskz.app.call
 import android.content.Context
 import android.content.Intent
 import android.media.AudioManager
+import android.os.VibrationEffect
+import android.os.Vibrator
+import com.tiskz.app.analysis.CallGuard
+import com.tiskz.app.analysis.GuardAlert
+import com.tiskz.app.analysis.GuardKind
 import android.os.Build
 import android.os.SystemClock
 import android.telecom.Call
@@ -69,6 +74,11 @@ object CallManager {
     private val _conference = MutableStateFlow(ConferenceState())
     val conference: StateFlow<ConferenceState> = _conference.asStateFlow()
 
+    /** Último pedido peligroso de quien llama (código, clave, Yape…), hasta que el titular lo cierre. */
+    private val _guard = MutableStateFlow<GuardAlert?>(null)
+    val guard: StateFlow<GuardAlert?> = _guard.asStateFlow()
+    private val guardedKinds = mutableSetOf<GuardKind>()
+
     private val telecomCallback = object : Call.Callback() {
         override fun onStateChanged(call: Call, state: Int) {
             // El cierre lo hace finish(): si aquí solo se marcara DISCONNECTED,
@@ -98,6 +108,8 @@ object CallManager {
                 CallNotifications.noticeFor(call, analysis, conference, settings.answerThreshold)
             }.collect { CallNotifications.render(appContext, it) }
         }
+        // Protección durante toda la llamada, también después de que el titular entra.
+        scope.launch { analysis.collect { it?.let(::guardAgainst) } }
         // Llamadas que no se pudieron enviar al panel la vez anterior.
         container.archive.flush()
     }
@@ -259,6 +271,32 @@ object CallManager {
         }
     }
 
+    fun dismissGuard() {
+        _guard.value = null
+        CallNotifications.cancelGuard(appContext)
+    }
+
+    /** Avisa una vez por tipo de peligro cuando quien llama pide códigos, claves, dinero, etc. */
+    private fun guardAgainst(analysis: CallAnalysis) {
+        val call = _activeCall.value ?: return
+        if (call.direction != CallDirection.INCOMING || call.phase == CallPhase.DISCONNECTED) return
+        for (line in analysis.transcript) {
+            if (line.speaker != Speaker.CALLER) continue
+            val kind = CallGuard.check(line.text) ?: continue
+            if (!guardedKinds.add(kind)) continue
+            val alert = GuardAlert(kind, line.text, line.id)
+            _guard.value = alert
+            vibrate()
+            CallNotifications.showGuard(appContext, alert)
+        }
+    }
+
+    private fun vibrate() = runCatching {
+        @Suppress("DEPRECATION")
+        appContext.getSystemService(Vibrator::class.java)
+            ?.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 250, 120, 250, 120, 400), -1))
+    }
+
     fun markNotScam() {
         session.value?.markNotScam()
     }
@@ -294,7 +332,10 @@ object CallManager {
         session.value?.close()
         _activeCall.value = call
         _conference.value = ConferenceState()
+        _guard.value = null
+        guardedKinds.clear()
         resolveCallerName(call.id, call.number)
+        if (call.direction == CallDirection.INCOMING && call.callerName == null) checkReputation(call)
         session.value = if (call.direction == CallDirection.INCOMING && !automaticCall && !call.simulated) {
             container.openAnalysisSession(call.number, forcedScenario)
         } else {
@@ -314,6 +355,18 @@ object CallManager {
             appContext.startActivity(
                 Intent(appContext, InCallActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             )
+        }
+    }
+
+    /** Mientras suena: si la comunidad ya reportó el número, se avisa antes de contestar. */
+    private fun checkReputation(call: ActiveCall) {
+        scope.launch {
+            val reputation = container.reputation.lookup(call.number) ?: return@launch
+            if (!reputation.flagged) return@launch
+            val current = _activeCall.value
+            if (current?.id == call.id && current.phase != CallPhase.DISCONNECTED) {
+                _activeCall.value = current.copy(reputation = reputation)
+            }
         }
     }
 
@@ -368,6 +421,7 @@ object CallManager {
         }
         telecomCall?.unregisterCallback(telecomCallback)
         telecomCall = null
+        CallNotifications.cancelGuard(appContext)
         scope.launch {
             delay(ENDED_SCREEN_MS)
             if (_activeCall.value?.id == ended.id) clear()

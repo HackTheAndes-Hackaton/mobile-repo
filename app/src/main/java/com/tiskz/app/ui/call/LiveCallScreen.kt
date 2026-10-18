@@ -42,6 +42,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.tiskz.app.model.ActiveCall
+import com.tiskz.app.analysis.GuardAlert
 import com.tiskz.app.call.ConferencePhase
 import com.tiskz.app.call.ConferenceState
 import com.tiskz.app.model.AgentStatus
@@ -63,6 +64,7 @@ import com.tiskz.app.ui.theme.TiskzColors
 import com.tiskz.app.util.PhoneNumbers
 import com.tiskz.app.util.formatDuration
 import compose.icons.TablerIcons
+import compose.icons.tablericons.AlertTriangle
 import compose.icons.tablericons.Ban
 import compose.icons.tablericons.Microphone
 import compose.icons.tablericons.MicrophoneOff
@@ -81,6 +83,7 @@ class LiveCallActions(
     val onToggleMute: () -> Unit,
     val onToggleSpeaker: () -> Unit,
     val onClose: () -> Unit,
+    val onDismissGuard: () -> Unit = {},
 )
 
 private enum class Mood { NEUTRAL, SAFE, DANGER }
@@ -96,6 +99,7 @@ fun LiveCallScreen(
     answerThreshold: Int,
     actions: LiveCallActions,
     conference: ConferenceState = ConferenceState(),
+    guard: GuardAlert? = null,
 ) {
     val automatic = conference.phase != ConferencePhase.IDLE
     var showProgress by remember(call.id) { mutableStateOf(false) }
@@ -162,6 +166,7 @@ fun LiveCallScreen(
                     .padding(horizontal = 20.dp)
                     .overlapUp(HERO_OVERLAP),
             )
+            guard?.let { GuardBanner(it, actions.onDismissGuard, Modifier.padding(start = 20.dp, end = 20.dp, top = 10.dp)) }
             AssessmentCard(analysis, compact = true, modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
             ScribeComparisonCard(analysis.scribe, compact = true, modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
             LiveTranscript(
@@ -294,9 +299,54 @@ private fun CallerText(call: ActiveCall, modifier: Modifier = Modifier, centered
                 Text(PhoneNumbers.display(call.number), style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.85f))
                 Spacer(Modifier.size(8.dp))
                 GlassChip("Contacto")
+            } else if (call.reputation?.flagged == true) {
+                ReputationChip("⚠ ${call.reputation.headline}")
             } else {
                 GlassChip("No está en tus contactos")
             }
+        }
+    }
+}
+
+/** Reportes de la comunidad: se destaca en rojo sobre la cabecera, aunque el análisis siga en curso. */
+@Composable
+private fun ReputationChip(text: String) {
+    Surface(color = TiskzColors.Red, shape = RoundedCornerShape(50)) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelMedium,
+            color = Color.White,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
+        )
+    }
+}
+
+/** Quien llama pidió algo peligroso: se frena al titular en el momento, con la frase exacta. */
+@Composable
+private fun GuardBanner(alert: GuardAlert, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(
+        color = TiskzColors.Red,
+        shape = RoundedCornerShape(20.dp),
+        modifier = modifier.fillMaxWidth().softShadow(RoundedCornerShape(20.dp), 12.dp),
+    ) {
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(TablerIcons.AlertTriangle, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                Spacer(Modifier.size(8.dp))
+                Text(alert.kind.title, style = MaterialTheme.typography.titleMedium, color = Color.White, modifier = Modifier.weight(1f))
+                TextButton(onClick = onDismiss) { Text("Entendido", color = Color.White) }
+            }
+            Text(alert.kind.advice, style = MaterialTheme.typography.bodyMedium, color = Color.White)
+            Text(
+                "Te dijeron: “${alert.quote}”",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.White.copy(alpha = 0.85f),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 4.dp),
+            )
         }
     }
 }
