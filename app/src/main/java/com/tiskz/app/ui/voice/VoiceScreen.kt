@@ -21,6 +21,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tiskz.app.model.CallAnalysis
 import com.tiskz.app.ui.LocalAppContainer
+import com.tiskz.app.data.TeamProvisioning
 import com.tiskz.app.voice.WebRtcVoiceSession
 import com.tiskz.app.voice.PhoneAlertSession
 import com.tiskz.app.analysis.AnalysisSession
@@ -33,13 +34,15 @@ fun VoiceScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val container = LocalAppContainer.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+    // App final: canal, código y permisos vienen de la configuración del equipo y no se muestran.
+    val simple = TeamProvisioning.enabled
     // No SavedState ni preferencias para el código o el consentimiento.
-    var code by remember { mutableStateOf("") }
+    var baseUrl by remember { mutableStateOf(container.settings.current.backendUrl) }
+    var code by remember { mutableStateOf(if (simple) container.conferenceCredentials.read(baseUrl).orEmpty() else "") }
     var assistant by remember { mutableStateOf(true) }
     var phone by remember { mutableStateOf(false) }
-    var consent by remember { mutableStateOf(false) }
-    var evidenceConsent by remember { mutableStateOf(false) }
-    var baseUrl by remember { mutableStateOf(container.settings.current.backendUrl) }
+    var consent by remember { mutableStateOf(simple) }
+    var evidenceConsent by remember { mutableStateOf(simple && container.settings.current.phoneEvidenceConsent) }
     var session by remember { mutableStateOf<AnalysisSession?>(null) }
     var pendingStart by remember { mutableStateOf(false) }
     var formError by remember { mutableStateOf<String?>(null) }
@@ -85,27 +88,31 @@ fun VoiceScreen(onBack: () -> Unit) {
                 Text(if (phone) "Llamadas telefónicas · alertas" else if (assistant) "Conversar con PhoneWard · marin" else "Micrófono → agentes → alerta", style = MaterialTheme.typography.titleLarge)
                 Text(if (phone) "Vapi atiende la llamada y esta pantalla recibe el análisis. Mantén la app abierta: las alertas se detienen al salir o enviarla al fondo. Detener alertas no cuelga la llamada." else "Analiza audio autorizado del micrófono. La conexión se detiene al salir de esta pantalla o enviar la app al fondo.", style = MaterialTheme.typography.bodyMedium)
             }
-            item {
+            if (!simple) item {
                 Row {
                     Switch(checked = phone, onCheckedChange = { phone = it; consent = false; evidenceConsent = false; session?.close(); session = null }, enabled = !active && !pendingStart)
                     Text("Recibir alertas de llamadas que atiende Vapi", modifier = Modifier.weight(1f))
                 }
             }
-            if (!phone) item {
+            if (!phone && !simple) item {
                 Row {
                     Switch(checked = assistant, onCheckedChange = { assistant = it; consent = false }, enabled = !active)
                     Text("El asistente escucha y responde con voz de IA (GPT-Live 1 · marin).", modifier = Modifier.weight(1f))
                 }
                 Text("Conversación por internet dentro de la app. Para atender tu número de celular se necesita configurar el desvío a un servicio telefónico.", style = MaterialTheme.typography.bodySmall)
             }
-            item { CallForwardingCard(enabled = !active && !pendingStart) }
-            item {
+            if (!simple) item { CallForwardingCard(enabled = !active && !pendingStart) }
+            if (!simple) item {
                 OutlinedTextField(value = baseUrl, onValueChange = { baseUrl = it }, label = { Text("Canal HTTPS") }, enabled = !active, singleLine = true, modifier = Modifier.fillMaxWidth())
             }
-            item {
+            if (!simple) item {
                 OutlinedTextField(value = code, onValueChange = { code = it }, label = { Text("Código privado del equipo") }, visualTransformation = PasswordVisualTransformation(), enabled = !active, singleLine = true, modifier = Modifier.fillMaxWidth())
             }
-            item {
+            if (simple) item {
+                Text("Al conversar, el audio se envía a OpenAI para analizarlo. La app no guarda grabaciones ni transcripciones en el teléfono.",
+                    style = MaterialTheme.typography.bodySmall)
+            }
+            if (!simple) item {
                 Row {
                     Checkbox(checked = consent, onCheckedChange = { consent = it }, enabled = !active)
                     Text(if (phone) "Autorizo analizar estas llamadas y cortar Vapi al detectar riesgo. La conferencia automática de PhoneWard cierra también la llamada del celular. Esta app no guarda audio ni transcripciones en disco." else if (assistant) "Autorizo enviar este audio a OpenAI, analizarlo y recibir respuestas con voz de IA. La app no guarda grabaciones ni transcripciones en disco." else "Tengo autorización para analizar este audio. OpenAI lo procesa; la app no guarda grabaciones ni transcripciones en disco.", modifier = Modifier.weight(1f))
@@ -121,7 +128,7 @@ fun VoiceScreen(onBack: () -> Unit) {
                     OutlinedButton(onClick = { session?.close() }, enabled = active, modifier = Modifier.weight(1f)) { Text(if (phone) "Detener alertas" else "Detener") }
                 }
             }
-            item {
+            if (!simple) item {
                 Row {
                     Checkbox(checked = evidenceConsent, onCheckedChange = { evidenceConsent = it }, enabled = !active && !pendingStart)
                     Text(if (phone) "Autorizo conservar y compartir con Red Vecinal Segura hasta 10 segundos de la llamada cuando se detecte una alerta. Queda pendiente de revisión; no identifica personas." else "Autorizo conservar y compartir con Red Vecinal Segura hasta 10 segundos del micrófono cuando haya una alerta o pulse Guardar. No autoriza identificar personas por su voz.", Modifier.weight(1f))

@@ -1,6 +1,5 @@
 package com.tiskz.app.ui.home
 
-import android.Manifest
 import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -69,7 +68,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tiskz.app.R
-import com.tiskz.app.data.ContactLookup
 import com.tiskz.app.model.CallDirection
 import com.tiskz.app.model.CallRecord
 import com.tiskz.app.model.Verdict
@@ -107,7 +105,6 @@ fun HomeScreen(
     onOpenDialer: () -> Unit,
     onOpenContacts: () -> Unit,
     onOpenRecord: (String) -> Unit,
-    onOpenVoice: () -> Unit,
 ) {
     val context = LocalContext.current
     val container = LocalAppContainer.current
@@ -115,16 +112,11 @@ fun HomeScreen(
     val settings by container.settings.settings.collectAsStateWithLifecycle()
 
     var roleHeld by remember { mutableStateOf(DialerRole.isHeld(context)) }
-    var contactsAllowed by remember { mutableStateOf(ContactLookup.hasPermission(context)) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         roleHeld = DialerRole.isHeld(context)
-        contactsAllowed = ContactLookup.hasPermission(context)
     }
     val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         roleHeld = DialerRole.isHeld(context)
-    }
-    val contactsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        contactsAllowed = granted
     }
 
     LightStatusBarIcons()
@@ -168,39 +160,6 @@ fun HomeScreen(
                     records = records,
                     modifier = Modifier.padding(horizontal = 20.dp).overlapUp(STATS_OVERLAP),
                 )
-            }
-            item {
-                Surface(color = TiskzColors.Blue50, shape = RoundedCornerShape(24.dp),
-                    modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 16.dp)) {
-                    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("Filtro de llamadas", style = MaterialTheme.typography.titleMedium)
-                        Text(if (settings.automaticConferenceEnabled)
-                            "Activo. Cuando llama un número que no está en tus contactos, tu asistente contesta primero y te avisa si es seguro antes de que entres."
-                            else "Tu asistente puede contestar primero a los números desconocidos y avisarte si es una estafa. Se configura una sola vez con tu SIM.")
-                        Button(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth()) { Text(if (settings.automaticConferenceEnabled) "Ajustes del filtro" else "Activar filtro de llamadas") }
-                    }
-                }
-            }
-            if (!contactsAllowed) {
-                item {
-                    ContactsBanner(
-                        onAllow = { contactsLauncher.launch(Manifest.permission.READ_CONTACTS) },
-                        modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp),
-                    )
-                }
-            }
-            item {
-                Surface(
-                    color = TiskzColors.Blue50,
-                    shape = RoundedCornerShape(24.dp),
-                    modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 16.dp),
-                ) {
-                    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("Analizar una conversación", style = MaterialTheme.typography.titleMedium)
-                        Text("Usa el micrófono para revisar en vivo una conversación y recibir alertas al instante.", style = MaterialTheme.typography.bodyMedium)
-                        Button(onClick = onOpenVoice, modifier = Modifier.fillMaxWidth()) { Text("Empezar a analizar") }
-                    }
-                }
             }
             item {
                 SectionTitle(
@@ -367,23 +326,6 @@ private fun SectionTitle(title: String, subtitle: String) {
     ) {
         Text(title, style = MaterialTheme.typography.titleLarge, color = TiskzColors.Ink, modifier = Modifier.weight(1f))
         Text(subtitle, style = MaterialTheme.typography.bodySmall, color = TiskzColors.Muted)
-    }
-}
-
-@Composable
-private fun ContactsBanner(onAllow: () -> Unit, modifier: Modifier = Modifier) {
-    TiskzCard(modifier.fillMaxWidth()) {
-        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(44.dp).clip(CircleShape).background(TiskzColors.Blue50), contentAlignment = Alignment.Center) {
-                Icon(TablerIcons.Users, null, tint = TiskzColors.Blue600)
-            }
-            Spacer(Modifier.size(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text("Ver nombres de contactos", style = MaterialTheme.typography.titleMedium, color = TiskzColors.Ink)
-                Text("Muestra quién llama, no solo el número.", style = MaterialTheme.typography.bodySmall, color = TiskzColors.Muted)
-            }
-            Button(onClick = onAllow, shape = RoundedCornerShape(50)) { Text("Permitir") }
-        }
     }
 }
 

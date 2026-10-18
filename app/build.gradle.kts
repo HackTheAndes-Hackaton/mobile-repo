@@ -37,6 +37,14 @@ android {
         //   tiskz.panelOrg=org_uav
         buildConfigField("String", "PANEL_URL", "\"${localProp("tiskz.panelUrl", "https://web-repo-xi.vercel.app/api/v1")}\"")
         buildConfigField("String", "PANEL_ORG", "\"${localProp("tiskz.panelOrg", "org_uav")}\"")
+        // Configuración del equipo para la app final (solo en local.properties, nunca en Git):
+        //   tiskz.preprovisioned=true  oculta los ajustes técnicos y aplica estos valores al arrancar
+        //   tiskz.voiceAccessCode=…    código privado del canal de voz
+        //   tiskz.panelApiKey=tkz_…    clave del panel para guardar llamadas y consultar reputación
+        // Ojo: quedan dentro del APK. Usar claves revocables y no publicar la APK.
+        buildConfigField("boolean", "PREPROVISIONED", localProp("tiskz.preprovisioned", "false"))
+        buildConfigField("String", "VOICE_ACCESS_CODE", "\"${localProp("tiskz.voiceAccessCode", "")}\"")
+        buildConfigField("String", "PANEL_API_KEY", "\"${localProp("tiskz.panelApiKey", "")}\"")
     }
 
     buildTypes {

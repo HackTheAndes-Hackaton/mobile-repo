@@ -50,7 +50,6 @@ fun TiskzNavHost(pendingDial: String?, onDialConsumed: () -> Unit) {
         }
         composable(Routes.HOME) {
             HomeScreen(
-                onOpenVoice = { navController.navigate(Routes.VOICE) },
                 onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                 onOpenDialer = { navController.navigate(Routes.dialer()) },
                 onOpenContacts = { navController.navigate(Routes.CONTACTS) },
@@ -83,7 +82,7 @@ fun TiskzNavHost(pendingDial: String?, onDialConsumed: () -> Unit) {
             com.tiskz.app.ui.voice.VoiceScreen(onBack = { navController.popBackStack() })
         }
         composable(Routes.SETTINGS) {
-            SettingsScreen(onBack = { navController.popBackStack() })
+            SettingsScreen(onBack = { navController.popBackStack() }, onOpenVoice = { navController.navigate(Routes.VOICE) })
         }
     }
 
