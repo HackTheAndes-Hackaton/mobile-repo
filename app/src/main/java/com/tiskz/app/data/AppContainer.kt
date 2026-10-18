@@ -36,8 +36,13 @@ class AppContainer(private val context: Context) {
     fun openVoiceSession(baseUrl: String, accessCode: String, assistant: Boolean = false, evidenceConsent: Boolean = false) =
         com.tiskz.app.voice.WebRtcVoiceSession(context.applicationContext, httpClient, baseUrl, accessCode, assistant, evidenceConsent)
 
-    fun openPhoneAlerts(baseUrl: String, accessCode: String, evidenceConsent: Boolean = settings.current.phoneEvidenceConsent) =
-        com.tiskz.app.voice.PhoneAlertSession(httpClient, baseUrl, accessCode, evidenceConsent)
+    /** La opción de conservar la voz también autoriza su huella para reconocer estafadores en otras llamadas. */
+    fun openPhoneAlerts(
+        baseUrl: String,
+        accessCode: String,
+        evidenceConsent: Boolean = settings.current.phoneEvidenceConsent,
+        callerNumber: String? = null,
+    ) = com.tiskz.app.voice.PhoneAlertSession(httpClient, baseUrl, accessCode, evidenceConsent, evidenceConsent, callerNumber)
 
     /**
      * Abre el análisis de una llamada entrante.

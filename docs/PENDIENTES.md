@@ -1,44 +1,44 @@
-# Pendientes de Tiskz
+# Pendientes de PhoneWard
 
-Estado al 18 de octubre de 2026, después de:
+Estado al 18 de octubre de 2026. Detalle técnico del servidor de voz: [agents — continuidad del equipo](https://github.com/HackTheAndes-Hackaton/agents/blob/main/docs/CONTINUIDAD_EQUIPO.md).
 
-- `web-repo` `f90c434`: reputación comunitaria del número y evidencia para la PNP.
-- `mobile-repo` `60d91a5`: alerta dentro de la llamada y reputación comunitaria del número.
+## Ya resuelto (no volver a abrir)
 
-## 1. Repo de agentes (estado actualizado)
+- `call.ready_to_answer` integrado: revisión actual en `observar`, sin alerta. No verifica identidad. Véase [CONTRATO_BACKEND.md](CONTRATO_BACKEND.md).
+- Señales peruanas (Yape, BCP, SUNAT, familiaridad, relato frente a amenaza) en comprensión y detección del servidor.
+- El número de Vapi usa la cascada Soniox → GPT-4.1 mini → Eleven Flash (voz Sarah).
+- Pantalla de llamada compacta: un solo panel con porcentaje y aviso, que se despliega al tocarlo; la conversación ocupa el resto.
+- HyperOS: mientras suena se abre una ventana invisible de PhoneWard para que el sistema no pase la llamada a su propio teléfono (por ejemplo, después de «Cerrar todo» en recientes). Solo se ve el aviso de llamada. **Falta confirmarlo con una llamada real.**
+- Notificaciones flotantes activadas en el Xiaomi de la demo.
+- `docs/PROBLEMA_PERU.md` está subido.
 
-| Pendiente | Por qué importa |
-|---|---|
-| **`call.ready_to_answer` implementado** | Integrado en main: revisión actual en `observar`, sin alerta. No verifica identidad. Se observó el evento en una llamada real; falta comprobar todos los avisos visuales. |
-| **Señales peruanas en el prompt del analizador** (familiaridad forzada, saludo eufórico, OTP, Yape, BCP o SUNAT) | Hoy solo están como reglas en el panel y en la app; el porcentaje de riesgo en vivo no las usa. |
-| **`maxDuration` de Vapi** | Si es corto, Vapi cuelga al agente aunque la app ya no tenga límite. |
-| **Número de Vapi peruano** (hoy es +1 209…) | Cada llamada es larga distancia internacional y une llamadas por la operadora, lo que es frágil. |
+## 1. Pruebas de punta a punta que faltan
 
-### Contrato vigente de revisión inicial
-
-El evento `call.ready_to_answer` se emite tras completar comprensión y detección de la misma revisión, con estado `observar` y sin alerta. No confirma identidad ni garantiza seguridad. Un nuevo turno invalida la revisión previa. Véase [CONTRATO_BACKEND.md](CONTRATO_BACKEND.md).
-
-Estado de captura, corte y comparación de voz: [CONTINUIDAD_EQUIPO.md](CONTINUIDAD_EQUIPO.md).
+- [ ] **HyperOS:** «Cerrar todo» en recientes → recibir una llamada → debe verse el aviso de PhoneWard, no el del teléfono del sistema.
+- [ ] **Llamada real completa con la cascada:** amenaza explícita → alerta → audio guardado → corte de la conferencia en el teléfono. Solo se probó con audio sintético.
+- [ ] **Guardar una llamada real contra la base de producción** y ver la reputación del número en la app (requiere la clave del punto 2).
+- [ ] **Flujo nuevo con llamada real:** aviso de entrada → «espacio seguro» → entrar → alerta si piden un código.
 
 ## 2. Configuración manual
 
-- [ ] Crear la **API key en el panel de producción**: https://web-repo-xi.vercel.app → Integraciones → Nueva clave.
-- [ ] Pegarla en la app: **Ajustes → Historial en el panel**. Sin ella no se guardan las conversaciones ni funciona la reputación.
-- [ ] Activar **"Notificaciones flotantes"** de Tiskz en el Xiaomi de la demo, y en cualquier otro teléfono que se use.
+- [ ] Pegar la API key de producción en la app: **Ajustes → Historial en el panel**.
 
-## 3. Pruebas de punta a punta que faltan
+## 3. Agente de voz (requiere acceso a Vapi)
 
-- [ ] **Guardar una llamada real contra la BD de producción.** Solo se probó en local; en producción los endpoints responden, pero sin clave se quedan en 401.
-- [ ] **La reputación en el teléfono.** Funciona en local; falta la clave para verla en la app.
-- [ ] **Una llamada real completa con el flujo nuevo**: pop-up de entrada → aviso discreto → "espacio seguro" → entrar → alerta si piden el código. Las pruebas fueron con la llamada simulada.
-- [ ] **El pop-up de "Te están llamando" con una llamada real.** En la simulación no salta porque Tiskz está abierto.
+- [ ] **Aplicar y medir** los ajustes preparados en `agents/config/vapi-cascade-assistant.json`: ejemplos de estilo en el prompt, `maxTokens` 80, `maxEndpointDelayMs` 500 y `optimizeStreamingLatency` 3. Objetivo: respuesta en menos de 1,5 s sin cortar a quien habla.
+- [ ] **Naturalidad:** confirmar en llamadas reales que ya no repite el recado ni cierra con preguntas innecesarias.
+- [ ] **`maxDurationSeconds`** (hoy 180 s): decidir si se amplía para la demo.
+- [ ] **Número de Vapi peruano** (hoy +1 209…): cada llamada es larga distancia internacional y el audio llega peor.
 
-## 4. Pendientes menores
+## 4. Funciones planeadas que aún no existen
 
-- [x] Las pruebas Android pasan: 65 pruebas JVM, compilación y lint en la versión 0.4.6.
-- [ ] `bun.lock` sin subir en `web-repo`. Decidir si va al repo.
-- [ ] `docs/PROBLEMA_PERU.md` (estado del arte con cifras de Perú) está en local y nunca se subió.
-- [ ] Sección "Validación con la PNP" en la documentación, con los aprendizajes de la entrevista.
+- [ ] Comparación de voces entre llamadas (motor de embeddings y revisión de referencias).
+- [ ] Desvío desde Entel.
+- [ ] Exportar reportes a PDF desde el panel.
+
+## 5. Documentación
+
+- [ ] Sección «Validación con la PNP» con los aprendizajes de la entrevista (falta el contenido de la entrevista).
 
 ## Simulación opcional
 

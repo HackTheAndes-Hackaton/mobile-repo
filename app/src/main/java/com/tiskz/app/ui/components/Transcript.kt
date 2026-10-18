@@ -59,8 +59,8 @@ fun LiveTranscript(
     LazyColumn(
         modifier = modifier,
         state = listState,
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-        contentPadding = PaddingValues(top = 16.dp, bottom = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        contentPadding = PaddingValues(top = 10.dp, bottom = 12.dp),
     ) {
         if (live) {
             item(key = "live") {
@@ -112,7 +112,7 @@ private fun TranscriptBubble(line: TranscriptLine, callerLabel: String) {
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
         ) {
             when {
                 fromAgent -> {
@@ -151,7 +151,7 @@ private fun TranscriptBubble(line: TranscriptLine, callerLabel: String) {
                     line.flagged -> TiskzColors.RedDark
                     else -> TiskzColors.Ink
                 },
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
             )
         }
     }

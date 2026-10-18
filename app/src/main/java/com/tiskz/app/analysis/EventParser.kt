@@ -93,6 +93,18 @@ object EventParser {
             )
         )
 
+        // Huella vocal del servidor: una pista revisable, no una identificación.
+        "voice.match" -> AnalysisEvent.Voice(
+            VoiceMatch(
+                similarity = json.optDouble("similarity", 0.0).toFloat(),
+                label = if (json.optBoolean("strong")) "Voz muy parecida a un estafador reportado" else "Voz parecida a un estafador reportado",
+                reports = json.optInt("cases"),
+            )
+        )
+
+        "voice.collecting" -> json.optString("status").takeIf { it in setOf("started", "saved", "failed", "insufficient_audio") }
+            ?.let { AnalysisEvent.VoiceCollecting(it) }
+
         "call.ready_to_answer" -> AnalysisEvent.ReadyToAnswer
 
         "call.ended" -> AnalysisEvent.Ended(

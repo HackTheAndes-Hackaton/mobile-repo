@@ -367,6 +367,9 @@ object CallManager {
             appContext.startActivity(
                 Intent(appContext, InCallActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             )
+        } else if (!call.simulated && call.phase == CallPhase.RINGING && !CallNotifications.screenVisible) {
+            // Solo el aviso queda a la vista; la ventana invisible evita que HyperOS cambie de app de teléfono.
+            RingingAnchorActivity.show(appContext)
         }
     }
 

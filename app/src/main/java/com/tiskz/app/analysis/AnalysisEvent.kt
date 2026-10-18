@@ -45,6 +45,9 @@ sealed interface AnalysisEvent {
 
     data class Voice(val match: VoiceMatch) : AnalysisEvent
 
+    /** Estafa confirmada: el agente alarga la llamada para guardar la voz (started, saved, failed, insufficient_audio). */
+    data class VoiceCollecting(val status: String) : AnalysisEvent
+
     /** Puede incorporarse después de la revisión inicial; no autentica a quien llama. */
     data object ReadyToAnswer : AnalysisEvent
 
@@ -114,6 +117,8 @@ fun CallAnalysis.reduce(event: AnalysisEvent): CallAnalysis = when (event) {
     is AnalysisEvent.AudioEvidence -> copy(audioEvidenceStatus = event.status, audioFragmentId = event.fragmentId)
 
     is AnalysisEvent.Voice -> copy(voiceMatch = event.match)
+
+    is AnalysisEvent.VoiceCollecting -> copy(voiceCollecting = event.status)
 
     AnalysisEvent.ReadyToAnswer -> copy(readyToAnswer = true)
 
