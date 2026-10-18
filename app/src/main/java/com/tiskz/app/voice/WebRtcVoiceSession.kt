@@ -49,7 +49,17 @@ class WebRtcVoiceSession(
     baseUrl: String,
     private var accessCode: String,
     private val assistant: Boolean = false,
+    private val evidenceConsent: Boolean = false,
 ) : AnalysisSession() {
+    data class Evidence(val busy: Boolean = false, val saved: Boolean = false, val message: String = "")
+    private val excerptBuffer = AudioExcerptBuffer()
+    private val _evidence = MutableStateFlow(Evidence())
+    val evidence = _evidence.asStateFlow()
+    private var savedExcerptId: String? = null
+    private var autoSaveAttempted = false
+    private var pendingExcerpt: Pair<String, ByteArray>? = null
+    @Volatile private var playingExcerpt = false
+    private var excerptPlayer: android.media.AudioTrack? = null
     enum class Connection { CONNECTING, STREAMING, ENDED }
     private val _connection = MutableStateFlow(Connection.CONNECTING)
     val connection = _connection.asStateFlow()
@@ -115,7 +125,7 @@ class WebRtcVoiceSession(
                     "Permite el acceso al micrófono para iniciar."
                 }
                 withTimeout(45000) {
-                    room = api.createRoom(accessCode, consent, assistant)
+                    room = api.createRoom(accessCode, consent, assistant, evidenceConsent)
                     accessCode = ""
                     openEvents(requireNotNull(room))
                     socketReady.await()
@@ -145,6 +155,10 @@ class WebRtcVoiceSession(
             onReady = { socketReady.complete(Unit) },
             onEvent = { event ->
                 dispatch(event)
+                if (evidenceConsent && state.value.alert == true && !autoSaveAttempted && excerptBuffer.snapshot() != null) {
+                    autoSaveAttempted = true
+                    saveExcerpt()
+                }
                 if (event is AnalysisEvent.Ended) scope.launch { close() }
             },
             onTerminated = ::fail,
@@ -158,6 +172,9 @@ class WebRtcVoiceSession(
             // Evita el valor de 8 kHz del emulador; conserva banda de voz para transcripción.
             .setInputSampleRate(48000)
             .setSamplesReadyCallback { samples ->
+                if (evidenceConsent && streaming.get() && !playingExcerpt && samples.audioFormat == AudioFormat.ENCODING_PCM_16BIT) {
+                    excerptBuffer.accept(samples.data, samples.sampleRate, samples.channelCount)
+                }
                 capturedSampleRate = samples.sampleRate
                 microphoneReady.complete(Unit)
                 if (streaming.get() && samples.audioFormat == AudioFormat.ENCODING_PCM_16BIT) {
@@ -258,6 +275,57 @@ class WebRtcVoiceSession(
         if (!closed.get()) socket?.send(JSONObject().put("type", "user.decision").put("action", decision.wire).toString())
     }
 
+    fun saveExcerpt() {
+        if (!evidenceConsent || closed.get() || _evidence.value.busy) return
+        val current = room ?: return
+        val candidate = pendingExcerpt ?: excerptBuffer.snapshot()?.let { java.util.UUID.randomUUID().toString() to it }
+        val audio = candidate?.second
+        if (audio == null) { _evidence.value = _evidence.value.copy(message = "Habla al menos un segundo antes de guardar."); return }
+        pendingExcerpt = candidate
+        _evidence.value = _evidence.value.copy(busy = true, message = "Guardando fragmento autorizado…")
+        scope.launch {
+            try {
+                savedExcerptId = api.saveExcerpt(current, audio, requireNotNull(candidate).first)
+                pendingExcerpt = null
+                audio.fill(0)
+                _evidence.value = Evidence(saved = true, message = "Fragmento guardado · pendiente de revisión.")
+            } catch (e: Exception) {
+                if (!closed.get()) _evidence.value = Evidence(saved = savedExcerptId != null, message = "No se pudo guardar el audio. Puedes volver a intentar.")
+            } finally { if (closed.get()) audio.fill(0) }
+        }
+    }
+
+    fun playExcerpt() {
+        val id = savedExcerptId ?: return
+        val current = room ?: return
+        if (closed.get() || _evidence.value.busy) return
+        _evidence.value = _evidence.value.copy(busy = true, message = "Recuperando el fragmento del servidor…")
+        scope.launch {
+            var bytes: ByteArray? = null
+            try {
+                bytes = api.loadExcerpt(current, id)
+                playingExcerpt = true
+                track?.setEnabled(false)
+                val player = android.media.AudioTrack.Builder()
+                    .setAudioAttributes(android.media.AudioAttributes.Builder().setUsage(android.media.AudioAttributes.USAGE_MEDIA).build())
+                    .setAudioFormat(android.media.AudioFormat.Builder().setSampleRate(16000).setEncoding(AudioFormat.ENCODING_PCM_16BIT).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
+                    .setTransferMode(android.media.AudioTrack.MODE_STATIC).setBufferSizeInBytes(bytes.size - 44).build()
+                excerptPlayer = player
+                player.write(bytes, 44, bytes.size - 44)
+                player.play()
+                _evidence.value = _evidence.value.copy(message = "Reproduciendo · micrófono pausado.")
+                delay(((bytes.size - 44) * 1000L / 32000) + 100)
+            } catch (e: Exception) {
+                if (!closed.get()) _evidence.value = _evidence.value.copy(message = "No se pudo reproducir el fragmento.")
+            } finally {
+                bytes?.fill(0)
+                runCatching { excerptPlayer?.stop(); excerptPlayer?.release() }
+                excerptPlayer = null; playingExcerpt = false
+                if (!closed.get()) { track?.setEnabled(true); _evidence.value = _evidence.value.copy(busy = false) }
+            }
+        }
+    }
+
     private fun fail(message: String) {
         if (closed.get()) return
         scope.launch {
@@ -268,6 +336,10 @@ class WebRtcVoiceSession(
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         streaming.set(false)
+        excerptBuffer.clear()
+        pendingExcerpt?.second?.fill(0); pendingExcerpt = null
+        runCatching { excerptPlayer?.stop(); excerptPlayer?.release() }
+        excerptPlayer = null
         accessCode = ""
         track?.setEnabled(false)
         remoteTrack?.setEnabled(false)

@@ -39,6 +39,7 @@ fun VoiceScreen(onBack: () -> Unit) {
     var assistant by remember { mutableStateOf(true) }
     var phone by remember { mutableStateOf(false) }
     var consent by remember { mutableStateOf(false) }
+    var evidenceConsent by remember { mutableStateOf(false) }
     var baseUrl by remember { mutableStateOf(container.settings.current.backendUrl) }
     var session by remember { mutableStateOf<AnalysisSession?>(null) }
     var pendingStart by remember { mutableStateOf(false) }
@@ -57,7 +58,7 @@ fun VoiceScreen(onBack: () -> Unit) {
         if (!consent || !lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) return
         try {
             session?.close()
-            val next = if (phone) container.openPhoneAlerts(baseUrl, code.trim()) else container.openVoiceSession(baseUrl, code.trim(), assistant)
+            val next = if (phone) container.openPhoneAlerts(baseUrl, code.trim()) else container.openVoiceSession(baseUrl, code.trim(), assistant, evidenceConsent)
             session = next
             formError = null
             (next as? WebRtcVoiceSession)?.start(consent)
@@ -87,7 +88,7 @@ fun VoiceScreen(onBack: () -> Unit) {
             }
             item {
                 Row {
-                    Switch(checked = phone, onCheckedChange = { phone = it; consent = false; session?.close(); session = null }, enabled = !active && !pendingStart)
+                    Switch(checked = phone, onCheckedChange = { phone = it; consent = false; evidenceConsent = false; session?.close(); session = null }, enabled = !active && !pendingStart)
                     Text("Recibir alertas de llamadas que atiende Vapi", modifier = Modifier.weight(1f))
                 }
             }
@@ -120,6 +121,22 @@ fun VoiceScreen(onBack: () -> Unit) {
                     }, enabled = !active && !pendingStart && consent && code.trim().length >= 12, modifier = Modifier.weight(1f)) { Text(if (phone) "Conectar alertas" else if (assistant) "Conversar" else "Iniciar micrófono") }
                     OutlinedButton(onClick = { session?.close() }, enabled = active, modifier = Modifier.weight(1f)) { Text(if (phone) "Detener alertas" else "Detener") }
                 }
+            }
+            if (!phone) item {
+                Row {
+                    Checkbox(checked = evidenceConsent, onCheckedChange = { evidenceConsent = it }, enabled = !active && !pendingStart)
+                    Text("Autorizo conservar y compartir con Red Vecinal Segura hasta 10 segundos del micrófono cuando haya una alerta o pulse Guardar. No autoriza identificar personas por su voz.", Modifier.weight(1f))
+                }
+                Text("Sin esta opción no se conserva audio. Los fragmentos guardados permanecen en el servidor hasta su eliminación; el búfer local se borra al terminar.", style = MaterialTheme.typography.bodySmall)
+            }
+            val voiceSession = session as? WebRtcVoiceSession
+            if (!phone && evidenceConsent && voiceSession != null) item {
+                val evidence by voiceSession.evidence.collectAsStateWithLifecycle()
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = voiceSession::saveExcerpt, enabled = active && !evidence.busy) { Text("Guardar últimos 10 s") }
+                    OutlinedButton(onClick = voiceSession::playExcerpt, enabled = active && evidence.saved && !evidence.busy) { Text("Escuchar guardado") }
+                }
+                Text(evidence.message)
             }
             item {
                 Text(when (connection) {

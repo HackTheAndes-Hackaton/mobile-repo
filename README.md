@@ -158,3 +158,10 @@ capturas incompletas antes de WebRTC; el resultado de esos intentos no se contó
 WebRTC Android: [SDK y versiones oficiales](https://github.com/webrtc-sdk/android).
 
 Para teléfonos ARM64 y el emulador usado en las pruebas: `app-arm64-v8a-debug.apk`. Para otras arquitecturas se generan APK específicos y `app-universal-debug.apk`. `installDebug` selecciona la arquitectura del dispositivo conectado.
+# Fragmentos de audio mediante MCP (0.3.0)
+
+En **Voz en vivo**, en modo WebRTC, se puede autorizar conservar y compartir con Red Vecinal Segura los últimos 10 segundos del micrófono. La autorización viene apagada. Al aparecer la primera alerta se intenta guardar un fragmento; también hay botones **Guardar últimos 10 s** y **Escuchar guardado**. La reproducción recupera el WAV del servidor y pausa el envío del micrófono mientras suena. El búfer local vive en memoria y se borra al cerrar la sesión. Un reintento de carga conserva el mismo identificador para evitar duplicados.
+
+Requiere el backend de agentes con `/v1/sessions/{id}/evidence` y el MCP del panel `/api/v1/mcp` desplegados. La clave `TISKZ_API_KEY` pertenece al backend y nunca se incluye en la APK. La reproducción desde esta pantalla utiliza el ticket de la sesión activa: no es un historial disponible después de cerrarla. Lo guardado permanece en el servidor hasta su eliminación, pendiente de revisión y sin reconocimiento de identidad.
+
+El modo **alertas de llamadas Vapi** sigue recibiendo transcripciones; no captura PCM de la conferencia Entel. Esta integración no guarda la voz remota de esa conferencia. El modo automático de conferencia y la confirmación de costos conservan sus valores por defecto apagados.

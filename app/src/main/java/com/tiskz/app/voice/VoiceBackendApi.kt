@@ -32,10 +32,11 @@ class VoiceBackendApi(baseUrl: String, client: OkHttpClient) {
     }.let { it.newBuilder().encodedPath(it.encodedPath.trimEnd('/') + "/").build() }
     private val calls = ConcurrentHashMap.newKeySet<Call>()
 
-    suspend fun createRoom(accessCode: String, consent: Boolean, assistant: Boolean = false): VoiceRoom {
+    suspend fun createRoom(accessCode: String, consent: Boolean, assistant: Boolean = false, evidenceConsent: Boolean = false): VoiceRoom {
         require(consent) { "Se requiere autorización para analizar el audio." }
         require(accessCode.length in 12..512) { "Introduce el código privado del equipo." }
         val body = JSONObject().put("consentimiento_analisis", true)
+        if (evidenceConsent) body.put("consentimiento_conservacion", true)
         if (assistant) body.put("mode", "assistant").put("consentimiento_voz_ia", true)
         val json = post("v1/sessions", accessCode, body)
         val id = json.getString("session_id")
@@ -51,6 +52,45 @@ class VoiceBackendApi(baseUrl: String, client: OkHttpClient) {
 
     suspend fun end(room: VoiceRoom) {
         post("v1/sessions/${room.id}/end", room.producerToken, JSONObject())
+    }
+
+    suspend fun saveExcerpt(room: VoiceRoom, audio: ByteArray, requestId: String): String =
+        post("v1/sessions/${room.id}/evidence", room.producerToken, JSONObject()
+            .put("request_id", requestId).put("audio_base64", java.util.Base64.getEncoder().encodeToString(audio)))
+            .getJSONObject("data").getString("id").also {
+                check(it.matches(Regex("clip_[a-f0-9]{48}"))) { "Identificador de audio inválido." }
+            }
+
+    suspend fun loadExcerpt(room: VoiceRoom, id: String): ByteArray = suspendCancellableCoroutine { continuation ->
+        require(id.matches(Regex("clip_[a-f0-9]{48}")))
+        val request = Request.Builder().url(base.newBuilder().addPathSegments("v1/sessions/${room.id}/evidence/$id").build())
+            .header("X-Voice-Token", room.producerToken).build()
+        val call = client.newCall(request)
+        calls.add(call)
+        continuation.invokeOnCancellation { call.cancel() }
+        call.enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                calls.remove(call)
+                if (continuation.isActive) continuation.resumeWithException(IOException("No se pudo recuperar el audio."))
+            }
+            override fun onResponse(call: Call, response: Response) {
+                calls.remove(call)
+                try {
+                    val bytes = response.use {
+                        check(it.isSuccessful && it.header("Content-Type")?.startsWith("audio/wav") == true) { "Fragmento no disponible." }
+                        val body = requireNotNull(it.body)
+                        val source = body.source()
+                        check(!source.request(480045)) { "Fragmento demasiado grande." }
+                        source.readByteArray().also { data ->
+                            check(data.size in 32044..480044 && data.copyOfRange(0, 4).toString(Charsets.US_ASCII) == "RIFF") { "Audio inválido." }
+                        }
+                    }
+                    if (continuation.isActive) continuation.resume(bytes)
+                } catch (e: Exception) {
+                    if (continuation.isActive) continuation.resumeWithException(IOException("No se pudo recuperar el fragmento autorizado."))
+                }
+            }
+        })
     }
 
     suspend fun phoneEventsUrl(accessCode: String): String {

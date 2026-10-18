@@ -28,8 +28,8 @@ class AppContainer(private val context: Context) {
         Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID).orEmpty()
     }
 
-    fun openVoiceSession(baseUrl: String, accessCode: String, assistant: Boolean = false) =
-        com.tiskz.app.voice.WebRtcVoiceSession(context.applicationContext, httpClient, baseUrl, accessCode, assistant)
+    fun openVoiceSession(baseUrl: String, accessCode: String, assistant: Boolean = false, evidenceConsent: Boolean = false) =
+        com.tiskz.app.voice.WebRtcVoiceSession(context.applicationContext, httpClient, baseUrl, accessCode, assistant, evidenceConsent)
 
     fun openPhoneAlerts(baseUrl: String, accessCode: String) =
         com.tiskz.app.voice.PhoneAlertSession(httpClient, baseUrl, accessCode)
