@@ -318,7 +318,7 @@ private fun PermissionPrompt(modifier: Modifier, onAllow: () -> Unit) {
         Spacer(Modifier.size(12.dp))
         Text("Permite el acceso a tus contactos", style = MaterialTheme.typography.titleMedium, color = TiskzColors.Ink)
         Text(
-            "Así puedes buscarlos y llamarlos desde Tiskz, y sus llamadas suenan normal, sin el asistente.",
+            "Así puedes buscarlos y llamarlos desde PhoneWard, y sus llamadas suenan normal, sin el asistente.",
             style = MaterialTheme.typography.bodyMedium,
             color = TiskzColors.Muted,
             modifier = Modifier.padding(top = 6.dp, bottom = 16.dp),

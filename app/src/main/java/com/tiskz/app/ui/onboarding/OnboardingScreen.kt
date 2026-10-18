@@ -68,7 +68,7 @@ fun OnboardingScreen(onFinished: () -> Unit) {
         Spacer(Modifier.weight(0.6f))
         TiskzLogo(size = 96.dp)
         Spacer(Modifier.height(20.dp))
-        Text("Tiskz", style = MaterialTheme.typography.displayMedium, color = TiskzColors.Blue700)
+        Text("PhoneWard", style = MaterialTheme.typography.displayMedium, color = TiskzColors.Blue700)
         Spacer(Modifier.height(8.dp))
         Text(
             text = "Tu teléfono, con protección contra estafas.",
@@ -98,10 +98,10 @@ fun OnboardingScreen(onFinished: () -> Unit) {
             modifier = Modifier.fillMaxWidth().height(60.dp),
             shape = RoundedCornerShape(20.dp),
         ) {
-            Text("Preparar Tiskz", style = MaterialTheme.typography.titleMedium)
+            Text("Preparar PhoneWard", style = MaterialTheme.typography.titleMedium)
         }
         Text(
-            text = "Android te pedirá elegir Tiskz como teléfono y conceder permisos. Esto todavía no activa las llamadas automáticas.",
+            text = "Android te pedirá elegir PhoneWard como teléfono y conceder permisos. Esto todavía no activa las llamadas automáticas.",
             style = MaterialTheme.typography.bodySmall,
             color = TiskzColors.Muted,
             textAlign = TextAlign.Center,

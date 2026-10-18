@@ -219,7 +219,7 @@ object CallNotifications {
                 CallStage.SAFE -> NotificationCompat.CallStyle.forScreeningCall(person, hangUp, join)
                 else -> NotificationCompat.CallStyle.forOngoingCall(person, hangUp)
             }
-            if (notice.verified) style.setVerificationText("Verificada por Tiskz")
+            if (notice.verified) style.setVerificationText("Verificada por PhoneWard")
             builder.setStyle(style)
             when (notice.stage) {
                 CallStage.DANGER -> builder.addAction(0, "Bloquear", block)
