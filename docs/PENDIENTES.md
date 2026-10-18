@@ -5,26 +5,20 @@ Estado al 18 de octubre de 2026, después de:
 - `web-repo` `f90c434`: reputación comunitaria del número y evidencia para la PNP.
 - `mobile-repo` `60d91a5`: alerta dentro de la llamada y reputación comunitaria del número.
 
-## 1. Repo de agentes (no implementado)
+## 1. Repo de agentes (estado actualizado)
 
 | Pendiente | Por qué importa |
 |---|---|
-| **El agente debe enviar `call.ready_to_answer`** cuando verifica quién llama | Sin esto, en una llamada real **nunca aparece "Ya puedes entrar"**. Es el hueco más grande del flujo principal. |
+| **`call.ready_to_answer` implementado** | Integrado en main: revisión actual en `observar`, sin alerta. No verifica identidad. Se observó el evento en una llamada real; falta comprobar todos los avisos visuales. |
 | **Señales peruanas en el prompt del analizador** (familiaridad forzada, saludo eufórico, OTP, Yape, BCP o SUNAT) | Hoy solo están como reglas en el panel y en la app; el porcentaje de riesgo en vivo no las usa. |
 | **`maxDuration` de Vapi** | Si es corto, Vapi cuelga al agente aunque la app ya no tenga límite. |
 | **Número de Vapi peruano** (hoy es +1 209…) | Cada llamada es larga distancia internacional y une llamadas por la operadora, lo que es frágil. |
 
-### Contrato sugerido para "espacio seguro"
+### Contrato vigente de revisión inicial
 
-El agente pide 4 datos: **nombre**, **entidad**, **motivo** y **si va a pedir algo** (dinero, códigos o datos).
-Si las respuestas son coherentes y no hay señales de riesgo, envía por el canal de alertas:
+El evento `call.ready_to_answer` se emite tras completar comprensión y detección de la misma revisión, con estado `observar` y sin alerta. No confirma identidad ni garantiza seguridad. Un nuevo turno invalida la revisión previa. Véase [CONTRATO_BACKEND.md](CONTRATO_BACKEND.md).
 
-```json
-{ "type": "call.ready_to_answer" }
-```
-
-La app también acepta `{ "type": "agent.status", "status": "safe" }`. Ambos están en `docs/CONTRATO_BACKEND.md`.
-Para el resumen del pop-up ("Tu agente analizó la llamada: …"), conviene enviar antes un `understanding.update` con `resumen`.
+Estado de captura, corte y comparación de voz: [CONTINUIDAD_EQUIPO.md](CONTINUIDAD_EQUIPO.md).
 
 ## 2. Configuración manual
 
@@ -41,14 +35,14 @@ Para el resumen del pop-up ("Tu agente analizó la llamada: …"), conviene envi
 
 ## 4. Pendientes menores
 
-- [ ] `PhoneAlertSessionTest` falla desde antes de estos cambios (NullPointerException). Hay que revisarlo.
+- [x] Las pruebas Android pasan: 65 pruebas JVM, compilación y lint en la versión 0.4.6.
 - [ ] `bun.lock` sin subir en `web-repo`. Decidir si va al repo.
 - [ ] `docs/PROBLEMA_PERU.md` (estado del arte con cifras de Perú) está en local y nunca se subió.
 - [ ] Sección "Validación con la PNP" en la documentación, con los aprendizajes de la entrevista.
 
-## Recomendación para la demo
+## Simulación opcional
 
-Lo crítico es el punto 1, el `ready_to_answer`. Mientras no esté, usar la **llamada simulada**, que muestra el flujo completo:
+La simulación permite revisar la interfaz; no valida audio real, guardado de voz ni conferencia de la operadora:
 
 ```bash
 adb shell am start -n com.tiskz.app/.MainActivity --es simulate safe
