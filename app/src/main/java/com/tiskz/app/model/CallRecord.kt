@@ -20,6 +20,12 @@ data class CallRecord(
     val transcript: List<TranscriptLine>,
     val blocked: Boolean,
     val simulated: Boolean,
+    val answeredAt: Long? = null,
+    val endedAt: Long? = null,
+    /** La atendió el asistente antes que el titular. */
+    val screened: Boolean = false,
+    /** De qué trató la llamada, según el análisis. */
+    val summary: String? = null,
 ) {
     val title: String get() = callerName ?: PhoneNumbers.display(number)
 
@@ -47,10 +53,14 @@ data class CallRecord(
         })
         put("blocked", blocked)
         put("simulated", simulated)
+        put("answeredAt", answeredAt ?: JSONObject.NULL)
+        put("endedAt", endedAt ?: JSONObject.NULL)
+        put("screened", screened)
+        put("summary", summary ?: JSONObject.NULL)
     }
 
     companion object {
-        fun from(call: ActiveCall, analysis: CallAnalysis?): CallRecord {
+        fun from(call: ActiveCall, analysis: CallAnalysis?, screened: Boolean = false): CallRecord {
             val end = call.endedAt ?: System.currentTimeMillis()
             val duration = call.answeredAt?.let { (end - it) / 1000 } ?: 0
             return CallRecord(
@@ -68,6 +78,10 @@ data class CallRecord(
                 transcript = analysis?.transcript.orEmpty(),
                 blocked = call.blocked,
                 simulated = call.simulated,
+                answeredAt = call.answeredAt,
+                endedAt = end,
+                screened = screened,
+                summary = analysis?.understanding?.summary?.takeIf { it.isNotBlank() },
             )
         }
 
@@ -96,6 +110,10 @@ data class CallRecord(
             },
             blocked = json.optBoolean("blocked"),
             simulated = json.optBoolean("simulated"),
+            answeredAt = if (json.isNull("answeredAt")) null else json.getLong("answeredAt"),
+            endedAt = if (json.isNull("endedAt")) null else json.getLong("endedAt"),
+            screened = json.optBoolean("screened"),
+            summary = json.optStringOrNull("summary"),
         )
     }
 }

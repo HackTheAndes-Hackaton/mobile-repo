@@ -118,6 +118,10 @@ fun SettingsScreen(onBack: () -> Unit) {
 
             HorizontalDivider(color = TiskzColors.Line)
 
+            PanelSettings()
+
+            HorizontalDivider(color = TiskzColors.Line)
+
             Column {
                 Text("Umbral para contestar: ${settings.answerThreshold}%", style = MaterialTheme.typography.titleMedium)
                 Text(
@@ -155,7 +159,7 @@ fun SettingsScreen(onBack: () -> Unit) {
 
 /** Campo con estado local: escribir directo sobre el StateFlow hace que se pierdan teclas. */
 @Composable
-private fun UrlField(label: String, initial: String, onChange: (String) -> Unit) {
+internal fun UrlField(label: String, initial: String, onChange: (String) -> Unit) {
     var text by rememberSaveable { mutableStateOf(initial) }
     OutlinedTextField(
         value = text,

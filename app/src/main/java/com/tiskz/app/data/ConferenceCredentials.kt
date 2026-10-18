@@ -13,9 +13,16 @@ import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
-/** Acceso configurado una vez por el equipo. Cifrado con una clave no exportable de Android. */
-class ConferenceCredentials(context: Context) {
-    private val prefs = context.getSharedPreferences("tiskz_conference_access", Context.MODE_PRIVATE)
+/**
+ * Acceso configurado una vez por el equipo. Cifrado con una clave no exportable de Android.
+ * Con otro [prefsName] y [alias] guarda otra credencial (por ejemplo, la API key del panel).
+ */
+class ConferenceCredentials(
+    context: Context,
+    prefsName: String = "tiskz_conference_access",
+    private val alias: String = ALIAS,
+) {
+    private val prefs = context.getSharedPreferences(prefsName, Context.MODE_PRIVATE)
     private val _configured = MutableStateFlow(read(prefs.getString("origin", "").orEmpty()) != null)
     val configured = _configured.asStateFlow()
 
@@ -50,9 +57,9 @@ class ConferenceCredentials(context: Context) {
 
     private fun key(): SecretKey {
         val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
-        (store.getKey(ALIAS, null) as? SecretKey)?.let { return it }
+        (store.getKey(alias, null) as? SecretKey)?.let { return it }
         return KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore").apply {
-            init(KeyGenParameterSpec.Builder(ALIAS, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
+            init(KeyGenParameterSpec.Builder(alias, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
                 .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
                 .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE).build())
         }.generateKey()

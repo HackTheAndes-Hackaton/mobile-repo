@@ -27,6 +27,11 @@ data class TiskzSettings(
     val conferenceAccount: String = "",
     val conferenceDestination: String = CarrierDialPlan.DEFAULT_AGENT,
     val conferenceConfirmedRoute: String = "",
+    /** Guardar la conversación de cada llamada en el panel web. */
+    val panelSync: Boolean = true,
+    val panelUrl: String = BuildConfig.PANEL_URL,
+    /** Organización del panel con la que se comparten las llamadas (X-Tiskz-Org). */
+    val panelOrg: String = BuildConfig.PANEL_ORG,
 )
 
 class SettingsRepository(context: Context) {
@@ -61,6 +66,9 @@ class SettingsRepository(context: Context) {
             .putString("conference_account", updated.conferenceAccount)
             .putString("conference_destination", updated.conferenceDestination)
             .putString("conference_confirmed_route", updated.conferenceConfirmedRoute)
+            .putBoolean(KEY_PANEL_SYNC, updated.panelSync)
+            .putString(KEY_PANEL_URL, updated.panelUrl)
+            .putString(KEY_PANEL_ORG, updated.panelOrg)
             .apply()
     }
 
@@ -78,6 +86,9 @@ class SettingsRepository(context: Context) {
         conferenceAccount = prefs.getString("conference_account", "").orEmpty(),
         conferenceDestination = prefs.getString("conference_destination", null) ?: CarrierDialPlan.DEFAULT_AGENT,
         conferenceConfirmedRoute = prefs.getString("conference_confirmed_route", "").orEmpty(),
+        panelSync = prefs.getBoolean(KEY_PANEL_SYNC, true),
+        panelUrl = prefs.getString(KEY_PANEL_URL, null) ?: BuildConfig.PANEL_URL,
+        panelOrg = prefs.getString(KEY_PANEL_ORG, null) ?: BuildConfig.PANEL_ORG,
     )
 
     private companion object {
@@ -87,5 +98,8 @@ class SettingsRepository(context: Context) {
         const val KEY_BACKEND = "backend_url"
         const val KEY_WS = "ws_url"
         const val KEY_THRESHOLD = "answer_threshold"
+        const val KEY_PANEL_SYNC = "panel_sync"
+        const val KEY_PANEL_URL = "panel_url"
+        const val KEY_PANEL_ORG = "panel_org"
     }
 }
