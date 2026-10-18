@@ -170,3 +170,8 @@ El modo **alertas de llamadas Vapi** sigue recibiendo transcripciones; no captur
 La versión 0.4.0 captura automáticamente al recibir una orden `audio.capture_requested` del backend, en lugar de reaccionar por su cuenta a la alerta visual. Comprueba sesión, identificador, ventana y vencimiento; una orden repetida no provoca otra grabación. El resultado confirmado por el servidor se muestra en pantalla. Si la subida falla, el botón Guardar reintenta los mismos bytes con el mismo ID, evitando duplicados.
 
 El camino de almacenamiento preferido del servidor es la API HTTP del panel; MCP continúa disponible para las herramientas de agentes. La APK solo llama al backend con el ticket productor de su sesión. No se incrusta ninguna clave global. La autorización de conservación y el modo de conferencia automática siguen apagados por defecto.
+
+
+### Audio de Android (0.4.1)
+
+La sesión de micrófono configura el modo de comunicación de Android y solicita procesamiento de eco/ruido disponible, preservando auriculares y restaurando la configuración al terminar. El efecto sobre la calidad necesita validación en un dispositivo físico. Conversar con Tiskz ya solicita GPT-Live 1; comprensión y alertas procesan sus subtítulos. La prueba sintética no sustituye la prueba en el ambiente real del usuario.
