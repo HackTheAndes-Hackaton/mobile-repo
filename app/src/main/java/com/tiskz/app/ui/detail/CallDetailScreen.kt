@@ -116,6 +116,15 @@ fun CallDetailScreen(recordId: String, onBack: () -> Unit) {
                 )
             }
 
+            if (record.modalities.isNotEmpty()) {
+                Section("Tipo y evidencia del contenido") {
+                    com.tiskz.app.ui.components.FraudModalityDetails(record.modalities)
+                }
+            } else if (record.endedByVoiceMatch) {
+                Text("Tipo de esta llamada: sin evidencia suficiente. La coincidencia de voz se evalúa por separado.",
+                    style = MaterialTheme.typography.bodySmall, color = TiskzColors.Muted)
+            }
+
             if (record.transcript.isNotEmpty()) {
                 Section("Conversación") {
                     StaticTranscript(record.transcript, record.callerName ?: "Quien llama", Modifier.fillMaxWidth())

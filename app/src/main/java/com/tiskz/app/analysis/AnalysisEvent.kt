@@ -110,7 +110,8 @@ fun CallAnalysis.reduce(event: AnalysisEvent): CallAnalysis = when (event) {
         alertRevision = event.revision ?: alertRevision,
         scoreKind = event.scoreKind ?: scoreKind,
         reasons = event.reasons,
-        scamType = event.scamType ?: scamType,
+        // Un turno nuevo puede retirar una hipótesis anterior; no conservar un tipo obsoleto.
+        scamType = if (event.revision != null) event.scamType else event.scamType ?: scamType,
         impersonating = event.impersonating ?: impersonating,
     )
 

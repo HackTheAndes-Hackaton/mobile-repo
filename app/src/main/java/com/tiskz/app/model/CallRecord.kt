@@ -28,6 +28,8 @@ data class CallRecord(
     val summary: String? = null,
     val endReason: CallEndReason? = null,
     val voiceSimilarity: Float? = null,
+    val modalities: List<FraudModality> = emptyList(),
+    val priorVoiceReportType: String? = null,
 ) {
     val title: String get() = callerName ?: PhoneNumbers.display(number)
     val endedByVoiceMatch: Boolean get() = endReason == CallEndReason.VOICE_MATCH
@@ -37,6 +39,7 @@ data class CallRecord(
         append(". ")
         append(if (blocked) "El número se añadió a tu lista local de bloqueo. " else "No se añadió un bloqueo de número. ")
         append("La coincidencia no verifica una identidad. El riesgo del contenido se evalúa por separado.")
+        priorVoiceReportType?.let { append(" Tipo indicado en reportes previos: $it; no clasifica esta llamada.") }
     } else null
 
     fun toJson(): JSONObject = JSONObject().apply {
@@ -69,6 +72,8 @@ data class CallRecord(
         put("summary", summary ?: JSONObject.NULL)
         put("endReason", endReason?.wireValue ?: JSONObject.NULL)
         put("voiceSimilarity", voiceSimilarity ?: JSONObject.NULL)
+        put("modalidades", JSONArray(modalities.map { it.toJson() }))
+        put("priorVoiceReportType", priorVoiceReportType ?: JSONObject.NULL)
     }
 
     companion object {
@@ -96,6 +101,8 @@ data class CallRecord(
                 summary = analysis?.understanding?.summary?.takeIf { it.isNotBlank() },
                 endReason = call.endReason,
                 voiceSimilarity = analysis?.voiceMatch?.similarity?.takeIf { it.isFinite() && it in 0f..1f },
+                modalities = analysis?.currentAssessment?.modalities.orEmpty(),
+                priorVoiceReportType = analysis?.voiceMatch?.reportedType,
             )
         }
 
@@ -130,6 +137,8 @@ data class CallRecord(
             summary = json.optStringOrNull("summary"),
             endReason = CallEndReason.fromWire(json.optStringOrNull("endReason")),
             voiceSimilarity = json.optDouble("voiceSimilarity", Double.NaN).toFloat().takeIf { it.isFinite() && it in 0f..1f },
+            modalities = FraudModality.parse(json.optJSONArray("modalidades")),
+            priorVoiceReportType = json.optStringOrNull("priorVoiceReportType")?.takeIf { it.length <= 120 },
         )
     }
 }

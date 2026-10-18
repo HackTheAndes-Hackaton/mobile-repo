@@ -404,6 +404,10 @@ private fun CallStatusPanel(
                     if (!expanded) Text("Ver", style = MaterialTheme.typography.labelMedium, color = TiskzColors.Muted)
                 }
             }
+            com.tiskz.app.ui.components.FraudModalityDetails(assessment?.modalities.orEmpty(), expanded)
+            if (assessment?.modalities.isNullOrEmpty() && analysis.alert == true) {
+                Text("Tipo todavía sin determinar: falta evidencia contextual.", style = MaterialTheme.typography.bodySmall, color = TiskzColors.Muted)
+            }
             if (expanded) {
                 Column(Modifier.padding(top = 6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     guard?.let {
@@ -416,6 +420,9 @@ private fun CallStatusPanel(
                     voice?.let {
                         Text("Similitud de voz ${(it.similarity * 100).roundToInt()} %. Es una pista: no identifica a una persona.",
                             style = MaterialTheme.typography.bodySmall, color = TiskzColors.Ink)
+                        Text(it.reportedType?.let { type -> "Tipo en reportes previos: $type. No clasifica esta llamada." }
+                            ?: "Los reportes previos no tienen un tipo de estafa documentado.",
+                            style = MaterialTheme.typography.bodySmall, color = TiskzColors.Muted)
                     }
                     when (analysis.voiceCollecting) {
                         "started" -> "Tu asistente sigue la conversación para guardar la voz; luego corta la llamada."

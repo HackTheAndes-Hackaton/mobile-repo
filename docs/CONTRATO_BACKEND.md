@@ -314,3 +314,12 @@ El aviso de coincidencia tiene prioridad visual sobre «Ya puedes entrar», incl
 Para actualizar desde la 0.4.6 sin borrar datos, compilar la 0.4.7 con la misma clave de firma que la APK instalada. Una clave debug de otra laptop no permite actualizarla: Android devuelve `INSTALL_FAILED_UPDATE_INCOMPATIBLE`. No desinstalar para resolverlo si se deben conservar los datos.
 
 La APK 0.4.8 conserva además el motivo de la orden autenticada antes de desconectar Telecom. Si fue `voice_match`, muestra «Cortada por coincidencia de voz» al terminar, en Recientes, en el detalle y en un aviso posterior al corte. El detalle separa la similitud vocal del riesgo del contenido y especifica si se añadió el número a la lista local. Recibir solo `voice.match` no permite afirmar que hubo corte o bloqueo. Los registros anteriores, sin motivo guardado, se leen sin atribuirles una causa retroactivamente.
+
+
+### Tipos preventivos y fuentes (APK 0.4.9)
+
+`assessment.update.assessment.modalidades[]` identifica conductas o hipótesis con `categoria`, `interpretacion`, `evidencias` (citas ancladas a `evidencia_textual`) y `fuentes` (IDs editoriales). La APK admite el catálogo de categorías del servidor, evita citas ajenas al evento y enlaza únicamente referencias fijas: `lazo_rivas_2022`, `sedano_2024`, `bde_vishing_2020`. Un estudio de caso y una revisión descriptiva orientan las categorías; la guía oficial las complementa. Ninguna fuente certifica la clasificación de una llamada.
+
+La pantalla de llamada y su detalle muestran el tipo provisional, sus citas y las fuentes. `risk.update.scam_type` contiene la primera hipótesis disponible de esa revisión o null; un evento nuevo con null retira una clasificación anterior. Una alerta no espera a que llegue el tipo, y sin comprensión suficiente se muestra «Tipo todavía sin determinar». La clasificación no cambia el porcentaje, los permisos ni la política de corte.
+
+`voice.match.scam_type` es un antecedente de reportes previos. Se muestra como tal, separado del análisis del contenido actual; no identifica al hablante ni atribuye esa modalidad a la llamada nueva. Si el campo falta, no se inventa. El historial conserva modalidades y referencias de la revisión vigente, sin rellenar retroactivamente registros anteriores.

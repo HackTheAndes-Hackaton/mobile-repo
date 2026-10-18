@@ -99,6 +99,7 @@ object EventParser {
                 similarity = json.optDouble("similarity", 0.0).toFloat(),
                 label = if (json.optBoolean("strong")) "Coincidencia fuerte con una voz reportada" else "Voz similar a un reporte previo",
                 reports = json.optInt("cases"),
+                reportedType = (json.opt("scam_type") as? String)?.trim()?.takeIf { it.isNotBlank() && it.length <= 120 },
             )
         )
 
@@ -130,7 +131,8 @@ object EventParser {
             val quote = (item.opt("cita") as? String)?.takeIf { it.isNotBlank() && it.length <= 600 } ?: return null
             Evidence(quote, item.optString("tipo"))
         }
-        return AnalysisEvent.Assessed(CallAssessment(state, guidance, evidence), revision)
+        val modalities = com.tiskz.app.model.FraudModality.parse(a.optJSONArray("modalidades"), evidence.map { it.quote }.toSet())
+        return AnalysisEvent.Assessed(CallAssessment(state, guidance, evidence, modalities), revision)
     }
 
     private fun strings(json: JSONObject, key: String): List<String> = json.optJSONArray(key)?.let { a ->

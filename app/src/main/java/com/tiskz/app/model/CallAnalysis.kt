@@ -30,7 +30,7 @@ enum class RiskLevel(val label: String) {
 }
 
 /** Coincidencia de la voz de quien llama con voces ya reportadas como estafa. */
-data class VoiceMatch(val similarity: Float, val label: String, val reports: Int)
+data class VoiceMatch(val similarity: Float, val label: String, val reports: Int, val reportedType: String? = null)
 
 data class Evidence(val quote: String, val observation: String)
 data class Understanding(
@@ -54,6 +54,7 @@ data class CallAssessment(
     val state: AssessmentState,
     val guidance: String,
     val evidence: List<Evidence>,
+    val modalities: List<FraudModality> = emptyList(),
 )
 
 data class ComparisonLine(val id: String, val text: String, val final: Boolean, val sequence: Int)
