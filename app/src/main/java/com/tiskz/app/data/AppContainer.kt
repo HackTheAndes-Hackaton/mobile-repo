@@ -26,6 +26,7 @@ class AppContainer(private val context: Context) {
     /** API key del panel web: se ingresa una vez en Ajustes y queda cifrada, nunca en el APK. */
     val panelCredentials = ConferenceCredentials(context, "tiskz_panel_access", "tiskz-panel-access-v1")
     val archive by lazy { CallArchive(context, settings, panelCredentials, httpClient) }
+    val reputation by lazy { CommunityReputation(settings, panelCredentials, httpClient) }
 
     @get:SuppressLint("HardwareIds")
     private val deviceId: String by lazy {
