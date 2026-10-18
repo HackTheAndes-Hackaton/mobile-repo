@@ -94,10 +94,11 @@ class VoiceBackendApi(baseUrl: String, client: OkHttpClient) {
         })
     }
 
-    suspend fun phoneEventsUrl(accessCode: String, evidenceConsent: Boolean = false, voiceprintConsent: Boolean = false, callerNumber: String? = null): String {
+    suspend fun phoneEventsUrl(accessCode: String, evidenceConsent: Boolean = false, voiceprintConsent: Boolean = false, callerNumber: String? = null, supportsVoiceBlock: Boolean = false): String {
         val body = JSONObject().put("consentimiento_analisis", true)
             .put("consentimiento_corte_automatico", true).put("consentimiento_conservacion", evidenceConsent)
             .put("consentimiento_huella_voz", voiceprintConsent)
+            .put("voice_block_protocol", if (supportsVoiceBlock) 1 else 0)
         // Solo dígitos: el servidor lo asocia a la voz guardada si la estafa se confirma.
         callerNumber?.filter { it.isDigit() || it == '+' }?.takeIf { it.count(Char::isDigit) in 6..15 }?.let { body.put("numero_llamante", it) }
         // Maritime puede estar despertando la VM (503) o la red puede cortarse un momento:

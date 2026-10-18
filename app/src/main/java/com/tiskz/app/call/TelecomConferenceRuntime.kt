@@ -19,6 +19,7 @@ import com.tiskz.app.model.CallPhase
 import com.tiskz.app.util.DialerRole
 import com.tiskz.app.voice.PhoneAlertSession
 import com.tiskz.app.voice.WebRtcVoiceSession
+import com.tiskz.app.voice.voiceBlockTarget
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -146,13 +147,25 @@ class TelecomConferenceRuntime(
         try {
             val code = container.conferenceCredentials.read(container.settings.current.backendUrl) ?: error("access unavailable")
             alerts = container.openPhoneAlerts(container.settings.current.backendUrl, code,
-                callerNumber = incoming.details.handle?.schemeSpecificPart).also(sessionOpened)
+                callerNumber = incoming.details.handle?.schemeSpecificPart, supportsVoiceBlock = true).also(sessionOpened)
             scope.launch {
                 alerts!!.hangupRequests.collect { request ->
                     if (request != null && !disposed && controller.state.running) {
+                        val number = if (request.blockNumber) voiceBlockTarget(
+                            incoming.details.handle?.schemeSpecificPart,
+                            incoming.details.handlePresentation == TelecomManager.PRESENTATION_ALLOWED,
+                            container.settings.current.conferenceDestination,
+                        ) else null
+                        number?.let(container.blocklist::block)
                         // Se cierra la conferencia y ambas patas, no solo la conexión con marin.
                         controller.hangUp()
-                        stateChanged(ConferenceState(ConferencePhase.ENDED, if (request.reason == "agent_ended") "El agente terminó: cierre de conferencia solicitado a Android." else "Corte por riesgo solicitado a Android."))
+                        val message = when (request.reason) {
+                            "agent_ended" -> "El agente terminó: cierre de conferencia solicitado a Android."
+                            "voice_match" -> if (number != null) "Número bloqueado localmente y corte preventivo por similitud de voz solicitado a Android."
+                                else "Corte preventivo por similitud de voz; el número entrante no se pudo bloquear."
+                            else -> "Corte por riesgo solicitado a Android."
+                        }
+                        stateChanged(ConferenceState(ConferencePhase.ENDED, message))
                         // Telecom confirma la desconexión mediante sus callbacks.
                     }
                 }

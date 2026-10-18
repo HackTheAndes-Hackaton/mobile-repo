@@ -42,7 +42,8 @@ class AppContainer(private val context: Context) {
         accessCode: String,
         evidenceConsent: Boolean = settings.current.phoneEvidenceConsent,
         callerNumber: String? = null,
-    ) = com.tiskz.app.voice.PhoneAlertSession(httpClient, baseUrl, accessCode, evidenceConsent, evidenceConsent, callerNumber)
+        supportsVoiceBlock: Boolean = false,
+    ) = com.tiskz.app.voice.PhoneAlertSession(httpClient, baseUrl, accessCode, evidenceConsent, evidenceConsent, callerNumber, supportsVoiceBlock)
 
     /**
      * Abre el análisis de una llamada entrante.

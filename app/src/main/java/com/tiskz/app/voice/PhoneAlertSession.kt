@@ -31,6 +31,7 @@ class PhoneAlertSession(
     evidenceConsent: Boolean = false,
     voiceprintConsent: Boolean = false,
     callerNumber: String? = null,
+    supportsVoiceBlock: Boolean = false,
 ) : AnalysisSession() {
     private val closed = AtomicBoolean(false)
     private val _connection = MutableStateFlow(WebRtcVoiceSession.Connection.CONNECTING)
@@ -49,7 +50,7 @@ class PhoneAlertSession(
         require(base.isHttps && base.username.isEmpty() && base.password.isEmpty() && base.query == null && base.fragment == null) { "El canal requiere HTTPS sin credenciales ni parámetros." }
         scope.launch {
           try {
-            val request = Request.Builder().url(api.phoneEventsUrl(accessCode, evidenceConsent, voiceprintConsent, callerNumber)).build()
+            val request = Request.Builder().url(api.phoneEventsUrl(accessCode, evidenceConsent, voiceprintConsent, callerNumber, supportsVoiceBlock)).build()
             if (closed.get()) return@launch
             val connected = client.newBuilder().followRedirects(false).followSslRedirects(false).build().newWebSocket(request, object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {

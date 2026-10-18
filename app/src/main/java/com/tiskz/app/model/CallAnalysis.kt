@@ -109,8 +109,11 @@ data class CallAnalysis(
     val isScam: Boolean
         get() = !markedSafeByUser && (status == AgentStatus.SCAM || riskPercent >= SCAM_THRESHOLD)
 
+    val hasVoiceWarning: Boolean
+        get() = voiceMatch?.let { it.similarity.isFinite() && it.similarity >= 0.7f && it.reports > 0 } == true
+
     fun isSafeToAnswer(threshold: Int): Boolean =
-        markedSafeByUser || ((readyToAnswer || status == AgentStatus.SAFE) && riskPercent < threshold)
+        !hasVoiceWarning && (markedSafeByUser || ((readyToAnswer || status == AgentStatus.SAFE) && riskPercent < threshold))
 
     companion object {
         const val SCAM_THRESHOLD = 70

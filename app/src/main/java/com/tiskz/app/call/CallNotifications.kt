@@ -115,6 +115,13 @@ object CallNotifications {
         if (call.direction == CallDirection.OUTGOING) {
             return notice(CallStage.ONGOING, if (call.phase == CallPhase.ACTIVE) "Llamada en curso" else "Llamando…")
         }
+        if (analysis?.hasVoiceWarning == true && call.phase != CallPhase.RINGING) {
+            return CallNotice(call.id, CallStage.DANGER, name,
+                "Voz similar a un reporte previo (${(analysis.voiceMatch!!.similarity * 100).toInt()} %).",
+                answeredAt = call.answeredAt, screened = call.screening, label = "● Coincidencia de voz", tone = NoticeTone.DANGER,
+                risk = analysis.riskPercent,
+                detail = "Coincidencia provisional; no verifica una identidad. Puede generar un bloqueo preventivo autorizado.")
+        }
         if (!call.screening) {
             return when (call.phase) {
                 CallPhase.RINGING -> notice(CallStage.INCOMING, if (call.callerName != null) "Llamada entrante" else "Llamada entrante · analizando quién llama")

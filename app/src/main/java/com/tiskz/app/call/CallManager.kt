@@ -165,7 +165,10 @@ object CallManager {
             try {
                 automatic = TelecomConferenceRuntime(appContext, container, call,
                     sessionOpened = { session.value = it },
-                    stateChanged = { _conference.value = it },
+                    stateChanged = { state ->
+                        _conference.value = state
+                        _activeCall.update { active -> active?.copy(blocked = active.blocked || container.blocklist.isBlocked(active.number)) }
+                    },
                     phaseChanged = { if (it == CallPhase.DISCONNECTED) finish() else updatePhase(it) },
                     ended = ::finish,
                     showCallScreen = ::showCallScreen,

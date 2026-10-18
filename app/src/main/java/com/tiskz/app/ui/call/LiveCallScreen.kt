@@ -131,6 +131,7 @@ fun LiveCallScreen(
     val screened = call.direction == CallDirection.INCOMING && analysis != null
     val mood = when {
         analysis == null -> Mood.NEUTRAL
+        analysis.hasVoiceWarning -> Mood.DANGER
         analysis.alert == true -> Mood.DANGER
         analysis.currentAssessment?.state == AssessmentState.ALERT -> Mood.DANGER
         analysis.currentAssessment != null -> Mood.NEUTRAL
@@ -158,6 +159,7 @@ fun LiveCallScreen(
                 onDismissGuard = actions.onDismissGuard,
                 headline = if (automatic) when {
                     conference.phase == ConferencePhase.FAILED -> "Sin monitoreo del agente"
+                    analysis.hasVoiceWarning -> "Coincidencia de voz detectada"
                     analysis.alert == true -> "Alerta detectada"
                     analysis.currentAssessment != null -> "Evaluación provisional"
                     analysis.assessment != null -> "Actualizando análisis"
@@ -361,8 +363,8 @@ private fun CallStatusPanel(
     val voice = analysis.voiceMatch
     val (noticeColor, noticeText) = when {
         guard != null -> TiskzColors.Red to guard.kind.title
-        analysis.voiceCollecting == "started" -> TiskzColors.Red to "Estafa confirmada · guardando su voz"
-        voice != null -> TiskzColors.Red to (voice.label + if (voice.reports > 0) " · ${voice.reports} ${if (voice.reports == 1) "caso" else "casos"}" else "")
+        analysis.voiceCollecting == "started" -> TiskzColors.Red to "Alerta de riesgo · guardando muestra de voz"
+        analysis.hasVoiceWarning -> TiskzColors.Red to ("Similitud de voz ${(voice!!.similarity * 100).roundToInt()} %" + if (voice.reports > 0) " · ${voice.reports} ${if (voice.reports == 1) "caso" else "casos"}" else "")
         assessment?.state == AssessmentState.ALERT || (assessment == null && analysis.alert == true) ->
             TiskzColors.Red to (assessment?.state?.label ?: "Alerta preventiva")
         assessment?.state == AssessmentState.VERIFY -> TiskzColors.AmberDark to assessment.state.label
@@ -417,7 +419,8 @@ private fun CallStatusPanel(
                     }
                     when (analysis.voiceCollecting) {
                         "started" -> "Tu asistente sigue la conversación para guardar la voz; luego corta la llamada."
-                        "saved" -> "Voz guardada: se reconocerá si vuelve a llamar desde otro número."
+                        "matched_existing" -> "La voz coincide con una muestra existente; se solicitó un corte preventivo."
+                        "saved" -> "Muestra de voz guardada para comparaciones posteriores."
                         "failed", "insufficient_audio" -> "No se pudo guardar la voz de esta llamada."
                         else -> null
                     }?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = TiskzColors.Muted) }

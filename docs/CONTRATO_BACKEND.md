@@ -286,3 +286,29 @@ Ejemplo completo de esta secuencia (los mismos eventos que usa el modo demo):
 La orden autenticada `call.hangup_requested` admite `reason:agent_ended` además de `risk_detected`. El motivo de cierre del agente no modifica el riesgo y admite revisión 0 (antes del primer turno). Se vincula a la misma sesión/llamada, requiere request_id válido y solo se consume una vez. La conferencia se cierra con ambas patas. Un `call.ended` aislado no ordena desconectar.
 
 El monitor envía `consentimiento_conservacion:true` únicamente con la opción de evidencia activada. El servidor conserva hasta 10 s del canal customer ante riesgo principal, no por la comparación experimental. `audio.capture_result` indica `saving`, `saved` con `fragment_id`, o `failed`. El guardado puede completarse después de colgar y quedar confirmado en el panel, aunque el monitor del celular ya se haya cerrado. No hay reconocimiento de identidad por voz: el WAV queda pendiente de revisión.
+
+
+### Bloqueo preventivo por coincidencia vocal (APK 0.4.7)
+
+La conferencia automática anuncia `voice_block_protocol: 1` en `POST /v1/phone/monitor`, además de los permisos vigentes de análisis, huella de voz y corte automático. Una versión anterior o un monitor manual no anuncia esta capacidad: recibe el aviso vocal, pero no la nueva orden de corte por coincidencia vocal.
+
+Con una similitud fuerte (≥ 0,80 y al menos un caso), el servidor publica primero `voice.match` y después:
+
+```json
+{
+  "type": "call.hangup_requested",
+  "session_id": "11111111-2222-4333-8444-555555555555",
+  "call_id": "11111111-2222-4333-8444-555555555555",
+  "request_id": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+  "revision": 0,
+  "reason": "voice_match",
+  "block_number": true,
+  "identity_verified": false
+}
+```
+
+La revisión puede ser 0 si todavía no hay texto. Se conservan la validación de sesión/llamada, UUID y consumo único. La APK añade a su lista local únicamente el número visible de la llamada entrante original obtenido de Telecom; ignora teléfonos en el evento y nunca bloquea el destino del agente. Si el número está oculto o no es válido, solicita el corte sin añadir un bloqueo. Cierra ambas patas de la conferencia.
+
+El aviso de coincidencia tiene prioridad visual sobre «Ya puedes entrar», incluso después de que el usuario se una. La similitud vocal aparece separada del porcentaje de riesgo del contenido; no modifica ese porcentaje ni confirma una identidad o un delito. Una coincidencia fuerte reutiliza la referencia existente, sin registrar otra denuncia ni otra huella como confirmación. `voice.collecting` con `status: matched_existing` cancela una recopilación en curso.
+
+Para actualizar desde la 0.4.6 sin borrar datos, compilar la 0.4.7 con la misma clave de firma que la APK instalada. Una clave debug de otra laptop no permite actualizarla: Android devuelve `INSTALL_FAILED_UPDATE_INCOMPATIBLE`. No desinstalar para resolverlo si se deben conservar los datos.

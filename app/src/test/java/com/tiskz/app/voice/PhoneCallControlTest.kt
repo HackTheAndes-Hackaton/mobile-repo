@@ -63,6 +63,22 @@ class PhoneCallControlTest {
         assertNotNull(control.accept(order(0).put("reason", "agent_ended")))
     }
 
+    @Test fun voiceMatchMayCloseBeforeTextAndRequestsOnlyAnExplicitLocalBlock() {
+        val control = PhoneCallControl()
+        control.accept(JSONObject().put("type", "phone.call").put("call_id", call))
+        val result = control.accept(order(0).put("reason", "voice_match").put("block_number", true))
+        assertEquals("voice_match", result?.reason)
+        assertEquals(true, result?.blockNumber)
+        assertNull(control.accept(order(0).put("reason", "voice_match").put("block_number", true)))
+    }
+
+    @Test fun aRiskCommandCannotInventANumberBlockAndTheFlagMustBeBoolean() {
+        val control = PhoneCallControl(); start(control)
+        assertEquals(false, control.accept(order().put("block_number", true))?.blockNumber)
+        val other = PhoneCallControl(); start(other)
+        assertEquals(false, other.accept(order().put("reason", "voice_match").put("block_number", "true"))?.blockNumber)
+    }
+
     @Test fun evidenceIsSavedOnlyAfterValidServerConfirmationAndDoesNotChangeRisk() {
         val saving = EventParser.parse("""{"type":"audio.capture_result","status":"saving"}""")!!
         val saved = EventParser.parse("""{"type":"audio.capture_result","status":"saved","fragment_id":"clip_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}""")!!

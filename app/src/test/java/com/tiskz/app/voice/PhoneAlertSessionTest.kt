@@ -41,12 +41,14 @@ class PhoneAlertSessionTest {
         }))
         server.start()
         val client = OkHttpClient.Builder().sslSocketFactory(clientTls.sslSocketFactory(), clientTls.trustManager).build()
-        val session = PhoneAlertSession(client, server.url("/a/agent").toString(), "private-test-code")
+        val session = PhoneAlertSession(client, server.url("/a/agent").toString(), "private-test-code", supportsVoiceBlock = true)
         try {
             val request = server.takeRequest(3, TimeUnit.SECONDS)!!
             assertEquals("/a/agent/v1/phone/monitor", request.path)
             assertEquals("private-test-code", request.getHeader("X-Voice-Token"))
-            assertTrue(JSONObject(request.body.readUtf8()).getBoolean("consentimiento_corte_automatico"))
+            val authorization = JSONObject(request.body.readUtf8())
+            assertTrue(authorization.getBoolean("consentimiento_corte_automatico"))
+            assertEquals(1, authorization.getInt("voice_block_protocol"))
             val upgrade = server.takeRequest(3, TimeUnit.SECONDS)!!
             assertEquals("/a/agent/ws/calls?channel=phone&ticket=observer-ticket-test-only", upgrade.path)
             assertNull(upgrade.getHeader("X-Voice-Token"))
