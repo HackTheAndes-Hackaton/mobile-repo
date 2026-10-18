@@ -6,7 +6,11 @@ import android.app.PendingIntent
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.net.Uri
+import android.os.Build
+import android.view.View
+import android.widget.RemoteViews
 import android.telecom.TelecomManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -42,7 +46,23 @@ data class CallNotice(
     val text: String,
     val verified: Boolean = false,
     val answeredAt: Long? = null,
+    /** La atiende marin: aviso normal de Tiskz (se puede ignorar), sin botones de contestar ni colgar. */
+    val screened: Boolean = false,
+    /** Etiqueta de estado en color: "Llamada segura", "Analizando"… */
+    val label: String = "",
+    val tone: NoticeTone = NoticeTone.INFO,
+    /** Riesgo para la barra; null mientras aún no hay conversación que analizar. */
+    val risk: Int? = null,
+    /** Segunda línea en el aviso expandido: qué puede hacer el titular. */
+    val detail: String? = null,
 )
+
+enum class NoticeTone(val color: Int) {
+    INFO(0xFF2563EB.toInt()),
+    SAFE(0xFF059669.toInt()),
+    WARN(0xFFD97706.toInt()),
+    DANGER(0xFFE11D48.toInt()),
+}
 
 /**
  * Avisos de llamada de Tiskz. La pantalla de llamada no tapa el teléfono al sonar:
@@ -86,43 +106,43 @@ object CallNotifications {
         if (call == null || call.phase == CallPhase.DISCONNECTED) return null
         val name = call.title.ifBlank { "Número privado" }
         fun notice(stage: CallStage, text: String, verified: Boolean = false) =
-            CallNotice(call.id, stage, name, text, verified, call.answeredAt)
+            CallNotice(call.id, stage, name, text, verified, call.answeredAt, screened = call.screening)
 
         if (call.direction == CallDirection.OUTGOING) {
             return notice(CallStage.ONGOING, if (call.phase == CallPhase.ACTIVE) "Llamada en curso" else "Llamando…")
         }
         if (!call.screening) {
             return when (call.phase) {
-                CallPhase.RINGING -> notice(CallStage.INCOMING, if (call.callerName != null) "Llamada entrante" else "Llamada entrante · Tiskz la está analizando")
+                CallPhase.RINGING -> notice(CallStage.INCOMING, if (call.callerName != null) "Llamada entrante" else "Llamada entrante · analizando quién llama")
                 CallPhase.HOLDING -> notice(CallStage.ONGOING, "Llamada en espera")
                 else -> notice(CallStage.ONGOING,
-                    if (conference.phase == ConferencePhase.CONNECTED) "En llamada · Marin sigue escuchando" else "Llamada en curso")
+                    if (conference.phase == ConferencePhase.CONNECTED) "En llamada · protegida" else "Llamada en curso")
             }
         }
-        // Marin atiende por el titular.
+        // El asistente atiende por el titular. El aviso habla de "tu asistente", sin nombres internos.
         val agentAnswered = if (call.simulated) analysis?.transcript?.isNotEmpty() == true else call.phase != CallPhase.RINGING
         val scam = analysis?.isScam == true || analysis?.alert == true
         val safe = !scam && analysis?.isSafeToAnswer(threshold) == true
         val summary = analysis?.understanding?.summary?.trim()?.trimEnd('.')?.takeIf { it.isNotBlank() }
         val reason = analysis?.reasons?.firstOrNull()?.trim()?.trimEnd('.')?.takeIf { it.isNotBlank() }
+        val risk = analysis?.takeIf { it.transcript.isNotEmpty() }?.riskPercent
+        fun screened(stage: CallStage, label: String, tone: NoticeTone, text: String, detail: String?, risk: Int? = null) =
+            CallNotice(call.id, stage, name, text, stage == CallStage.SAFE && tone == NoticeTone.SAFE, call.answeredAt,
+                screened = true, label = label, tone = tone, risk = risk, detail = detail)
         return when {
-            scam -> notice(CallStage.DANGER, listOfNotNull(
-                "Marin detectó una posible estafa",
-                analysis?.scamType ?: analysis?.reasons?.firstOrNull(),
-            ).joinToString(" · "))
-            safe -> notice(CallStage.SAFE, when {
-                summary != null -> "Tu agente analizó la llamada: $summary. Ya puedes entrar."
-                reason != null -> "Tu agente analizó la llamada · $reason. Ya puedes entrar."
-                else -> "Tu agente verificó quién llama y para qué. Ya puedes entrar."
-            }, verified = true)
-            conference.phase == ConferencePhase.FAILED ->
-                notice(CallStage.SAFE, "Marin no pudo unirse. Puedes entrar, pero sin protección.")
-            !agentAnswered -> notice(CallStage.INCOMING, "Llamada entrante · Marin contestará por ti")
-            else -> notice(CallStage.SCREENING, buildString {
-                append("Marin está atendiendo")
-                analysis?.takeIf { it.transcript.isNotEmpty() }?.let { append(" · riesgo ${it.riskPercent}%") }
-                append(" · aún no estás en la llamada")
-            })
+            scam -> screened(CallStage.DANGER, "● Posible estafa", NoticeTone.DANGER,
+                listOfNotNull(analysis?.scamType, analysis?.impersonating?.let { "se hace pasar por $it" })
+                    .joinToString(" · ").ifEmpty { reason ?: "Quien llama muestra señales de estafa" } + ".",
+                "Te recomendamos no entrar. Puedes bloquear el número.", analysis?.riskPercent)
+            safe -> screened(CallStage.SAFE, "● Llamada segura", NoticeTone.SAFE,
+                summary?.let { "Es sobre: $it." } ?: reason?.let { "$it." } ?: "Verificamos quién llama y para qué.",
+                "Ya puedes entrar a la llamada.", risk)
+            conference.phase == ConferencePhase.FAILED -> screened(CallStage.SAFE, "● Sin protección", NoticeTone.WARN,
+                "No pudimos analizar esta llamada.", "Puedes entrar, pero sin protección.")
+            !agentAnswered -> screened(CallStage.INCOMING, "● Llamada entrante", NoticeTone.INFO,
+                "Tu asistente va a contestar por ti.", "Te avisamos cuando sea seguro entrar.")
+            else -> screened(CallStage.SCREENING, "● Analizando", NoticeTone.INFO,
+                "Tu asistente está hablando con quien llama.", "Aún no estás en la llamada.", risk)
         }
     }
 
@@ -145,7 +165,7 @@ object CallNotifications {
         }
         if (!manager.areNotificationsEnabled()) return
         try {
-            manager.notify(id, build(context, notice, alert, callStyle = true))
+            manager.notify(id, build(context, notice, alert, callStyle = !notice.screened))
         } catch (e: IllegalArgumentException) {
             // El sistema rechazó el estilo de llamada: el mismo aviso con botones normales.
             runCatching { manager.notify(id, build(context, notice, alert, callStyle = false)) }
@@ -159,24 +179,20 @@ object CallNotifications {
         val popUp = alert && !screenVisible
         val builder = NotificationCompat.Builder(context, if (popUp) CHANNEL_ID else ONGOING_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_tiskz_shield)
-            .setColor(when (notice.stage) {
-                CallStage.SAFE -> 0xFF059669.toInt()
-                CallStage.DANGER -> 0xFFDC2626.toInt()
-                else -> 0xFF2563EB.toInt()
-            })
+            .setColor(notice.tone.color)
             .setContentTitle(notice.name)
             .setContentText(notice.text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(notice.text))
-            .setSubText(if (notice.stage == CallStage.SAFE || notice.stage == CallStage.SCREENING) "Marin · Tiskz" else "Tiskz")
-            .setCategory(NotificationCompat.CATEGORY_CALL)
+            .setCategory(if (callStyle) NotificationCompat.CATEGORY_CALL else NotificationCompat.CATEGORY_STATUS)
             .setPriority(if (popUp) NotificationCompat.PRIORITY_MAX else NotificationCompat.PRIORITY_LOW)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setOngoing(true)
+            .setOngoing(callStyle)
             .setOnlyAlertOnce(true)
             .setContentIntent(openCall)
-            // Requisito de Android para el estilo de llamada. Con el teléfono desbloqueado solo
-            // muestra el aviso arriba; con el teléfono bloqueado abre la pantalla de llamada.
-            .setFullScreenIntent(openCall, popUp)
+        // Requisito de Android para el estilo de llamada. Con el teléfono desbloqueado solo
+        // muestra el aviso arriba; con el teléfono bloqueado abre la pantalla de llamada.
+        // Los avisos de marin no lo llevan: se pueden ignorar y abrir Tiskz cuando uno quiera.
+        if (callStyle) builder.setFullScreenIntent(openCall, popUp)
         notice.answeredAt?.takeIf { notice.stage == CallStage.ONGOING }?.let {
             builder.setWhen(it).setUsesChronometer(true).setShowWhen(true)
         }
@@ -202,6 +218,19 @@ object CallNotifications {
                 CallStage.SCREENING -> builder.addAction(0, "Ver en vivo", openCall)
                 else -> Unit
             }
+        } else if (notice.screened) {
+            // El asistente atiende: nada de contestar o rechazar aquí. Tocar el aviso abre Tiskz.
+            builder.setStyle(NotificationCompat.DecoratedCustomViewStyle())
+                .setCustomContentView(views(context, R.layout.notification_call_small, notice))
+                .setCustomBigContentView(views(context, R.layout.notification_call_big, notice))
+                // El pop-up tiene poca altura (HyperOS lo recorta): versión compacta con el riesgo en la etiqueta.
+                .setCustomHeadsUpContentView(views(context, R.layout.notification_call_small, notice))
+            when (notice.stage) {
+                CallStage.SCREENING -> builder.addAction(0, "Ver en vivo", openCall)
+                CallStage.SAFE -> builder.addAction(0, "Entrar a la llamada", join)
+                CallStage.DANGER -> builder.addAction(0, "Bloquear", block)
+                else -> Unit
+            }
         } else {
             when (notice.stage) {
                 CallStage.INCOMING -> builder.addAction(0, "Rechazar", reject).addAction(0, "Responder", answer)
@@ -212,6 +241,29 @@ object CallNotifications {
             }
         }
         return builder.build()
+    }
+
+    /** Vista propia del aviso: estado en color, quién llama, barra de riesgo y qué hacer. */
+    private fun views(context: Context, layout: Int, notice: CallNotice) = RemoteViews(context.packageName, layout).apply {
+        val big = layout == R.layout.notification_call_big
+        // En la versión compacta el riesgo va junto a la etiqueta; en la grande, a la derecha con su barra.
+        setTextViewText(R.id.notif_label, if (big) notice.label else notice.label + notice.risk?.let { " · $it%" }.orEmpty())
+        setTextColor(R.id.notif_label, notice.tone.color)
+        setTextViewText(R.id.notif_name, notice.name)
+        setTextViewText(R.id.notif_text, notice.text)
+        if (!big) return@apply
+        setTextViewText(R.id.notif_detail, notice.detail.orEmpty())
+        setViewVisibility(R.id.notif_detail, if (notice.detail != null) View.VISIBLE else View.GONE)
+        val risk = notice.risk
+        setViewVisibility(R.id.notif_bar, if (risk != null) View.VISIBLE else View.GONE)
+        setTextViewText(R.id.notif_risk, risk?.let { "Riesgo $it%" }.orEmpty())
+        setTextColor(R.id.notif_risk, notice.tone.color)
+        if (risk != null) {
+            setProgressBar(R.id.notif_bar, 100, risk.coerceIn(2, 100), false)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                setColorStateList(R.id.notif_bar, "setProgressTintList", ColorStateList.valueOf(notice.tone.color))
+            }
+        }
     }
 
     /** Abre la pantalla de llamada; con [action] además contesta o entra (desde un aviso no se puede abrir una Activity desde un receiver). */
