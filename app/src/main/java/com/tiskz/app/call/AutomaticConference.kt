@@ -111,7 +111,7 @@ class AutomaticConference(
     }
 
     fun alertsLost() {
-        if (!terminal) fail("Se perdió el canal de alertas. Continúa la llamada desde PhoneWard.")
+        if (!terminal) fail("Se perdió el canal de alertas. Continúa la llamada desde Tiskz.")
     }
 
     fun callsChanged(current: List<ConferenceLeg>) {
@@ -151,7 +151,7 @@ class AutomaticConference(
                 (callerId !in conference.children && caller()?.parent != conference.id)) end()
             else if (agent()?.phase == LegPhase.DISCONNECTED ||
                 (agentId !in conference.children && agent()?.parent != conference.id)) {
-                fail("Marin terminó la llamada. Continúa la conversación desde PhoneWard.")
+                fail("Marin terminó la llamada. Continúa la conversación desde Tiskz.")
             }
             return
         }
@@ -185,7 +185,7 @@ class AutomaticConference(
     }
 
     /** Cancela la preparación y conserva la llamada original. No se usa para colgar toda la conferencia. */
-    fun cancel() { if (!terminal) fail("Automatización cancelada. Continúa la llamada desde PhoneWard.") }
+    fun cancel() { if (!terminal) fail("Automatización cancelada. Continúa la llamada desde Tiskz.") }
 
     /** El botón Colgar termina todas las patas propias, incluso una conferencia aún en formación. */
     fun hangUp() {

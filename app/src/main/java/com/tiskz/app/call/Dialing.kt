@@ -9,7 +9,7 @@ import android.telecom.TelecomManager
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 
-/** Llamada saliente desde el marcador, Contactos o Recientes. Telecom la entrega a PhoneWard como cualquier llamada. */
+/** Llamada saliente desde el marcador, Contactos o Recientes. Telecom la entrega a Tiskz como cualquier llamada. */
 object Dialing {
 
     fun canCall(context: Context): Boolean =

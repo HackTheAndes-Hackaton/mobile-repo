@@ -80,8 +80,7 @@ class CallArchive(
             val url = baseUrl.trimEnd('/').toHttpUrl().newBuilder().addPathSegment("calls").addPathSegment(id).build()
             val request = Request.Builder().url(url)
                 .header("Authorization", "Bearer $key")
-                .header("X-PhoneWard-Org", org)
-                .header("X-Tiskz-Org", org) // panel anterior al cambio de nombre
+                .header("X-Tiskz-Org", org)
                 .put(body.toRequestBody(JSON))
                 .build()
             client.newCall(request).execute().use { it.code to it.body?.string().orEmpty().take(300) }
@@ -132,7 +131,7 @@ class CallArchive(
         }.toMap()
 
     companion object {
-        private const val TAG = "PhoneWardArchive"
+        private const val TAG = "TiskzArchive"
         private const val PAYLOAD = "payload:"
         private const val STATE = "state:"
         private val JSON = "application/json; charset=utf-8".toMediaType()

@@ -5,7 +5,7 @@ import android.telecom.CallAudioState
 import android.telecom.InCallService
 
 /** Android nos vincula este servicio por ser la app de teléfono predeterminada. */
-class PhoneWardInCallService : InCallService() {
+class TiskzInCallService : InCallService() {
 
     override fun onCallAdded(call: Call) {
         CallManager.attachService(this)

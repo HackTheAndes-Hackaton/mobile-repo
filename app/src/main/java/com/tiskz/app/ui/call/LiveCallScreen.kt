@@ -60,8 +60,8 @@ import com.tiskz.app.ui.components.RiskBar
 import com.tiskz.app.ui.components.overlapUp
 import com.tiskz.app.ui.components.rememberNow
 import com.tiskz.app.ui.components.softShadow
-import com.tiskz.app.ui.theme.PhoneWardBrushes
-import com.tiskz.app.ui.theme.PhoneWardColors
+import com.tiskz.app.ui.theme.TiskzBrushes
+import com.tiskz.app.ui.theme.TiskzColors
 import com.tiskz.app.util.PhoneNumbers
 import com.tiskz.app.util.formatDuration
 import compose.icons.TablerIcons
@@ -138,7 +138,7 @@ fun LiveCallScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(PhoneWardColors.Background),
+            .background(TiskzColors.Background),
     ) {
         if (screened) {
             CompactHero(call, mood)
@@ -162,7 +162,7 @@ fun LiveCallScreen(
                     analysis.alertProbability != null -> "Estimación del modelo; no confirma ni descarta una estafa."
                     else -> "Esperando la primera evaluación de lo que dice quien llama."
                 } else riskDetail(analysis, answerThreshold),
-                headlineColor = if (mood == Mood.NEUTRAL && analysis.riskPercent < 30) PhoneWardColors.Blue600 else null,
+                headlineColor = if (mood == Mood.NEUTRAL && analysis.riskPercent < 30) TiskzColors.Blue600 else null,
                 modifier = Modifier
                     .padding(horizontal = 20.dp)
                     .overlapUp(HERO_OVERLAP),
@@ -182,7 +182,7 @@ fun LiveCallScreen(
             )
         } else {
             FullHero(call, Modifier.weight(1f))
-            if (automatic) Text(conference.message, style = MaterialTheme.typography.bodySmall, color = PhoneWardColors.Muted,
+            if (automatic) Text(conference.message, style = MaterialTheme.typography.bodySmall, color = TiskzColors.Muted,
                 modifier = Modifier.fillMaxWidth().padding(16.dp), textAlign = TextAlign.Center)
         }
 
@@ -205,9 +205,9 @@ fun LiveCallScreen(
 @Composable
 private fun heroBrush(mood: Mood): Brush {
     val (startTarget, endTarget) = when (mood) {
-        Mood.NEUTRAL -> PhoneWardColors.Blue900 to PhoneWardColors.Blue600
-        Mood.SAFE -> PhoneWardColors.EmeraldDark to PhoneWardColors.Emerald
-        Mood.DANGER -> PhoneWardColors.RedDark to PhoneWardColors.Red
+        Mood.NEUTRAL -> TiskzColors.Blue900 to TiskzColors.Blue600
+        Mood.SAFE -> TiskzColors.EmeraldDark to TiskzColors.Emerald
+        Mood.DANGER -> TiskzColors.RedDark to TiskzColors.Red
     }
     val start by animateColorAsState(startTarget, tween(700), label = "heroStart")
     val end by animateColorAsState(endTarget, tween(700), label = "heroEnd")
@@ -313,7 +313,7 @@ private fun CallerText(call: ActiveCall, modifier: Modifier = Modifier, centered
 /** Reportes de la comunidad: se destaca en rojo sobre la cabecera, aunque el análisis siga en curso. */
 @Composable
 private fun ReputationChip(text: String) {
-    Surface(color = PhoneWardColors.Red, shape = RoundedCornerShape(50)) {
+    Surface(color = TiskzColors.Red, shape = RoundedCornerShape(50)) {
         Text(
             text = text,
             style = MaterialTheme.typography.labelMedium,
@@ -329,7 +329,7 @@ private fun ReputationChip(text: String) {
 @Composable
 private fun GuardBanner(alert: GuardAlert, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
     Surface(
-        color = PhoneWardColors.Red,
+        color = TiskzColors.Red,
         shape = RoundedCornerShape(20.dp),
         modifier = modifier.fillMaxWidth().softShadow(RoundedCornerShape(20.dp), 12.dp),
     ) {
@@ -390,7 +390,7 @@ private fun riskDetail(analysis: CallAnalysis, threshold: Int): String? = when {
     ).joinToString(" · ").ifEmpty { null }
     analysis.isSafeToAnswer(threshold) -> "No hay alerta actual; la identidad no está verificada."
     analysis.status == AgentStatus.OFFLINE -> analysis.error ?: "Contesta con precaución."
-    else -> analysis.reasons.firstOrNull() ?: "PhoneWard está analizando lo que dice quien llama."
+    else -> analysis.reasons.firstOrNull() ?: "Tiskz está analizando lo que dice quien llama."
 }
 
 // --- Controles ---
@@ -409,7 +409,7 @@ private fun ActionBar(
             .fillMaxWidth()
             .softShadow(shape, 24.dp)
             .clip(shape)
-            .background(PhoneWardColors.White)
+            .background(TiskzColors.White)
             .navigationBarsPadding()
             .padding(horizontal = 24.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -419,7 +419,7 @@ private fun ActionBar(
                 onClick = actions.onClose,
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(18.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PhoneWardColors.Blue600),
+                colors = ButtonDefaults.buttonColors(containerColor = TiskzColors.Blue600),
             ) {
                 Text("Cerrar", style = MaterialTheme.typography.titleMedium)
             }
@@ -434,23 +434,23 @@ private fun ActionBar(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.Bottom,
                 ) {
-                    CircleAction(TablerIcons.PhoneOff, "Rechazar", actions.onReject, PhoneWardBrushes.Danger, Color.White, glow = PhoneWardColors.Red)
+                    CircleAction(TablerIcons.PhoneOff, "Rechazar", actions.onReject, TiskzBrushes.Danger, Color.White, glow = TiskzColors.Red)
                     when {
                         scam -> CircleAction(
                             TablerIcons.Ban, "Bloquear", actions.onBlock,
-                            Brush.linearGradient(listOf(PhoneWardColors.Navy, PhoneWardColors.Blue900)), Color.White, glow = PhoneWardColors.Navy,
+                            Brush.linearGradient(listOf(TiskzColors.Navy, TiskzColors.Blue900)), Color.White, glow = TiskzColors.Navy,
                         )
-                        safe -> CircleAction(TablerIcons.Phone, "Contestar", actions.onAnswer, PhoneWardBrushes.Safe, Color.White, glow = PhoneWardColors.Emerald)
+                        safe -> CircleAction(TablerIcons.Phone, "Contestar", actions.onAnswer, TiskzBrushes.Safe, Color.White, glow = TiskzColors.Emerald)
                         else -> CircleAction(
                             TablerIcons.Phone, "Contestar", actions.onAnswer,
-                            Brush.linearGradient(listOf(PhoneWardColors.Blue50, PhoneWardColors.Blue100)), PhoneWardColors.Blue700,
+                            Brush.linearGradient(listOf(TiskzColors.Blue50, TiskzColors.Blue100)), TiskzColors.Blue700,
                         )
                     }
                 }
                 if (scam) {
                     Row(Modifier.padding(top = 6.dp)) {
-                        TextButton(onClick = actions.onNotScam) { Text("No es estafa", color = PhoneWardColors.Muted) }
-                        TextButton(onClick = actions.onAnswer) { Text("Contestar igual", color = PhoneWardColors.Muted) }
+                        TextButton(onClick = actions.onNotScam) { Text("No es estafa", color = TiskzColors.Muted) }
+                        TextButton(onClick = actions.onAnswer) { Text("Contestar igual", color = TiskzColors.Muted) }
                     }
                 }
             }
@@ -458,7 +458,7 @@ private fun ActionBar(
             else -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
               if (conference.phase == ConferencePhase.CONNECTED) {
                   Text("Tu asistente sigue escuchando la llamada", style = MaterialTheme.typography.bodySmall,
-                      color = PhoneWardColors.Muted, modifier = Modifier.padding(bottom = 12.dp))
+                      color = TiskzColors.Muted, modifier = Modifier.padding(bottom = 12.dp))
               }
               Row(
                 Modifier.fillMaxWidth(),
@@ -471,7 +471,7 @@ private fun ActionBar(
                     active = call.muted,
                     onClick = actions.onToggleMute,
                 )
-                CircleAction(TablerIcons.PhoneOff, "Colgar", actions.onHangUp, PhoneWardBrushes.Danger, Color.White, glow = PhoneWardColors.Red)
+                CircleAction(TablerIcons.PhoneOff, "Colgar", actions.onHangUp, TiskzBrushes.Danger, Color.White, glow = TiskzColors.Red)
                 ToggleAction(
                     icon = TablerIcons.Volume,
                     label = "Altavoz",
@@ -507,7 +507,7 @@ private fun ScreeningActions(
             else -> "Podrás entrar cuando se confirme que es seguro"
         },
         style = MaterialTheme.typography.bodySmall,
-        color = if (scam) PhoneWardColors.Red else PhoneWardColors.Muted,
+        color = if (scam) TiskzColors.Red else TiskzColors.Muted,
         modifier = Modifier.padding(bottom = 10.dp),
     )
     Row(
@@ -515,26 +515,26 @@ private fun ScreeningActions(
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.Bottom,
     ) {
-        CircleAction(TablerIcons.PhoneOff, "Cancelar", actions.onHangUp, PhoneWardBrushes.Danger, Color.White,
-            size = SCREENING_BUTTON, glow = PhoneWardColors.Red)
+        CircleAction(TablerIcons.PhoneOff, "Cancelar", actions.onHangUp, TiskzBrushes.Danger, Color.White,
+            size = SCREENING_BUTTON, glow = TiskzColors.Red)
         when {
             scam -> CircleAction(
                 TablerIcons.Ban, "Bloquear", actions.onBlock,
-                Brush.linearGradient(listOf(PhoneWardColors.Navy, PhoneWardColors.Blue900)), Color.White,
-                size = SCREENING_BUTTON, glow = PhoneWardColors.Navy,
+                Brush.linearGradient(listOf(TiskzColors.Navy, TiskzColors.Blue900)), Color.White,
+                size = SCREENING_BUTTON, glow = TiskzColors.Navy,
             )
-            canJoin -> CircleAction(TablerIcons.Phone, "Entrar", actions.onJoin, PhoneWardBrushes.Safe, Color.White,
-                size = SCREENING_BUTTON, glow = PhoneWardColors.Emerald)
+            canJoin -> CircleAction(TablerIcons.Phone, "Entrar", actions.onJoin, TiskzBrushes.Safe, Color.White,
+                size = SCREENING_BUTTON, glow = TiskzColors.Emerald)
             else -> CircleAction(
                 TablerIcons.Phone, "Entrar", {},
-                Brush.linearGradient(listOf(PhoneWardColors.Blue50, PhoneWardColors.Blue50)), PhoneWardColors.Muted,
+                Brush.linearGradient(listOf(TiskzColors.Blue50, TiskzColors.Blue50)), TiskzColors.Muted,
                 size = SCREENING_BUTTON, enabled = false,
             )
         }
     }
     if (scam) {
         TextButton(onClick = actions.onNotScam, modifier = Modifier.padding(top = 6.dp)) {
-            Text("No es estafa", color = PhoneWardColors.Muted)
+            Text("No es estafa", color = TiskzColors.Muted)
         }
     }
 }
@@ -545,8 +545,8 @@ private fun ToggleAction(icon: ImageVector, label: String, active: Boolean, onCl
         icon = icon,
         label = label,
         onClick = onClick,
-        background = if (active) PhoneWardBrushes.Brand else Brush.linearGradient(listOf(PhoneWardColors.Blue50, PhoneWardColors.Blue50)),
-        content = if (active) Color.White else PhoneWardColors.Blue700,
+        background = if (active) TiskzBrushes.Brand else Brush.linearGradient(listOf(TiskzColors.Blue50, TiskzColors.Blue50)),
+        content = if (active) Color.White else TiskzColors.Blue700,
         size = 64.dp,
     )
 }
@@ -583,6 +583,6 @@ private fun CircleAction(
             }
         }
         Spacer(Modifier.height(8.dp))
-        Text(label, style = MaterialTheme.typography.labelLarge, color = PhoneWardColors.Ink)
+        Text(label, style = MaterialTheme.typography.labelLarge, color = TiskzColors.Ink)
     }
 }

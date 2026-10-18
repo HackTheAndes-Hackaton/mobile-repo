@@ -30,8 +30,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.tiskz.app.ui.LocalAppContainer
-import com.tiskz.app.ui.components.PhoneWardLogo
-import com.tiskz.app.ui.theme.PhoneWardColors
+import com.tiskz.app.ui.components.TiskzLogo
+import com.tiskz.app.ui.theme.TiskzColors
 import com.tiskz.app.util.DialerRole
 import compose.icons.TablerIcons
 import compose.icons.tablericons.Activity
@@ -59,21 +59,21 @@ fun OnboardingScreen(onFinished: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(PhoneWardColors.White)
+            .background(TiskzColors.White)
             .statusBarsPadding()
             .navigationBarsPadding()
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(Modifier.weight(0.6f))
-        PhoneWardLogo(size = 96.dp)
+        TiskzLogo(size = 96.dp)
         Spacer(Modifier.height(20.dp))
-        Text("PhoneWard", style = MaterialTheme.typography.displayMedium, color = PhoneWardColors.Blue700)
+        Text("Tiskz", style = MaterialTheme.typography.displayMedium, color = TiskzColors.Blue700)
         Spacer(Modifier.height(8.dp))
         Text(
             text = "Tu teléfono, con protección contra estafas.",
             style = MaterialTheme.typography.titleMedium,
-            color = PhoneWardColors.Ink,
+            color = TiskzColors.Ink,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(32.dp))
@@ -98,12 +98,12 @@ fun OnboardingScreen(onFinished: () -> Unit) {
             modifier = Modifier.fillMaxWidth().height(60.dp),
             shape = RoundedCornerShape(20.dp),
         ) {
-            Text("Preparar PhoneWard", style = MaterialTheme.typography.titleMedium)
+            Text("Preparar Tiskz", style = MaterialTheme.typography.titleMedium)
         }
         Text(
-            text = "Android te pedirá elegir PhoneWard como teléfono y conceder permisos. Esto todavía no activa las llamadas automáticas.",
+            text = "Android te pedirá elegir Tiskz como teléfono y conceder permisos. Esto todavía no activa las llamadas automáticas.",
             style = MaterialTheme.typography.bodySmall,
-            color = PhoneWardColors.Muted,
+            color = TiskzColors.Muted,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 8.dp),
         )
@@ -113,7 +113,7 @@ fun OnboardingScreen(onFinished: () -> Unit) {
         Text(
             text = "La atención automática viene apagada.",
             style = MaterialTheme.typography.bodySmall,
-            color = PhoneWardColors.Muted,
+            color = TiskzColors.Muted,
         )
     }
 }
@@ -122,15 +122,15 @@ fun OnboardingScreen(onFinished: () -> Unit) {
 private fun Feature(icon: ImageVector, title: String, body: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(
-            Modifier.size(48.dp).background(PhoneWardColors.Blue50, CircleShape),
+            Modifier.size(48.dp).background(TiskzColors.Blue50, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, null, tint = PhoneWardColors.Blue600)
+            Icon(icon, null, tint = TiskzColors.Blue600)
         }
         Spacer(Modifier.size(14.dp))
         Column {
-            Text(title, style = MaterialTheme.typography.titleMedium, color = PhoneWardColors.Ink)
-            Text(body, style = MaterialTheme.typography.bodyMedium, color = PhoneWardColors.Muted)
+            Text(title, style = MaterialTheme.typography.titleMedium, color = TiskzColors.Ink)
+            Text(body, style = MaterialTheme.typography.bodyMedium, color = TiskzColors.Muted)
         }
     }
 }

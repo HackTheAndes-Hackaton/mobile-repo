@@ -25,7 +25,7 @@ import com.tiskz.app.model.CallPhase
 import com.tiskz.app.util.PhoneNumbers
 import com.tiskz.app.util.DialerRole
 
-/** Etapas del aviso de llamada. Cada una se ve como una llamada del sistema, pero es de PhoneWard. */
+/** Etapas del aviso de llamada. Cada una se ve como una llamada del sistema, pero es de Tiskz. */
 enum class CallStage {
     /** Suena: Rechazar o Responder (tomarla uno mismo, sin marin). */
     INCOMING,
@@ -47,7 +47,7 @@ data class CallNotice(
     val text: String,
     val verified: Boolean = false,
     val answeredAt: Long? = null,
-    /** La atiende marin: aviso normal de PhoneWard (se puede ignorar), sin botones de contestar ni colgar. */
+    /** La atiende marin: aviso normal de Tiskz (se puede ignorar), sin botones de contestar ni colgar. */
     val screened: Boolean = false,
     /** Etiqueta de estado en color: "Llamada segura", "Analizando"… */
     val label: String = "",
@@ -66,7 +66,7 @@ enum class NoticeTone(val color: Int) {
 }
 
 /**
- * Avisos de llamada de PhoneWard. La pantalla de llamada no tapa el teléfono al sonar:
+ * Avisos de llamada de Tiskz. La pantalla de llamada no tapa el teléfono al sonar:
  * todo empieza en un aviso arriba, como cualquier llamada, y el titular decide si abrirla.
  */
 object CallNotifications {
@@ -178,7 +178,7 @@ object CallNotifications {
             // El sistema rechazó el estilo de llamada: el mismo aviso con botones normales.
             runCatching { manager.notify(id, build(context, notice, alert, callStyle = false)) }
         } catch (e: SecurityException) {
-            // Sin permiso de notificaciones: se puede abrir la llamada desde PhoneWard.
+            // Sin permiso de notificaciones: se puede abrir la llamada desde Tiskz.
         }
     }
 
@@ -199,7 +199,7 @@ object CallNotifications {
             .setContentIntent(openCall)
         // Requisito de Android para el estilo de llamada. Con el teléfono desbloqueado solo
         // muestra el aviso arriba; con el teléfono bloqueado abre la pantalla de llamada.
-        // Los avisos de marin no lo llevan: se pueden ignorar y abrir PhoneWard cuando uno quiera.
+        // Los avisos de marin no lo llevan: se pueden ignorar y abrir Tiskz cuando uno quiera.
         if (callStyle) builder.setFullScreenIntent(openCall, popUp)
         notice.answeredAt?.takeIf { notice.stage == CallStage.ONGOING }?.let {
             builder.setWhen(it).setUsesChronometer(true).setShowWhen(true)
@@ -219,7 +219,7 @@ object CallNotifications {
                 CallStage.SAFE -> NotificationCompat.CallStyle.forScreeningCall(person, hangUp, join)
                 else -> NotificationCompat.CallStyle.forOngoingCall(person, hangUp)
             }
-            if (notice.verified) style.setVerificationText("Verificada por PhoneWard")
+            if (notice.verified) style.setVerificationText("Verificada por Tiskz")
             builder.setStyle(style)
             when (notice.stage) {
                 CallStage.DANGER -> builder.addAction(0, "Bloquear", block)
@@ -227,7 +227,7 @@ object CallNotifications {
                 else -> Unit
             }
         } else if (notice.screened) {
-            // El asistente atiende: nada de contestar o rechazar aquí. Tocar el aviso abre PhoneWard.
+            // El asistente atiende: nada de contestar o rechazar aquí. Tocar el aviso abre Tiskz.
             builder.setStyle(NotificationCompat.DecoratedCustomViewStyle())
                 .setCustomContentView(views(context, R.layout.notification_call_small, notice))
                 .setCustomBigContentView(views(context, R.layout.notification_call_big, notice))
@@ -318,7 +318,7 @@ object CallNotifications {
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
     )
 
-    /** Aviso de llamada perdida con el estilo de PhoneWard: abre el historial o vuelve a llamar. */
+    /** Aviso de llamada perdida con el estilo de Tiskz: abre el historial o vuelve a llamar. */
     fun showMissed(context: Context, count: Int, number: String, name: String?) {
         val manager = NotificationManagerCompat.from(context)
         if (!manager.areNotificationsEnabled()) return
@@ -353,7 +353,7 @@ object CallNotifications {
         }
     }
 
-    /** Al abrir PhoneWard se dan por vistas: se quita nuestro aviso y se reinicia el contador de Telecom. */
+    /** Al abrir Tiskz se dan por vistas: se quita nuestro aviso y se reinicia el contador de Telecom. */
     @SuppressLint("MissingPermission") // Telecom admite al marcador predeterminado; el rol se comprueba abajo.
     fun cancelMissed(context: Context) {
         NotificationManagerCompat.from(context).cancel(MISSED_NOTIFICATION_ID)

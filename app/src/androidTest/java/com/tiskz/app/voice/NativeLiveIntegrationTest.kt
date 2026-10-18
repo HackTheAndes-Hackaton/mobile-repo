@@ -61,7 +61,7 @@ class NativeLiveIntegrationTest {
             val energy = session.receivedAudioEnergy()
             assertTrue(energy > 0)
             assertEquals(0, session.committedSegments)
-            assertTrue(state.transcript.any { it.speaker == Speaker.AGENT && Regex("PhoneWard|Tiskz", RegexOption.IGNORE_CASE).containsMatchIn(it.text) })
+            assertTrue(state.transcript.any { it.speaker == Speaker.AGENT && it.text.contains("Tiskz", true) })
             assertFalse(Regex("\\b(Ana|Enrique)\\b", RegexOption.IGNORE_CASE).containsMatchIn(state.understanding!!.summary))
             val caller = state.transcript.filter { it.speaker != Speaker.AGENT }.joinToString("") { it.text }
             assertTrue(state.understanding!!.evidence.all { caller.contains(it.quote) })

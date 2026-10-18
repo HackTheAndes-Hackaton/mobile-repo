@@ -7,15 +7,13 @@ plugins {
 }
 
 // URLs del backend y de los agentes: se sobrescriben en local.properties (no se sube a git).
-//   phoneward.backendUrl=https://api.midominio.com
-//   phoneward.wsUrl=wss://api.midominio.com/ws/calls
+//   tiskz.backendUrl=https://api.midominio.com
+//   tiskz.wsUrl=wss://api.midominio.com/ws/calls
 val localProps = Properties().apply {
     rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
 }
 
-// Las claves tiskz.* son las anteriores al cambio de nombre a PhoneWard: se siguen leyendo.
-fun localProp(key: String, default: String): String =
-    localProps.getProperty(key) ?: localProps.getProperty(key.replace("phoneward.", "tiskz.")) ?: default
+fun localProp(key: String, default: String): String = localProps.getProperty(key) ?: default
 
 android {
     namespace = "com.tiskz.app"
@@ -30,15 +28,15 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // La voz usa Maritime por defecto; la URL se puede cambiar en Ajustes.
-        buildConfigField("String", "BACKEND_URL", "\"${localProp("phoneward.backendUrl", "https://api.maritime.sh/a/ebf0eb81-42c0-4437-a044-1af84af1b755")}\"")
-        buildConfigField("String", "WS_URL", "\"${localProp("phoneward.wsUrl", "ws://10.0.2.2:8000/ws/calls")}\"")
-        buildConfigField("boolean", "DEMO_MODE_DEFAULT", localProp("phoneward.demoMode", "true"))
+        buildConfigField("String", "BACKEND_URL", "\"${localProp("tiskz.backendUrl", "https://api.maritime.sh/a/ebf0eb81-42c0-4437-a044-1af84af1b755")}\"")
+        buildConfigField("String", "WS_URL", "\"${localProp("tiskz.wsUrl", "ws://10.0.2.2:8000/ws/calls")}\"")
+        buildConfigField("boolean", "DEMO_MODE_DEFAULT", localProp("tiskz.demoMode", "true"))
         // Panel web donde se guarda la conversación de cada llamada. La API key NO va aquí:
         // se ingresa una vez en Ajustes y queda cifrada en el teléfono.
-        //   phoneward.panelUrl=https://web-repo-xi.vercel.app/api/v1
-        //   phoneward.panelOrg=org_uav
-        buildConfigField("String", "PANEL_URL", "\"${localProp("phoneward.panelUrl", "https://web-repo-xi.vercel.app/api/v1")}\"")
-        buildConfigField("String", "PANEL_ORG", "\"${localProp("phoneward.panelOrg", "org_uav")}\"")
+        //   tiskz.panelUrl=https://web-repo-xi.vercel.app/api/v1
+        //   tiskz.panelOrg=org_uav
+        buildConfigField("String", "PANEL_URL", "\"${localProp("tiskz.panelUrl", "https://web-repo-xi.vercel.app/api/v1")}\"")
+        buildConfigField("String", "PANEL_ORG", "\"${localProp("tiskz.panelOrg", "org_uav")}\"")
     }
 
     buildTypes {

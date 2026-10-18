@@ -59,9 +59,9 @@ import com.tiskz.app.data.ContactsBook
 import com.tiskz.app.data.PhoneContact
 import com.tiskz.app.data.normalizeQuery
 import com.tiskz.app.ui.components.CallerAvatar
-import com.tiskz.app.ui.components.PhoneWardCard
-import com.tiskz.app.ui.theme.PhoneWardBrushes
-import com.tiskz.app.ui.theme.PhoneWardColors
+import com.tiskz.app.ui.components.TiskzCard
+import com.tiskz.app.ui.theme.TiskzBrushes
+import com.tiskz.app.ui.theme.TiskzColors
 import com.tiskz.app.util.PhoneNumbers
 import compose.icons.TablerIcons
 import compose.icons.tablericons.Users
@@ -108,7 +108,7 @@ fun ContactsScreen(onBack: () -> Unit, onOpenDialer: () -> Unit) {
     }
 
     Scaffold(
-        containerColor = PhoneWardColors.Background,
+        containerColor = TiskzColors.Background,
         topBar = {
             TopAppBar(
                 title = { Text("Contactos") },
@@ -117,10 +117,10 @@ fun ContactsScreen(onBack: () -> Unit, onOpenDialer: () -> Unit) {
                 },
                 actions = {
                     IconButton(onClick = { context.startActivity(ContactsBook.insertIntent()) }) {
-                        Icon(TablerIcons.UserPlus, contentDescription = "Nuevo contacto", tint = PhoneWardColors.Blue600)
+                        Icon(TablerIcons.UserPlus, contentDescription = "Nuevo contacto", tint = TiskzColors.Blue600)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = PhoneWardColors.Background),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = TiskzColors.Background),
             )
         },
         floatingActionButton = {
@@ -129,9 +129,9 @@ fun ContactsScreen(onBack: () -> Unit, onOpenDialer: () -> Unit) {
                 shape = CircleShape,
                 containerColor = Color.Transparent,
                 elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp),
-                modifier = Modifier.size(64.dp).shadow(18.dp, CircleShape, spotColor = PhoneWardColors.Blue600),
+                modifier = Modifier.size(64.dp).shadow(18.dp, CircleShape, spotColor = TiskzColors.Blue600),
             ) {
-                Box(Modifier.fillMaxSize().background(PhoneWardBrushes.Brand), contentAlignment = Alignment.Center) {
+                Box(Modifier.fillMaxSize().background(TiskzBrushes.Brand), contentAlignment = Alignment.Center) {
                     Icon(TablerIcons.GridDots, contentDescription = "Marcar", tint = Color.White)
                 }
             }
@@ -158,12 +158,12 @@ fun ContactsScreen(onBack: () -> Unit, onOpenDialer: () -> Unit) {
                     value = query,
                     onValueChange = { query = it },
                     placeholder = { Text("Buscar por nombre o número") },
-                    leadingIcon = { Icon(TablerIcons.Search, contentDescription = null, tint = PhoneWardColors.Muted) },
+                    leadingIcon = { Icon(TablerIcons.Search, contentDescription = null, tint = TiskzColors.Muted) },
                     singleLine = true,
                     shape = RoundedCornerShape(18.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedContainerColor = PhoneWardColors.White,
-                        focusedContainerColor = PhoneWardColors.White,
+                        unfocusedContainerColor = TiskzColors.White,
+                        focusedContainerColor = TiskzColors.White,
                         unfocusedBorderColor = Color.Transparent,
                     ),
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
@@ -184,7 +184,7 @@ fun ContactsScreen(onBack: () -> Unit, onOpenDialer: () -> Unit) {
                 list == null -> item { Hint("Cargando contactos…") }
                 filtered.isEmpty() && query.isNotBlank() -> item {
                     Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Ningún contacto coincide con «$query».", color = PhoneWardColors.Muted)
+                        Text("Ningún contacto coincide con «$query».", color = TiskzColors.Muted)
                         if (PhoneNumbers.digits(query).length >= 6) {
                             Spacer(Modifier.size(12.dp))
                             Button(onClick = { call(query.trim()) }) { Text("Llamar a ${query.trim()}") }
@@ -217,7 +217,7 @@ private fun ContactRow(
     onCall: (String) -> Unit,
     onOpen: () -> Unit,
 ) {
-    PhoneWardCard(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp), shape = RoundedCornerShape(20.dp)) {
+    TiskzCard(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp), shape = RoundedCornerShape(20.dp)) {
         Column {
             Row(
                 Modifier.fillMaxWidth().clickable(onClick = onToggle).padding(horizontal = 14.dp, vertical = 10.dp),
@@ -227,17 +227,17 @@ private fun ContactRow(
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(contact.name, style = MaterialTheme.typography.titleMedium, color = PhoneWardColors.Ink,
+                        Text(contact.name, style = MaterialTheme.typography.titleMedium, color = TiskzColors.Ink,
                             maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                         if (contact.starred) {
                             Spacer(Modifier.width(4.dp))
-                            Icon(TablerIcons.Star, contentDescription = "Favorito", tint = PhoneWardColors.Amber, modifier = Modifier.size(14.dp))
+                            Icon(TablerIcons.Star, contentDescription = "Favorito", tint = TiskzColors.Amber, modifier = Modifier.size(14.dp))
                         }
                     }
                     Text(
                         text = if (contact.phones.size > 1) "${contact.phones.size} números" else PhoneNumbers.display(contact.phones.first().number),
                         style = MaterialTheme.typography.bodySmall,
-                        color = PhoneWardColors.Muted,
+                        color = TiskzColors.Muted,
                     )
                 }
                 CallButton { if (contact.phones.size == 1) onCall(contact.phones.first().number) else onToggle() }
@@ -250,19 +250,19 @@ private fun ContactRow(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Column(Modifier.weight(1f)) {
-                                Text(PhoneNumbers.display(phone.number), style = MaterialTheme.typography.bodyLarge, color = PhoneWardColors.Ink)
-                                Text(phone.label, style = MaterialTheme.typography.bodySmall, color = PhoneWardColors.Muted)
+                                Text(PhoneNumbers.display(phone.number), style = MaterialTheme.typography.bodyLarge, color = TiskzColors.Ink)
+                                Text(phone.label, style = MaterialTheme.typography.bodySmall, color = TiskzColors.Muted)
                             }
-                            Icon(TablerIcons.Phone, contentDescription = "Llamar", tint = PhoneWardColors.Blue600, modifier = Modifier.size(20.dp))
+                            Icon(TablerIcons.Phone, contentDescription = "Llamar", tint = TiskzColors.Blue600, modifier = Modifier.size(20.dp))
                         }
                     }
                     Row(
                         Modifier.clip(RoundedCornerShape(12.dp)).clickable(onClick = onOpen).padding(vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(TablerIcons.ExternalLink, contentDescription = null, tint = PhoneWardColors.Blue600, modifier = Modifier.size(16.dp))
+                        Icon(TablerIcons.ExternalLink, contentDescription = null, tint = TiskzColors.Blue600, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text("Ver o editar en Contactos", style = MaterialTheme.typography.labelLarge, color = PhoneWardColors.Blue600)
+                        Text("Ver o editar en Contactos", style = MaterialTheme.typography.labelLarge, color = TiskzColors.Blue600)
                     }
                 }
             }
@@ -276,18 +276,18 @@ private fun Favorite(contact: PhoneContact, onCall: () -> Unit) {
         Modifier.width(72.dp).clip(RoundedCornerShape(16.dp)).clickable(onClick = onCall).padding(vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        CallerAvatar(contact.name, size = 56.dp, background = PhoneWardBrushes.Brand, content = Color.White)
+        CallerAvatar(contact.name, size = 56.dp, background = TiskzBrushes.Brand, content = Color.White)
         Spacer(Modifier.size(6.dp))
-        Text(contact.name.substringBefore(' '), style = MaterialTheme.typography.labelMedium, color = PhoneWardColors.Ink,
+        Text(contact.name.substringBefore(' '), style = MaterialTheme.typography.labelMedium, color = TiskzColors.Ink,
             maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
 @Composable
 private fun CallButton(onClick: () -> Unit) {
-    Surface(onClick = onClick, shape = CircleShape, color = PhoneWardColors.Blue50, modifier = Modifier.size(42.dp)) {
+    Surface(onClick = onClick, shape = CircleShape, color = TiskzColors.Blue50, modifier = Modifier.size(42.dp)) {
         Box(contentAlignment = Alignment.Center) {
-            Icon(TablerIcons.Phone, contentDescription = "Llamar", tint = PhoneWardColors.Blue600, modifier = Modifier.size(20.dp))
+            Icon(TablerIcons.Phone, contentDescription = "Llamar", tint = TiskzColors.Blue600, modifier = Modifier.size(20.dp))
         }
     }
 }
@@ -297,14 +297,14 @@ private fun Header(text: String) {
     Text(
         text,
         style = MaterialTheme.typography.labelLarge,
-        color = PhoneWardColors.Blue700,
+        color = TiskzColors.Blue700,
         modifier = Modifier.padding(start = 28.dp, end = 20.dp, top = 14.dp, bottom = 4.dp),
     )
 }
 
 @Composable
 private fun Hint(text: String) {
-    Text(text, color = PhoneWardColors.Muted, modifier = Modifier.fillMaxWidth().padding(24.dp))
+    Text(text, color = TiskzColors.Muted, modifier = Modifier.fillMaxWidth().padding(24.dp))
 }
 
 @Composable
@@ -314,13 +314,13 @@ private fun PermissionPrompt(modifier: Modifier, onAllow: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Icon(TablerIcons.Users, contentDescription = null, tint = PhoneWardColors.Blue600, modifier = Modifier.size(48.dp))
+        Icon(TablerIcons.Users, contentDescription = null, tint = TiskzColors.Blue600, modifier = Modifier.size(48.dp))
         Spacer(Modifier.size(12.dp))
-        Text("Permite el acceso a tus contactos", style = MaterialTheme.typography.titleMedium, color = PhoneWardColors.Ink)
+        Text("Permite el acceso a tus contactos", style = MaterialTheme.typography.titleMedium, color = TiskzColors.Ink)
         Text(
-            "Así puedes buscarlos y llamarlos desde PhoneWard, y sus llamadas suenan normal, sin el asistente.",
+            "Así puedes buscarlos y llamarlos desde Tiskz, y sus llamadas suenan normal, sin el asistente.",
             style = MaterialTheme.typography.bodyMedium,
-            color = PhoneWardColors.Muted,
+            color = TiskzColors.Muted,
             modifier = Modifier.padding(top = 6.dp, bottom = 16.dp),
         )
         Button(onClick = onAllow) { Text("Permitir contactos") }

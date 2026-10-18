@@ -41,7 +41,7 @@ internal fun CallForwardingCard(enabled: Boolean) {
                 Text("2. En los ajustes de llamadas, selecciona tu SIM. Si usas Entel, elige la SIM Entel y busca Desvío de llamadas.")
                 Text("3. Elige cuándo desviar, introduce el número receptor y espera la confirmación de la operadora. Comprueba el resultado llamando desde otro celular.")
                 Text("La ubicación de estos ajustes depende del modelo de celular. Para desactivar el desvío, vuelve a la misma configuración.", style = MaterialTheme.typography.bodySmall)
-                if (settingsUnavailable) Text("Abre Teléfono → Ajustes → Cuentas de llamadas → tu SIM → Desvío de llamadas. No se pudieron abrir los ajustes desde PhoneWard.", color = MaterialTheme.colorScheme.error)
+                if (settingsUnavailable) Text("Abre Teléfono → Ajustes → Cuentas de llamadas → tu SIM → Desvío de llamadas. No se pudieron abrir los ajustes desde Tiskz.", color = MaterialTheme.colorScheme.error)
             }
         },
         confirmButton = {

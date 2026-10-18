@@ -1,4 +1,4 @@
-# Pendientes de PhoneWard
+# Pendientes de Tiskz
 
 Estado al 18 de octubre de 2026, después de:
 
@@ -24,14 +24,14 @@ Estado de captura, corte y comparación de voz: [CONTINUIDAD_EQUIPO.md](CONTINUI
 
 - [ ] Crear la **API key en el panel de producción**: https://web-repo-xi.vercel.app → Integraciones → Nueva clave.
 - [ ] Pegarla en la app: **Ajustes → Historial en el panel**. Sin ella no se guardan las conversaciones ni funciona la reputación.
-- [ ] Activar **"Notificaciones flotantes"** de PhoneWard en el Xiaomi de la demo, y en cualquier otro teléfono que se use.
+- [ ] Activar **"Notificaciones flotantes"** de Tiskz en el Xiaomi de la demo, y en cualquier otro teléfono que se use.
 
 ## 3. Pruebas de punta a punta que faltan
 
 - [ ] **Guardar una llamada real contra la BD de producción.** Solo se probó en local; en producción los endpoints responden, pero sin clave se quedan en 401.
 - [ ] **La reputación en el teléfono.** Funciona en local; falta la clave para verla en la app.
 - [ ] **Una llamada real completa con el flujo nuevo**: pop-up de entrada → aviso discreto → "espacio seguro" → entrar → alerta si piden el código. Las pruebas fueron con la llamada simulada.
-- [ ] **El pop-up de "Te están llamando" con una llamada real.** En la simulación no salta porque PhoneWard está abierto.
+- [ ] **El pop-up de "Te están llamando" con una llamada real.** En la simulación no salta porque Tiskz está abierto.
 
 ## 4. Pendientes menores
 

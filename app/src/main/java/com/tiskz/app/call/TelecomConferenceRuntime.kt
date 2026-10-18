@@ -90,7 +90,7 @@ class TelecomConferenceRuntime(
         override fun answer(id: String) {
             val call = required(id)
             // HyperOS revisa al contestar si la app de teléfono tiene pantalla visible; si no la ve,
-            // pasa la llamada al teléfono del sistema. Se muestra PhoneWard y luego se contesta.
+            // pasa la llamada al teléfono del sistema. Se muestra Tiskz y luego se contesta.
             showCallScreen()
             scope.launch {
                 delay(UI_BEFORE_ANSWER_MS)
@@ -269,7 +269,7 @@ class TelecomConferenceRuntime(
     private fun stateOf(call: Call): Int = call.state
 
     private companion object {
-        /** Tiempo para que la pantalla de PhoneWard quede al frente antes de contestar. */
+        /** Tiempo para que la pantalla de Tiskz quede al frente antes de contestar. */
         const val UI_BEFORE_ANSWER_MS = 700L
     }
 }

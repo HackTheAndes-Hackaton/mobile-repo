@@ -1,6 +1,6 @@
 # Conferencia automática con marin
 
-PhoneWard integra en la aplicación principal el flujo del prototipo local `tiskz-call-probe`:
+Tiskz integra en la aplicación principal el flujo del prototipo local `tiskz-call-probe`:
 recibir una llamada de la SIM, contestar, ponerla en espera, llamar al agente y solicitar
 una conferencia. No captura ni inyecta el audio interno de la SIM. El audio llega a Vapi
 como el de otro participante telefónico.
@@ -10,8 +10,8 @@ No se activa un desvío, se compra un número ni se llama durante la configuraci
 
 ## Preparación una sola vez
 
-1. Instalar la APK principal de PhoneWard. En Inicio pulsar **Configurar protección automática**.
-2. Elegir PhoneWard como aplicación Teléfono y conceder `CALL_PHONE` y `READ_PHONE_STATE`.
+1. Instalar la APK principal de Tiskz. En Inicio pulsar **Configurar protección automática**.
+2. Elegir Tiskz como aplicación Teléfono y conceder `CALL_PHONE` y `READ_PHONE_STATE`.
 3. Seleccionar la SIM receptora; si hay una sola se preselecciona, sin autorizar llamadas.
 4. Revisar la operadora detectada, el número del agente y la marcación calculada.
 5. Confirmar con esa operadora que **esa SIM, ese destino y la conferencia** no añaden cargos.
@@ -82,7 +82,7 @@ Esto no determina la conservación que hagan los proveedores.
 - Usar una sola conferencia y ninguna otra llamada directa al número compartido de Vapi a la vez.
 - Tras la confirmación de costos, pedir a una persona informada que llame al número habitual
   de la SIM seleccionada. La app intenta contestar y unir automáticamente.
-- Comprobar los hitos en PhoneWard y **el audio desde ambos extremos**. La confirmación de Android
+- Comprobar los hitos en Tiskz y **el audio desde ambos extremos**. La confirmación de Android
   por sí sola no demuestra que marin sea audible para quien llamó.
 - El saludo de Vapi puede ocurrir mientras la llamada original sigue en espera; después de
   unir, pedir a marin que vuelva a presentarse y aceptar continuar con el análisis.
@@ -93,7 +93,7 @@ Hay límites de 12 s para conectar alertas, 8 s para contestar/espera, 25 s para
 para obtener capacidad de unión y 10 s para confirmarla. Una vez unida, marin no tiene límite
 de tiempo: escucha y analiza hasta que se cuelgue, también después de que entre el titular.
 
-Mientras marin atiende, el titular **no está en la llamada**: PhoneWard silencia el micrófono, baja
+Mientras marin atiende, el titular **no está en la llamada**: Tiskz silencia el micrófono, baja
 el volumen de la llamada y solo muestra **Cancelar** y **Entrar**. *Entrar* se habilita cuando el
 backend envía `call.ready_to_answer` o `agent.status: safe` (espacio seguro), o si marin no logró
 unirse. Si hay alerta de estafa se muestra **Bloquear** en su lugar. Al entrar se reactiva el

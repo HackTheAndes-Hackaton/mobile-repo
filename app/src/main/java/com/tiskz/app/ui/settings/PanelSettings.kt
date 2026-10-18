@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tiskz.app.data.ArchiveState
 import com.tiskz.app.ui.LocalAppContainer
-import com.tiskz.app.ui.theme.PhoneWardColors
+import com.tiskz.app.ui.theme.TiskzColors
 
 /** Guardar la conversación de cada llamada en el panel web (Recientes y casos del panel). */
 @Composable
@@ -51,9 +51,9 @@ fun PanelSettings() {
             Column(Modifier.weight(1f)) {
                 Text("Historial en el panel", style = MaterialTheme.typography.titleMedium)
                 Text(
-                    "Al colgar, PhoneWard guarda la conversación de la llamada (tu asistente, quien llama y tú) en el panel de la organización.",
+                    "Al colgar, Tiskz guarda la conversación de la llamada (tu asistente, quien llama y tú) en el panel de la organización.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = PhoneWardColors.Muted,
+                    color = TiskzColors.Muted,
                 )
             }
             Switch(checked = settings.panelSync, onCheckedChange = { on -> repo.update { it.copy(panelSync = on) } })
@@ -109,9 +109,9 @@ fun PanelSettings() {
                 if (failed > 0) append(" · $failed rechazadas")
             },
             style = MaterialTheme.typography.bodySmall,
-            color = PhoneWardColors.Muted,
+            color = TiskzColors.Muted,
         )
-        lastError?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = PhoneWardColors.Red) }
+        lastError?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = TiskzColors.Red) }
         if (pending + failed > 0) {
             OutlinedButton(onClick = container.archive::retryFailed, enabled = keyReady) { Text("Enviar pendientes") }
         }

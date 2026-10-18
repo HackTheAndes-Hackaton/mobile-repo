@@ -43,8 +43,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tiskz.app.R
 import com.tiskz.app.model.Verdict
-import com.tiskz.app.ui.theme.PhoneWardBrushes
-import com.tiskz.app.ui.theme.PhoneWardColors
+import com.tiskz.app.ui.theme.TiskzBrushes
+import com.tiskz.app.ui.theme.TiskzColors
 import com.tiskz.app.ui.theme.color
 import com.tiskz.app.ui.theme.containerColor
 import compose.icons.TablerIcons
@@ -53,7 +53,7 @@ import kotlinx.coroutines.delay
 
 /** Sombra suave teñida de azul, usada por todas las tarjetas. */
 fun Modifier.softShadow(shape: Shape, elevation: Dp = 14.dp): Modifier =
-    shadow(elevation, shape, ambientColor = PhoneWardColors.Shadow.copy(alpha = 0.08f), spotColor = PhoneWardColors.Shadow.copy(alpha = 0.18f))
+    shadow(elevation, shape, ambientColor = TiskzColors.Shadow.copy(alpha = 0.08f), spotColor = TiskzColors.Shadow.copy(alpha = 0.18f))
 
 /** Sube el elemento [amount] sobre el anterior sin dejar hueco debajo. */
 fun Modifier.overlapUp(amount: Dp): Modifier = layout { measurable, constraints ->
@@ -66,7 +66,7 @@ fun Modifier.overlapUp(amount: Dp): Modifier = layout { measurable, constraints 
 
 /** Tarjeta blanca redondeada con sombra suave. */
 @Composable
-fun PhoneWardCard(
+fun TiskzCard(
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(24.dp),
     content: @Composable () -> Unit,
@@ -75,23 +75,23 @@ fun PhoneWardCard(
         modifier
             .softShadow(shape)
             .clip(shape)
-            .background(PhoneWardColors.White),
+            .background(TiskzColors.White),
     ) { content() }
 }
 
 @Composable
-fun PhoneWardLogo(size: Dp = 72.dp, onDark: Boolean = false) {
+fun TiskzLogo(size: Dp = 72.dp, onDark: Boolean = false) {
     Box(
         modifier = Modifier
             .size(size)
             .clip(RoundedCornerShape(size * 0.3f))
-            .background(if (onDark) Brush.linearGradient(listOf(Color.White.copy(alpha = 0.22f), Color.White.copy(alpha = 0.12f))) else PhoneWardBrushes.Brand),
+            .background(if (onDark) Brush.linearGradient(listOf(Color.White.copy(alpha = 0.22f), Color.White.copy(alpha = 0.12f))) else TiskzBrushes.Brand),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
             painter = painterResource(R.drawable.ic_tiskz_shield),
             contentDescription = null,
-            tint = PhoneWardColors.White,
+            tint = TiskzColors.White,
             modifier = Modifier.size(size * 0.56f),
         )
     }
@@ -103,8 +103,8 @@ fun CallerAvatar(
     name: String?,
     size: Dp,
     modifier: Modifier = Modifier,
-    background: Brush = Brush.linearGradient(listOf(PhoneWardColors.Blue100, PhoneWardColors.Blue50)),
-    content: Color = PhoneWardColors.Blue700,
+    background: Brush = Brush.linearGradient(listOf(TiskzColors.Blue100, TiskzColors.Blue50)),
+    content: Color = TiskzColors.Blue700,
 ) {
     val initials = name
         ?.split(' ')

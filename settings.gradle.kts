@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "PhoneWard"
+rootProject.name = "Tiskz"
 include(":app")

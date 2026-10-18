@@ -62,7 +62,7 @@ La presentación no cambia `alerta`, `risk_percent`, `readyToAnswer`, consentimi
 
 > Pendiente de implementar en el backend. Describe el flujo de [`ANALISIS_Y_FLUJO.md`](ANALISIS_Y_FLUJO.md#4-flujo-principal):
 > los contactos suenan normal; los desconocidos se rechazan en silencio, el operador los desvía al
-> número de PhoneWard y **un único agente** los atiende. No hay un modo honeypot aparte: si es estafa,
+> número de Tiskz y **un único agente** los atiende. No hay un modo honeypot aparte: si es estafa,
 > el mismo agente sigue la conversación. **El análisis es continuo** y cubre también la parte de la
 > llamada en que el usuario ya está conectado.
 
@@ -71,7 +71,7 @@ Una llamada desconocida tiene dos tramos, y el WebSocket de la llamada cubre amb
 | Tramo | `call.phase` | Quién habla con quien llama |
 |---|---|---|
 | 1 | `agent` | El agente de IA |
-| 2 | `connected` | El usuario; PhoneWard escucha en silencio |
+| 2 | `connected` | El usuario; Tiskz escucha en silencio |
 | 1 otra vez | `agent_retaken` | El agente retoma (el usuario pasó la llamada o colgó por alerta) |
 | — | `ended` | Nadie |
 
@@ -84,7 +84,7 @@ Una llamada desconocida tiene dos tramos, y el WebSocket de la llamada cubre amb
 ```
 
 **`call.verified`**: el agente terminó el tramo 1 y la llamada parece legítima. Llega **antes** de que el
-backend llame al usuario desde el número de PhoneWard, para que la app muestre "Llamada verificada".
+backend llame al usuario desde el número de Tiskz, para que la app muestre "Llamada verificada".
 
 ```json
 {
@@ -153,7 +153,7 @@ App                                        Backend / agente
  |<-- risk.update 12% --------------------------|
  |<-- call.verified ----------------------------|  la app muestra "Llamada verificada"
  |--- user.decision: answer ------------------->|
- |<-- call.phase: connected --------------------|  PhoneWard escucha en silencio
+ |<-- call.phase: connected --------------------|  Tiskz escucha en silencio
  |<-- transcript.update (caller) ---------------|  "…del área de seguridad del BCP"
  |<-- insight.update identity_mismatch 82% -----|  alerta en pantalla
  |--- user.decision: handoff_to_agent --------->|
@@ -173,7 +173,7 @@ necesita configurar manualmente una URL WebSocket. El flujo objetivo de la secci
 GET  {WS_URL}?caller=<número en E.164, URL-encoded>      (WebSocket)
 ```
 
-- `WS_URL` se configura en `local.properties` (`phoneward.wsUrl=...`) o en Ajustes dentro de la app.
+- `WS_URL` se configura en `local.properties` (`tiskz.wsUrl=...`) o en Ajustes dentro de la app.
 - Se abre **una conexión por llamada entrante**, en cuanto la llamada empieza a sonar.
 - El backend usa `caller` para encontrar la sesión del agente que está atendiendo a ese número.
 
@@ -218,7 +218,7 @@ pueden agregar campos o tipos nuevos sin romper la app.
 { "type": "transcript.update", "id": "c-2", "speaker": "caller", "text": "Necesito la clave que le llegó por SMS", "flagged": true }
 ```
 
-- `speaker`: `caller` (quien llama) · `agent` (PhoneWard) · `user` (el dueño del teléfono)
+- `speaker`: `caller` (quien llama) · `agent` (Tiskz) · `user` (el dueño del teléfono)
 - `id` (opcional): si se repite, la app **reemplaza** la frase. Sirve para mandar texto parcial y luego el final.
 - `flagged`: marca la frase en rojo como sospechosa.
 
@@ -269,7 +269,7 @@ App                                   Backend / agentes
  |--- WS connect ?caller=+569... ------->|
  |--- session.start -------------------->|
  |<-- agent.status: screening -----------|
- |<-- transcript.update (agent) ---------|  "Hola, soy PhoneWard…"
+ |<-- transcript.update (agent) ---------|  "Hola, soy Tiskz…"
  |<-- transcript.update (caller) --------|
  |<-- risk.update 32% -------------------|
  |<-- voiceprint.match 0.87 -------------|

@@ -54,7 +54,7 @@ class WebSocketAnalysisSession(
         }
 
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-            dispatch(AnalysisEvent.Error("Sin conexión con el análisis de PhoneWard"))
+            dispatch(AnalysisEvent.Error("Sin conexión con el análisis de Tiskz"))
         }
     }
 

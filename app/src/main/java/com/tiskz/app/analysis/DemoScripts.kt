@@ -18,7 +18,7 @@ object DemoScripts {
     private val greeting = AnalysisEvent.Transcript(
         id = "agent-1",
         speaker = Speaker.AGENT,
-        text = "Hola, soy PhoneWard, el asistente de esta línea. ¿Quién llama y cuál es el motivo?",
+        text = "Hola, soy Tiskz, el asistente de esta línea. ¿Quién llama y cuál es el motivo?",
         flagged = false,
     )
 
