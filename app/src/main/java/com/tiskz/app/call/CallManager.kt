@@ -397,11 +397,13 @@ object CallManager {
     }
 
     /**
-     * Mientras suena basta el aviso, pero una llamada contestada necesita la pantalla de Tiskz al frente:
-     * si no, HyperOS (Xiaomi) cree que la app de teléfono no tiene interfaz y pasa la llamada al sistema.
+     * HyperOS (Xiaomi) pasa la llamada al teléfono del sistema si la app de teléfono no tiene una ventana.
+     * Con el asistente atendiendo basta la ventana invisible; si el titular está en la llamada, se abre la pantalla.
      */
     private fun showCallScreen() {
         if (CallNotifications.screenVisible) return
+        // Mientras atiende el asistente solo se ve el aviso: la ventana invisible basta para HyperOS.
+        if (_activeCall.value?.screening == true) { RingingAnchorActivity.show(appContext); return }
         runCatching {
             appContext.startActivity(Intent(appContext, InCallActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         }

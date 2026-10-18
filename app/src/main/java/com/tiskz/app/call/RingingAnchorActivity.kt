@@ -10,18 +10,19 @@ import android.view.WindowManager
 import com.tiskz.app.model.CallPhase
 
 /**
- * Mientras suena, HyperOS (Xiaomi) revisa si la app de teléfono tiene una ventana propia; si PhoneWard no tiene
- * ninguna (por ejemplo, tras «Cerrar todo» en recientes), pasa la llamada al teléfono del sistema.
- * Esta ventana es invisible y no recibe toques: el titular sigue viendo solo el aviso de llamada.
- * Se cierra sola cuando deja de sonar.
+ * Mientras suena y mientras atiende el asistente, HyperOS (Xiaomi) revisa si la app de teléfono tiene una
+ * ventana propia; si PhoneWard no tiene ninguna (por ejemplo, tras «Cerrar todo» en recientes), pasa la llamada
+ * al teléfono del sistema. Esta ventana es invisible y no recibe toques: el titular sigue viendo solo el aviso.
+ * Se cierra sola cuando el titular entra a la llamada o la llamada termina.
  */
 class RingingAnchorActivity : Activity() {
 
     private val handler = Handler(Looper.getMainLooper())
     private val check = object : Runnable {
         override fun run() {
-            val ringing = CallManager.activeCall.value?.phase == CallPhase.RINGING
-            if (!ringing || System.currentTimeMillis() - startedAt > MAX_MS) finish() else handler.postDelayed(this, POLL_MS)
+            val call = CallManager.activeCall.value
+            val needed = call != null && call.phase != CallPhase.DISCONNECTED && (call.phase == CallPhase.RINGING || call.screening)
+            if (!needed || System.currentTimeMillis() - startedAt > MAX_MS) finish() else handler.postDelayed(this, POLL_MS)
         }
     }
     private var startedAt = 0L
@@ -50,7 +51,7 @@ class RingingAnchorActivity : Activity() {
 
     companion object {
         private const val POLL_MS = 300L
-        private const val MAX_MS = 60_000L
+        private const val MAX_MS = 15 * 60_000L
 
         fun show(context: Context) {
             runCatching {

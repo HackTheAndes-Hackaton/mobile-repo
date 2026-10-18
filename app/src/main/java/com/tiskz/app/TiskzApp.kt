@@ -4,6 +4,7 @@ import android.app.Application
 import com.tiskz.app.call.CallManager
 import com.tiskz.app.call.CallNotifications
 import com.tiskz.app.data.AppContainer
+import com.tiskz.app.data.TeamProvisioning
 import com.tiskz.app.util.PhoneNumbers
 
 class TiskzApp : Application() {
@@ -15,6 +16,7 @@ class TiskzApp : Application() {
         super.onCreate()
         PhoneNumbers.init(this)
         container = AppContainer(this)
+        TeamProvisioning.apply(container)
         CallManager.init(this, container)
         CallNotifications.createChannel(this)
     }

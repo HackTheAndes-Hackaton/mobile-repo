@@ -88,6 +88,8 @@ object CallNotifications {
     /** Con la pantalla de llamada abierta, los avisos no emergen: ya se ve todo ahí. */
     @Volatile var screenVisible = false
     private var lastNotice: CallNotice? = null
+    /** Etapas que ya emergieron como pop-up en la llamada actual. */
+    private val poppedStages = mutableSetOf<CallStage>()
 
     fun createChannel(context: Context) {
         val missed = NotificationChannel(MISSED_CHANNEL_ID, "Llamadas perdidas", NotificationManager.IMPORTANCE_HIGH).apply {
@@ -164,19 +166,22 @@ object CallNotifications {
             manager.cancel(QUIET_ID)
             return
         }
-        val alert = notice.stage in setOf(CallStage.INCOMING, CallStage.SAFE, CallStage.DANGER)
-        val id = if (alert) ALERT_ID else QUIET_ID
-        // Cada cambio de etapa reemplaza el aviso anterior; uno emergente vuelve a salir como pop-up.
-        if (previous != null && (previous.stage != notice.stage || previous.callId != notice.callId)) {
+        // Un solo aviso por llamada, actualizado en el mismo lugar. Durante la llamada la etapa va y viene
+        // (cada frase nueva invalida la revisión), así que cada etapa emerge como pop-up solo la primera vez.
+        if (previous?.callId != notice.callId) {
+            poppedStages.clear()
             manager.cancel(ALERT_ID)
             manager.cancel(QUIET_ID)
         }
+        val pop = notice.stage in setOf(CallStage.INCOMING, CallStage.SAFE, CallStage.DANGER) && poppedStages.add(notice.stage)
+        // Para que vuelva a emerger hay que publicarlo de nuevo; una actualización con setOnlyAlertOnce no emerge.
+        if (pop && previous != null) manager.cancel(ALERT_ID)
         if (!manager.areNotificationsEnabled()) return
         try {
-            manager.notify(id, build(context, notice, alert, callStyle = !notice.screened))
+            manager.notify(ALERT_ID, build(context, notice, pop, callStyle = !notice.screened))
         } catch (e: IllegalArgumentException) {
             // El sistema rechazó el estilo de llamada: el mismo aviso con botones normales.
-            runCatching { manager.notify(id, build(context, notice, alert, callStyle = false)) }
+            runCatching { manager.notify(ALERT_ID, build(context, notice, pop, callStyle = false)) }
         } catch (e: SecurityException) {
             // Sin permiso de notificaciones: se puede abrir la llamada desde Tiskz.
         }

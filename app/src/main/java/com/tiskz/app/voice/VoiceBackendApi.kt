@@ -1,5 +1,6 @@
 package com.tiskz.app.voice
 
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
 import okhttp3.Call
 import okhttp3.Callback
@@ -99,7 +100,16 @@ class VoiceBackendApi(baseUrl: String, client: OkHttpClient) {
             .put("consentimiento_huella_voz", voiceprintConsent)
         // Solo dígitos: el servidor lo asocia a la voz guardada si la estafa se confirma.
         callerNumber?.filter { it.isDigit() || it == '+' }?.takeIf { it.count(Char::isDigit) in 6..15 }?.let { body.put("numero_llamante", it) }
-        val ticket = post("v1/phone/monitor", accessCode, body).getString("ticket")
+        // Maritime puede estar despertando la VM (503) o la red puede cortarse un momento:
+        // se reintenta durante unos segundos, dentro del margen que tiene la conferencia para conectar.
+        var attempt = 0
+        val ticket = run {
+            while (true) {
+                try { return@run post("v1/phone/monitor", accessCode, body).getString("ticket") }
+                catch (e: RetryableChannelException) { if (++attempt >= MONITOR_ATTEMPTS) throw e; delay(MONITOR_RETRY_MS) }
+            }
+            @Suppress("UNREACHABLE_CODE") error("unreachable")
+        }
         check(ticket.length in 12..256) { "Ticket de alertas inválido." }
         return base.newBuilder().addPathSegments("ws/calls").addQueryParameter("channel", "phone")
             .addQueryParameter("ticket", ticket).build().toString().replaceFirst("https://", "wss://")
@@ -122,12 +132,13 @@ class VoiceBackendApi(baseUrl: String, client: OkHttpClient) {
         call.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 calls.remove(call)
-                if (continuation.isActive) continuation.resumeWithException(IOException("No se pudo conectar con el canal de voz."))
+                if (continuation.isActive) continuation.resumeWithException(RetryableChannelException("No se pudo conectar con el canal de voz."))
             }
             override fun onResponse(call: Call, response: Response) {
                 calls.remove(call)
                 try {
                     val result = response.use {
+                        if (it.code in 502..504) throw RetryableChannelException("El servicio de voz se está iniciando (HTTP ${it.code}).")
                         if (!it.isSuccessful) throw IOException(when (it.code) {
                             401 -> "Código de acceso incorrecto o sesión vencida."
                             409 -> "Ya hay una llamada o un monitor de corte activo. Ciérralo antes de conectar."
@@ -146,3 +157,9 @@ class VoiceBackendApi(baseUrl: String, client: OkHttpClient) {
         })
     }
 }
+
+/** Error pasajero del canal (servidor despertando o red cortada): se puede reintentar. */
+class RetryableChannelException(message: String) : IOException(message)
+
+private const val MONITOR_ATTEMPTS = 10
+private const val MONITOR_RETRY_MS = 900L

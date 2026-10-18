@@ -89,8 +89,8 @@ class TelecomConferenceRuntime(
     private val controller = AutomaticConference(callerId, accountKey, requestId, plan.target, object : ConferenceActions {
         override fun answer(id: String) {
             val call = required(id)
-            // HyperOS revisa al contestar si la app de teléfono tiene pantalla visible; si no la ve,
-            // pasa la llamada al teléfono del sistema. Se muestra Tiskz y luego se contesta.
+            // HyperOS revisa al contestar si la app de teléfono tiene una ventana; si no la ve, pasa la
+            // llamada al teléfono del sistema. Se asegura la ventana (invisible si atiende el asistente) y luego se contesta.
             showCallScreen()
             scope.launch {
                 delay(UI_BEFORE_ANSWER_MS)
