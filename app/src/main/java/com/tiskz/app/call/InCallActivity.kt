@@ -1,5 +1,6 @@
 package com.tiskz.app.call
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -26,6 +27,7 @@ class InCallActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.light(Color.WHITE, Color.WHITE),
         )
         val settings = (application as TiskzApp).container.settings
+        if (savedInstanceState == null) handleNoticeAction(intent)
 
         setContent {
             TiskzTheme {
@@ -62,5 +64,29 @@ class InCallActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleNoticeAction(intent)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        CallNotifications.screenVisible = true
+    }
+
+    override fun onPause() {
+        CallNotifications.screenVisible = false
+        super.onPause()
+    }
+
+    /** "Responder" y "Entrar" del aviso abren esta pantalla y ejecutan la acción una sola vez. */
+    private fun handleNoticeAction(intent: Intent) {
+        when (intent.getStringExtra(CallNotifications.EXTRA_ACTION)) {
+            CallNotifications.ACTION_ANSWER -> CallManager.answer()
+            CallNotifications.ACTION_JOIN -> CallManager.join()
+        }
+        intent.removeExtra(CallNotifications.EXTRA_ACTION)
     }
 }

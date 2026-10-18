@@ -10,6 +10,7 @@ import android.telecom.CallAudioState
 import android.telecom.InCallService
 import android.telecom.VideoProfile
 import android.util.Log
+import androidx.core.app.NotificationManagerCompat
 import com.tiskz.app.analysis.AnalysisSession
 import com.tiskz.app.analysis.UserDecision
 import com.tiskz.app.data.AppContainer
@@ -29,6 +30,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
@@ -89,6 +91,12 @@ object CallManager {
     fun init(context: Context, appContainer: AppContainer) {
         appContext = context.applicationContext
         container = appContainer
+        // El aviso de llamada sigue cada cambio: suena, contesta marin, espacio seguro o estafa, en llamada.
+        scope.launch {
+            combine(_activeCall, analysis, _conference, container.settings.settings) { call, analysis, conference, settings ->
+                CallNotifications.noticeFor(call, analysis, conference, settings.answerThreshold)
+            }.collect { CallNotifications.render(appContext, it) }
+        }
     }
 
     // --- Entrada desde Telecom ---
@@ -187,6 +195,13 @@ object CallManager {
     // --- Acciones de la UI ---
 
     fun answer() {
+        // Tomarla uno mismo mientras suena: deja de estar en modo marin antes de cancelarlo,
+        // para que no se vuelva a silenciar el micrófono.
+        _activeCall.value?.takeIf { it.screening }?.let {
+            _activeCall.value = it.copy(screening = false)
+            restoreCallVolume()
+            if (!it.simulated) inCallService?.setMuted(false)
+        }
         // Si el titular toma la llamada mientras se prepara, no se añade al agente más tarde.
         automatic?.cancelPreparation()
         session.value?.send(UserDecision.ANSWER)
@@ -277,15 +292,26 @@ object CallManager {
         _activeCall.value = call
         _conference.value = ConferenceState()
         resolveCallerName(call.id, call.number)
-        session.value = if (call.direction == CallDirection.INCOMING && !automaticCall) {
+        session.value = if (call.direction == CallDirection.INCOMING && !automaticCall && !call.simulated) {
             container.openAnalysisSession(call.number, forcedScenario)
         } else {
             null
         }
-        CallNotifications.show(appContext, call)
-        appContext.startActivity(
-            Intent(appContext, InCallActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        )
+        if (call.simulated) scope.launch {
+            // En la demo suena unos segundos antes de que marin conteste, como una llamada real.
+            delay(SIMULATED_RING_MS)
+            if (_activeCall.value?.id == call.id && _activeCall.value?.phase != CallPhase.DISCONNECTED) {
+                session.value = container.openAnalysisSession(call.number, forcedScenario)
+            }
+        }
+        // Una llamada entrante no tapa la pantalla: aparece como aviso arriba y el titular decide
+        // si abrirla. Las salientes (o sin permiso de avisos) abren la pantalla de llamada.
+        val notices = NotificationManagerCompat.from(appContext).areNotificationsEnabled()
+        if (call.direction == CallDirection.OUTGOING || !notices) {
+            appContext.startActivity(
+                Intent(appContext, InCallActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+        }
     }
 
     /** Busca el número en los contactos y, si aparece, muestra el nombre en vez del número. */
@@ -295,9 +321,7 @@ object CallManager {
             val name = withContext(Dispatchers.IO) { ContactLookup.findName(appContext, number) } ?: return@launch
             val current = _activeCall.value
             if (current?.id != callId || current.number != number) return@launch
-            val updated = current.copy(callerName = name)
-            _activeCall.value = updated
-            if (updated.phase != CallPhase.DISCONNECTED) CallNotifications.show(appContext, updated)
+            _activeCall.value = current.copy(callerName = name)
         }
     }
 
@@ -336,7 +360,6 @@ object CallManager {
         }
         telecomCall?.unregisterCallback(telecomCallback)
         telecomCall = null
-        CallNotifications.cancel(appContext)
         scope.launch {
             delay(ENDED_SCREEN_MS)
             if (_activeCall.value?.id == ended.id) clear()
@@ -378,5 +401,6 @@ object CallManager {
     }
 
     private const val ENDED_SCREEN_MS = 2500L
+    private const val SIMULATED_RING_MS = 4000L
     private const val TAG = "Tiskz"
 }

@@ -83,6 +83,11 @@
             </intent-filter>
         </service>
 
+        <!-- Botones del aviso de llamada (rechazar, colgar, bloquear). -->
+        <receiver
+            android:name=".call.CallActionReceiver"
+            android:exported="false" />
+
         <!-- Llamadas perdidas: Telecom delega el aviso en la app de teléfono predeterminada. -->
         <receiver
             android:name=".call.MissedCallReceiver"
