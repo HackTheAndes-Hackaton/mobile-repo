@@ -1,4 +1,4 @@
-# Tiskz
+# PhoneWard
 
 **Nueva prueba de telefonía:** la APK principal incorpora el flujo de conferencia automática
 del prototipo `tiskz-call-probe`, con operadora/prefijo detectados por SIM, destino configurable,
@@ -7,8 +7,8 @@ hasta confirmar costos. Preparación y límites: [Conferencia automática](docs/
 La conferencia completa y el audio remoto de esta APK aún requieren prueba física. El flujo
 de desvío descrito a continuación es el diseño objetivo; no se activa con esta integración.
 
-Tiskz es la app de teléfono que protege contra estafas telefónicas. Los contactos suenan normal; las
-llamadas desconocidas las atiende primero un agente de IA, y Tiskz analiza **toda la llamada**, también
+PhoneWard es la app de teléfono que protege contra estafas telefónicas. Los contactos suenan normal; las
+llamadas desconocidas las atiende primero un agente de IA, y PhoneWard analiza **toda la llamada**, también
 cuando el usuario ya está hablando.
 
 ## Cómo funciona
@@ -16,7 +16,7 @@ cuando el usuario ya está hablando.
 | Quién llama | Qué pasa |
 |---|---|
 | **Contacto guardado** | Suena normal. Sin filtro ni espera. |
-| **Número desconocido u oculto** | Tiskz la rechaza en silencio y el operador la desvía (desvío "si está ocupado") al número de Tiskz. Un agente de IA contesta con un saludo neutro ("Aló, ¿de parte de quién?"). |
+| **Número desconocido u oculto** | PhoneWard la rechaza en silencio y el operador la desvía (desvío "si está ocupado") al número de PhoneWard. Un agente de IA contesta con un saludo neutro ("Aló, ¿de parte de quién?"). |
 | **Estafa ya confirmada** | Va directo al agente. El usuario nunca se entera. |
 
 - **Un solo agente.** No hay un modo honeypot aparte: el agente atiende igual a todos los desconocidos, sin
@@ -24,7 +24,7 @@ cuando el usuario ya está hablando.
   sigue la conversación, retiene al estafador y registra evidencia.
 - **El agente no se delata, pero no suplanta al usuario.** No anuncia que es un filtro anti-estafas, nunca
   dice ser el dueño del teléfono y, si le preguntan directamente si es una máquina, lo reconoce.
-- **Análisis continuo.** Si la llamada parece legítima, Tiskz llama al usuario ("Llamada verificada") y los
+- **Análisis continuo.** Si la llamada parece legítima, PhoneWard llama al usuario ("Llamada verificada") y los
   conecta, pero **sigue escuchando**. Un estafador que se portó bien con el agente y cambia de rol con el
   usuario dispara una alerta con el motivo, por ejemplo: *"Dijo ser de Claro, ahora habla en nombre del BCP"*.
   El usuario puede colgar o pasarle la llamada al agente.
@@ -93,10 +93,14 @@ export JAVA_HOME="/c/Program Files/Android/Android Studio/jbr"
 En `local.properties` (no se sube a git):
 
 ```properties
-tiskz.wsUrl=wss://agentes.midominio.com/ws/calls
-tiskz.backendUrl=https://api.midominio.com
-tiskz.demoMode=false
+phoneward.wsUrl=wss://agentes.midominio.com/ws/calls
+phoneward.backendUrl=https://api.midominio.com
+phoneward.demoMode=false
 ```
+
+> **Antes Tiskz.** Las claves `tiskz.*` de un `local.properties` anterior se siguen leyendo. El paquete
+> `com.tiskz.app` y los datos guardados en el teléfono (ajustes, historial, bloqueados, credenciales y canales de
+> notificación) conservan su nombre para no perder datos ni obligar a reinstalar.
 
 También se pueden cambiar en **Ajustes** dentro de la app, sin recompilar.
 La URL HTTP del backend apunta por defecto a Maritime y se usa en el canal de voz. La URL WebSocket
@@ -110,8 +114,8 @@ llamada la actualiza sin duplicarla; sin conexión queda en cola y se reintenta.
 en el caso, pestaña **Conversación**, y se puede recuperar con `GET /api/v1/calls/{id}`.
 
 ```properties
-tiskz.panelUrl=https://web-repo-xi.vercel.app/api/v1
-tiskz.panelOrg=org_uav
+phoneward.panelUrl=https://web-repo-xi.vercel.app/api/v1
+phoneward.panelOrg=org_uav
 ```
 
 La **API key** del panel no va en `local.properties` ni en el APK: se crea en el panel
@@ -122,8 +126,8 @@ donde queda cifrada con el Keystore de Android. Desde ahí también se puede des
 
 Viene **activado**: las llamadas se analizan con guiones locales (`analysis/DemoScripts.kt`), sin backend.
 
-- **Inicio → Probar Tiskz**: botones "Estafa" y "Llamada segura" que simulan una llamada entrante.
-- **Llamada real en el emulador** (con Tiskz como app de teléfono):
+- **Inicio → Probar PhoneWard**: botones "Estafa" y "Llamada segura" que simulan una llamada entrante.
+- **Llamada real en el emulador** (con PhoneWard como app de teléfono):
   ```bash
   adb emu gsm call 987654321     # termina en impar → escenario estafa (modo Automático)
   adb emu gsm call 912345678     # termina en par   → escenario seguro
@@ -190,12 +194,12 @@ El camino de almacenamiento preferido del servidor es la API HTTP del panel; MCP
 
 ### Audio de Android (0.4.1)
 
-La sesión de micrófono configura el modo de comunicación de Android y solicita procesamiento de eco/ruido disponible, preservando auriculares y restaurando la configuración al terminar. El efecto sobre la calidad necesita validación en un dispositivo físico. Conversar con Tiskz ya solicita GPT-Live 1; comprensión y alertas procesan sus subtítulos. La prueba sintética no sustituye la prueba en el ambiente real del usuario.
+La sesión de micrófono configura el modo de comunicación de Android y solicita procesamiento de eco/ruido disponible, preservando auriculares y restaurando la configuración al terminar. El efecto sobre la calidad necesita validación en un dispositivo físico. Conversar con PhoneWard ya solicita GPT-Live 1; comprensión y alertas procesan sus subtítulos. La prueba sintética no sustituye la prueba en el ambiente real del usuario.
 
 
 ### Corte por riesgo (0.4.2)
 
-El monitor de llamadas telefónicas autoriza el corte de Vapi cuando el backend detecta riesgo. En la conferencia automática administrada por Tiskz, una orden autenticada `call.hangup_requested` desconecta también las dos patas y su padre mediante Telecom. Se verifican llamada, sesión, revisión y UUID; los duplicados y órdenes obsoletas se ignoran. Una alerta visual aislada no ejecuta comandos. Si la conferencia se unió manualmente fuera de Tiskz, este monitor solo solicita el cierre de Vapi.
+El monitor de llamadas telefónicas autoriza el corte de Vapi cuando el backend detecta riesgo. En la conferencia automática administrada por PhoneWard, una orden autenticada `call.hangup_requested` desconecta también las dos patas y su padre mediante Telecom. Se verifican llamada, sesión, revisión y UUID; los duplicados y órdenes obsoletas se ignoran. Una alerta visual aislada no ejecuta comandos. Si la conferencia se unió manualmente fuera de PhoneWard, este monitor solo solicita el cierre de Vapi.
 
 Antes de conectar una nueva prueba, cierra otros monitores del equipo. Se admite un único monitor automático y no se adopta una llamada que ya estaba activa. La autorización del canal telefónico explica el corte por riesgo. El modo automático de conferencia conserva sus requisitos de SIM, permisos y costos confirmados, y sigue desactivado por defecto.
 

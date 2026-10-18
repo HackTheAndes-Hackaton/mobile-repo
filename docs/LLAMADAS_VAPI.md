@@ -1,6 +1,6 @@
 # Llamadas telefónicas con Vapi y marin
 
-El número de Vapi tiene asignado `Tiskz - Entel marin prueba`, con `gpt-realtime-mini-2025-12-15` y voz `marin`, y GPT-4o Transcribe configurado en español (`es`). La voz usa saldo de Vapi. La comprensión y la detección usan los modelos ya configurados en Maritime. No se ha configurado ni confirmado el desvío de Entel.
+El número de Vapi tiene asignado `PhoneWard - Entel marin prueba`, con `gpt-realtime-mini-2025-12-15` y voz `marin`, y GPT-4o Transcribe configurado en español (`es`). La voz usa saldo de Vapi. La comprensión y la detección usan los modelos ya configurados en Maritime. No se ha configurado ni confirmado el desvío de Entel.
 
 El asistente se identifica como virtual, informa del procesamiento con IA y solicita continuar. La prueba limita las llamadas a 180 segundos. `config/vapi-assistant.json` contiene la configuración sin credenciales: grabación, PCAP, logs de conversación e historial de transcripción desactivados. Esto no equivale a contratar el servicio Zero Data Retention del proveedor: Vapi puede conservar registros de entrega de webhooks aunque los logs de conversación estén desactivados.
 

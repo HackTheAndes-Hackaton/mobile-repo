@@ -10,12 +10,12 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.tiskz.app.TiskzApp
+import com.tiskz.app.PhoneWardApp
 import com.tiskz.app.ui.call.LiveCallActions
 import com.tiskz.app.ui.call.LiveCallScreen
-import com.tiskz.app.ui.theme.TiskzTheme
+import com.tiskz.app.ui.theme.PhoneWardTheme
 
-/** Pantalla de llamada de Tiskz. Se muestra sobre la pantalla de bloqueo. */
+/** Pantalla de llamada de PhoneWard. Se muestra sobre la pantalla de bloqueo. */
 class InCallActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,11 +26,11 @@ class InCallActivity : ComponentActivity() {
             statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.light(Color.WHITE, Color.WHITE),
         )
-        val settings = (application as TiskzApp).container.settings
+        val settings = (application as PhoneWardApp).container.settings
         if (savedInstanceState == null) handleNoticeAction(intent)
 
         setContent {
-            TiskzTheme {
+            PhoneWardTheme {
                 val call by CallManager.activeCall.collectAsStateWithLifecycle()
                 val analysis by CallManager.analysis.collectAsStateWithLifecycle()
                 val conference by CallManager.conference.collectAsStateWithLifecycle()

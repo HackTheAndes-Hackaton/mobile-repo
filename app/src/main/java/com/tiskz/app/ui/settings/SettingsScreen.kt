@@ -38,7 +38,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tiskz.app.BuildConfig
 import com.tiskz.app.data.DemoScenario
 import com.tiskz.app.ui.LocalAppContainer
-import com.tiskz.app.ui.theme.TiskzColors
+import com.tiskz.app.ui.theme.PhoneWardColors
 import compose.icons.TablerIcons
 import compose.icons.tablericons.ArrowLeft
 import kotlin.math.roundToInt
@@ -53,7 +53,7 @@ fun SettingsScreen(onBack: () -> Unit) {
     val repo = container.settings
 
     Scaffold(
-        containerColor = TiskzColors.White,
+        containerColor = PhoneWardColors.White,
         topBar = {
             TopAppBar(
                 title = { Text("Ajustes") },
@@ -62,7 +62,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                         Icon(TablerIcons.ArrowLeft, contentDescription = "Volver")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = TiskzColors.White),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = PhoneWardColors.White),
             )
         },
     ) { padding ->
@@ -75,14 +75,14 @@ fun SettingsScreen(onBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
             AutomaticConferenceSettings()
-            HorizontalDivider(color = TiskzColors.Line)
+            HorizontalDivider(color = PhoneWardColors.Line)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text("Modo demo", style = MaterialTheme.typography.titleMedium)
                     Text(
                         text = "Analiza las llamadas con guiones de ejemplo, sin backend.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = TiskzColors.Muted,
+                        color = PhoneWardColors.Muted,
                     )
                 }
                 Switch(checked = settings.demoMode, onCheckedChange = { on -> repo.update { it.copy(demoMode = on) } })
@@ -105,29 +105,29 @@ fun SettingsScreen(onBack: () -> Unit) {
                     Text(
                         text = "Automático: contactos guardados = segura; otros números terminados en par = segura, impar = estafa.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = TiskzColors.Muted,
+                        color = PhoneWardColors.Muted,
                     )
                 }
             }
 
-            HorizontalDivider(color = TiskzColors.Line)
+            HorizontalDivider(color = PhoneWardColors.Line)
 
             Text("Conexión", style = MaterialTheme.typography.titleMedium)
             UrlField("WebSocket de los agentes", settings.wsUrl) { url -> repo.update { it.copy(wsUrl = url) } }
             UrlField("Backend (REST)", settings.backendUrl) { url -> repo.update { it.copy(backendUrl = url) } }
 
-            HorizontalDivider(color = TiskzColors.Line)
+            HorizontalDivider(color = PhoneWardColors.Line)
 
             PanelSettings()
 
-            HorizontalDivider(color = TiskzColors.Line)
+            HorizontalDivider(color = PhoneWardColors.Line)
 
             Column {
                 Text("Umbral para contestar: ${settings.answerThreshold}%", style = MaterialTheme.typography.titleMedium)
                 Text(
-                    text = "Tiskz destaca \"Contestar\" solo si el riesgo es menor a este valor.",
+                    text = "PhoneWard destaca \"Contestar\" solo si el riesgo es menor a este valor.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = TiskzColors.Muted,
+                    color = PhoneWardColors.Muted,
                 )
                 Slider(
                     value = settings.answerThreshold.toFloat(),
@@ -137,7 +137,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                 )
             }
 
-            HorizontalDivider(color = TiskzColors.Line)
+            HorizontalDivider(color = PhoneWardColors.Line)
 
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedButton(onClick = container.blocklist::clear, enabled = blocked.isNotEmpty(), modifier = Modifier.weight(1f)) {
@@ -149,9 +149,9 @@ fun SettingsScreen(onBack: () -> Unit) {
             }
 
             Text(
-                text = "Tiskz ${BuildConfig.VERSION_NAME}",
+                text = "PhoneWard ${BuildConfig.VERSION_NAME}",
                 style = MaterialTheme.typography.bodySmall,
-                color = TiskzColors.Muted,
+                color = PhoneWardColors.Muted,
             )
         }
     }

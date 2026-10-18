@@ -26,7 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tiskz.app.model.RiskLevel
-import com.tiskz.app.ui.theme.TiskzColors
+import com.tiskz.app.ui.theme.PhoneWardColors
 import com.tiskz.app.ui.theme.color
 import kotlin.math.roundToInt
 
@@ -44,7 +44,7 @@ fun RiskBar(
     val progress by animateFloatAsState(percent.coerceIn(0, 100) / 100f, tween(700), label = "risk")
     val color by animateColorAsState(RiskLevel.of(percent).color(), tween(500), label = "riskColor")
 
-    TiskzCard(modifier.fillMaxWidth()) {
+    PhoneWardCard(modifier.fillMaxWidth()) {
         Column(Modifier.padding(horizontal = 18.dp, vertical = 16.dp)) {
             Row(verticalAlignment = Alignment.Bottom) {
                 Column(Modifier.weight(1f)) {
@@ -53,7 +53,7 @@ fun RiskBar(
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.SemiBold,
                         letterSpacing = 1.sp,
-                        color = TiskzColors.Muted,
+                        color = PhoneWardColors.Muted,
                     )
                     Text(headline, style = MaterialTheme.typography.titleLarge, color = headlineColor ?: color)
                 }
@@ -70,7 +70,7 @@ fun RiskBar(
                     .fillMaxWidth()
                     .height(12.dp)
                     .clip(RoundedCornerShape(50))
-                    .background(TiskzColors.Surface),
+                    .background(PhoneWardColors.Surface),
             ) {
                 Box(
                     Modifier
@@ -84,7 +84,7 @@ fun RiskBar(
                 Text(
                     text = detail,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = TiskzColors.Muted,
+                    color = PhoneWardColors.Muted,
                     maxLines = 2,
                     modifier = Modifier.padding(top = 10.dp),
                 )

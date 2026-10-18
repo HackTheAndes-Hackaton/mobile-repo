@@ -8,7 +8,7 @@ import com.tiskz.app.data.ContactLookup
 
 /**
  * Como app de teléfono predeterminada, Telecom nos delega las llamadas perdidas:
- * así el aviso sale de Tiskz y no del teléfono del sistema.
+ * así el aviso sale de PhoneWard y no del teléfono del sistema.
  */
 class MissedCallReceiver : BroadcastReceiver() {
 

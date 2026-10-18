@@ -37,7 +37,7 @@ private object Routes {
  * @param pendingDial número recibido por un intent DIAL (por ejemplo, desde Contactos).
  */
 @Composable
-fun TiskzNavHost(pendingDial: String?, onDialConsumed: () -> Unit) {
+fun PhoneWardNavHost(pendingDial: String?, onDialConsumed: () -> Unit) {
     val navController = rememberNavController()
     val container = LocalAppContainer.current
     val start = remember { if (container.settings.current.onboardingDone) Routes.HOME else Routes.ONBOARDING }

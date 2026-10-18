@@ -11,7 +11,7 @@ import androidx.compose.ui.unit.sp
 import com.tiskz.app.model.RiskLevel
 import com.tiskz.app.model.Verdict
 
-object TiskzColors {
+object PhoneWardColors {
     // Marca: azul profundo → azul → celeste.
     val Navy = Color(0xFF0B1B4D)
     val Blue900 = Color(0xFF1E3A8A)
@@ -45,66 +45,66 @@ object TiskzColors {
     val Shadow = Color(0xFF1E3A8A)
 }
 
-object TiskzBrushes {
-    val Brand = Brush.linearGradient(listOf(TiskzColors.Blue900, TiskzColors.Blue600, TiskzColors.Sky))
-    val Danger = Brush.linearGradient(listOf(TiskzColors.RedDark, TiskzColors.Red, Color(0xFFFB7185)))
-    val Safe = Brush.linearGradient(listOf(TiskzColors.EmeraldDark, TiskzColors.Emerald, Color(0xFF6EE7B7)))
-    val AgentBubble = Brush.linearGradient(listOf(TiskzColors.Blue700, TiskzColors.Blue600))
+object PhoneWardBrushes {
+    val Brand = Brush.linearGradient(listOf(PhoneWardColors.Blue900, PhoneWardColors.Blue600, PhoneWardColors.Sky))
+    val Danger = Brush.linearGradient(listOf(PhoneWardColors.RedDark, PhoneWardColors.Red, Color(0xFFFB7185)))
+    val Safe = Brush.linearGradient(listOf(PhoneWardColors.EmeraldDark, PhoneWardColors.Emerald, Color(0xFF6EE7B7)))
+    val AgentBubble = Brush.linearGradient(listOf(PhoneWardColors.Blue700, PhoneWardColors.Blue600))
 }
 
 /** Verde = tranquilo, ámbar/naranja = atención, rojo = estafa. */
 fun RiskLevel.color(): Color = when (this) {
-    RiskLevel.LOW -> TiskzColors.Emerald
-    RiskLevel.MEDIUM -> TiskzColors.Amber
-    RiskLevel.HIGH -> TiskzColors.Orange
-    RiskLevel.CRITICAL -> TiskzColors.Red
+    RiskLevel.LOW -> PhoneWardColors.Emerald
+    RiskLevel.MEDIUM -> PhoneWardColors.Amber
+    RiskLevel.HIGH -> PhoneWardColors.Orange
+    RiskLevel.CRITICAL -> PhoneWardColors.Red
 }
 
 fun Verdict.color(): Color = when (this) {
-    Verdict.SAFE -> TiskzColors.EmeraldDark
-    Verdict.SUSPICIOUS -> TiskzColors.AmberDark
-    Verdict.SCAM -> TiskzColors.Red
-    Verdict.NONE -> TiskzColors.Muted
+    Verdict.SAFE -> PhoneWardColors.EmeraldDark
+    Verdict.SUSPICIOUS -> PhoneWardColors.AmberDark
+    Verdict.SCAM -> PhoneWardColors.Red
+    Verdict.NONE -> PhoneWardColors.Muted
 }
 
 fun Verdict.containerColor(): Color = when (this) {
-    Verdict.SAFE -> TiskzColors.EmeraldContainer
-    Verdict.SUSPICIOUS -> TiskzColors.AmberContainer
-    Verdict.SCAM -> TiskzColors.RedContainer
-    Verdict.NONE -> TiskzColors.Surface
+    Verdict.SAFE -> PhoneWardColors.EmeraldContainer
+    Verdict.SUSPICIOUS -> PhoneWardColors.AmberContainer
+    Verdict.SCAM -> PhoneWardColors.RedContainer
+    Verdict.NONE -> PhoneWardColors.Surface
 }
 
 private val LightColors = lightColorScheme(
-    primary = TiskzColors.Blue600,
-    onPrimary = TiskzColors.White,
-    primaryContainer = TiskzColors.Blue100,
-    onPrimaryContainer = TiskzColors.Blue900,
-    secondary = TiskzColors.Blue700,
-    onSecondary = TiskzColors.White,
-    secondaryContainer = TiskzColors.Blue50,
-    onSecondaryContainer = TiskzColors.Blue900,
-    background = TiskzColors.Background,
-    onBackground = TiskzColors.Ink,
-    surface = TiskzColors.White,
-    onSurface = TiskzColors.Ink,
-    surfaceVariant = TiskzColors.Surface,
-    onSurfaceVariant = TiskzColors.Muted,
-    surfaceContainerLowest = TiskzColors.White,
-    surfaceContainerLow = TiskzColors.Background,
-    surfaceContainer = TiskzColors.White,
-    surfaceContainerHigh = TiskzColors.White,
-    surfaceContainerHighest = TiskzColors.Blue50,
-    error = TiskzColors.Red,
-    onError = TiskzColors.White,
-    errorContainer = TiskzColors.RedContainer,
-    onErrorContainer = TiskzColors.RedDark,
-    outline = TiskzColors.Line,
-    outlineVariant = TiskzColors.Line,
+    primary = PhoneWardColors.Blue600,
+    onPrimary = PhoneWardColors.White,
+    primaryContainer = PhoneWardColors.Blue100,
+    onPrimaryContainer = PhoneWardColors.Blue900,
+    secondary = PhoneWardColors.Blue700,
+    onSecondary = PhoneWardColors.White,
+    secondaryContainer = PhoneWardColors.Blue50,
+    onSecondaryContainer = PhoneWardColors.Blue900,
+    background = PhoneWardColors.Background,
+    onBackground = PhoneWardColors.Ink,
+    surface = PhoneWardColors.White,
+    onSurface = PhoneWardColors.Ink,
+    surfaceVariant = PhoneWardColors.Surface,
+    onSurfaceVariant = PhoneWardColors.Muted,
+    surfaceContainerLowest = PhoneWardColors.White,
+    surfaceContainerLow = PhoneWardColors.Background,
+    surfaceContainer = PhoneWardColors.White,
+    surfaceContainerHigh = PhoneWardColors.White,
+    surfaceContainerHighest = PhoneWardColors.Blue50,
+    error = PhoneWardColors.Red,
+    onError = PhoneWardColors.White,
+    errorContainer = PhoneWardColors.RedContainer,
+    onErrorContainer = PhoneWardColors.RedDark,
+    outline = PhoneWardColors.Line,
+    outlineVariant = PhoneWardColors.Line,
 )
 
 // Un punto más grande que la estándar: pensada para adultos mayores.
 private val base = Typography()
-private val TiskzTypography = Typography(
+private val PhoneWardTypography = Typography(
     displayLarge = base.displayLarge.copy(fontWeight = FontWeight.Bold),
     displayMedium = base.displayMedium.copy(fontWeight = FontWeight.Bold),
     headlineLarge = base.headlineLarge.copy(fontWeight = FontWeight.Bold),
@@ -119,6 +119,6 @@ private val TiskzTypography = Typography(
 )
 
 @Composable
-fun TiskzTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = LightColors, typography = TiskzTypography, content = content)
+fun PhoneWardTheme(content: @Composable () -> Unit) {
+    MaterialTheme(colorScheme = LightColors, typography = PhoneWardTypography, content = content)
 }

@@ -35,14 +35,14 @@ import androidx.compose.ui.unit.dp
 import com.tiskz.app.R
 import com.tiskz.app.model.Speaker
 import com.tiskz.app.model.TranscriptLine
-import com.tiskz.app.ui.theme.TiskzBrushes
-import com.tiskz.app.ui.theme.TiskzColors
+import com.tiskz.app.ui.theme.PhoneWardBrushes
+import com.tiskz.app.ui.theme.PhoneWardColors
 import compose.icons.TablerIcons
 import compose.icons.tablericons.AlertTriangle
 
 /**
- * Conversación en vivo entre el agente de Tiskz y quien llama. Se desplaza sola a la última frase.
- * @param live muestra la píldora "Tiskz IA escuchando" con ondas animadas.
+ * Conversación en vivo entre el agente de PhoneWard y quien llama. Se desplaza sola a la última frase.
+ * @param live muestra la píldora "PhoneWard IA escuchando" con ondas animadas.
  */
 @Composable
 fun LiveTranscript(
@@ -65,14 +65,14 @@ fun LiveTranscript(
         if (live) {
             item(key = "live") {
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    Surface(color = TiskzColors.White, shape = RoundedCornerShape(50), modifier = Modifier.softShadow(RoundedCornerShape(50), 6.dp)) {
+                    Surface(color = PhoneWardColors.White, shape = RoundedCornerShape(50), modifier = Modifier.softShadow(RoundedCornerShape(50), 6.dp)) {
                         Row(
                             Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            WaveBars(TiskzColors.Blue600)
+                            WaveBars(PhoneWardColors.Blue600)
                             Spacer(Modifier.size(8.dp))
-                            Text("Tiskz IA está atendiendo", style = MaterialTheme.typography.labelLarge, color = TiskzColors.Blue700)
+                            Text("PhoneWard IA está atendiendo", style = MaterialTheme.typography.labelLarge, color = PhoneWardColors.Blue700)
                         }
                     }
                 }
@@ -116,19 +116,19 @@ private fun TranscriptBubble(line: TranscriptLine, callerLabel: String) {
         ) {
             when {
                 fromAgent -> {
-                    Icon(painterResource(R.drawable.ic_tiskz_shield), null, tint = TiskzColors.Blue600, modifier = Modifier.size(16.dp))
+                    Icon(painterResource(R.drawable.ic_tiskz_shield), null, tint = PhoneWardColors.Blue600, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.size(4.dp))
-                    Text("Tiskz IA", style = MaterialTheme.typography.labelLarge, color = TiskzColors.Blue600)
+                    Text("PhoneWard IA", style = MaterialTheme.typography.labelLarge, color = PhoneWardColors.Blue600)
                 }
                 line.flagged -> {
-                    Icon(TablerIcons.AlertTriangle, null, tint = TiskzColors.Red, modifier = Modifier.size(15.dp))
+                    Icon(TablerIcons.AlertTriangle, null, tint = PhoneWardColors.Red, modifier = Modifier.size(15.dp))
                     Spacer(Modifier.size(4.dp))
-                    Text("$callerLabel · sospechoso", style = MaterialTheme.typography.labelLarge, color = TiskzColors.Red)
+                    Text("$callerLabel · sospechoso", style = MaterialTheme.typography.labelLarge, color = PhoneWardColors.Red)
                 }
                 line.speaker == Speaker.USER ->
-                    Text("Tú", style = MaterialTheme.typography.labelLarge, color = TiskzColors.Muted)
+                    Text("Tú", style = MaterialTheme.typography.labelLarge, color = PhoneWardColors.Muted)
                 else ->
-                    Text(callerLabel, style = MaterialTheme.typography.labelLarge, color = TiskzColors.Muted)
+                    Text(callerLabel, style = MaterialTheme.typography.labelLarge, color = PhoneWardColors.Muted)
             }
         }
         val bubble = Modifier
@@ -137,9 +137,9 @@ private fun TranscriptBubble(line: TranscriptLine, callerLabel: String) {
             .clip(shape)
             .then(
                 when {
-                    fromAgent -> Modifier.background(TiskzBrushes.AgentBubble)
-                    line.flagged -> Modifier.background(TiskzColors.RedContainer).border(1.5.dp, TiskzColors.Red.copy(alpha = 0.5f), shape)
-                    else -> Modifier.background(TiskzColors.White)
+                    fromAgent -> Modifier.background(PhoneWardBrushes.AgentBubble)
+                    line.flagged -> Modifier.background(PhoneWardColors.RedContainer).border(1.5.dp, PhoneWardColors.Red.copy(alpha = 0.5f), shape)
+                    else -> Modifier.background(PhoneWardColors.White)
                 }
             )
         Box(bubble) {
@@ -147,9 +147,9 @@ private fun TranscriptBubble(line: TranscriptLine, callerLabel: String) {
                 text = line.text,
                 style = MaterialTheme.typography.bodyLarge,
                 color = when {
-                    fromAgent -> TiskzColors.White
-                    line.flagged -> TiskzColors.RedDark
-                    else -> TiskzColors.Ink
+                    fromAgent -> PhoneWardColors.White
+                    line.flagged -> PhoneWardColors.RedDark
+                    else -> PhoneWardColors.Ink
                 },
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
             )

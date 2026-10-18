@@ -46,7 +46,7 @@ import kotlinx.coroutines.withContext
 
 /**
  * Fuente única de verdad de la llamada en curso.
- * Recibe llamadas reales desde [TiskzInCallService] y simuladas desde el botón de demo.
+ * Recibe llamadas reales desde [PhoneWardInCallService] y simuladas desde el botón de demo.
  * MVP: maneja una llamada a la vez.
  */
 object CallManager {
@@ -394,7 +394,7 @@ object CallManager {
     }
 
     /**
-     * Mientras suena basta el aviso, pero una llamada contestada necesita la pantalla de Tiskz al frente:
+     * Mientras suena basta el aviso, pero una llamada contestada necesita la pantalla de PhoneWard al frente:
      * si no, HyperOS (Xiaomi) cree que la app de teléfono no tiene interfaz y pasa la llamada al sistema.
      */
     private fun showCallScreen() {
@@ -406,7 +406,7 @@ object CallManager {
 
     private fun updatePhase(phase: CallPhase) {
         val current = _activeCall.value
-        // Contestada desde fuera de la app (auricular, Bluetooth): igual se muestra Tiskz.
+        // Contestada desde fuera de la app (auricular, Bluetooth): igual se muestra PhoneWard.
         if (phase == CallPhase.ACTIVE && current?.phase == CallPhase.RINGING && !current.simulated) showCallScreen()
         if (current?.screening == true && !current.simulated && phase != CallPhase.RINGING) {
             // Contestó marin, no el titular: no se le escucha ni oye la conversación hasta que entre.
@@ -490,5 +490,5 @@ object CallManager {
     private const val ENDED_SCREEN_MS = 2500L
     private const val SIMULATED_RING_MS = 4000L
     private const val MAX_REMUTES = 20
-    private const val TAG = "Tiskz"
+    private const val TAG = "PhoneWard"
 }

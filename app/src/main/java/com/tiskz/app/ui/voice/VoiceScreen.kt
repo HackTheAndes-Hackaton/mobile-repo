@@ -82,7 +82,7 @@ fun VoiceScreen(onBack: () -> Unit) {
     }) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             item {
-                Text(if (phone) "Llamadas telefónicas · alertas" else if (assistant) "Conversar con Tiskz · marin" else "Micrófono → agentes → alerta", style = MaterialTheme.typography.titleLarge)
+                Text(if (phone) "Llamadas telefónicas · alertas" else if (assistant) "Conversar con PhoneWard · marin" else "Micrófono → agentes → alerta", style = MaterialTheme.typography.titleLarge)
                 Text(if (phone) "Vapi atiende la llamada y esta pantalla recibe el análisis. Mantén la app abierta: las alertas se detienen al salir o enviarla al fondo. Detener alertas no cuelga la llamada." else "Analiza audio autorizado del micrófono. La conexión se detiene al salir de esta pantalla o enviar la app al fondo.", style = MaterialTheme.typography.bodyMedium)
             }
             item {
@@ -108,7 +108,7 @@ fun VoiceScreen(onBack: () -> Unit) {
             item {
                 Row {
                     Checkbox(checked = consent, onCheckedChange = { consent = it }, enabled = !active)
-                    Text(if (phone) "Autorizo analizar estas llamadas y cortar Vapi al detectar riesgo. La conferencia automática de Tiskz cierra también la llamada del celular. Esta app no guarda audio ni transcripciones en disco." else if (assistant) "Autorizo enviar este audio a OpenAI, analizarlo y recibir respuestas con voz de IA. La app no guarda grabaciones ni transcripciones en disco." else "Tengo autorización para analizar este audio. OpenAI lo procesa; la app no guarda grabaciones ni transcripciones en disco.", modifier = Modifier.weight(1f))
+                    Text(if (phone) "Autorizo analizar estas llamadas y cortar Vapi al detectar riesgo. La conferencia automática de PhoneWard cierra también la llamada del celular. Esta app no guarda audio ni transcripciones en disco." else if (assistant) "Autorizo enviar este audio a OpenAI, analizarlo y recibir respuestas con voz de IA. La app no guarda grabaciones ni transcripciones en disco." else "Tengo autorización para analizar este audio. OpenAI lo procesa; la app no guarda grabaciones ni transcripciones en disco.", modifier = Modifier.weight(1f))
                 }
             }
             item {
@@ -153,7 +153,7 @@ fun VoiceScreen(onBack: () -> Unit) {
             item { Text(if (phone) "Interlocutor · llamada atendida por Vapi" else if (assistant) "Conversación · subtítulos parciales" else "Audio del micrófono · transcripción", style = MaterialTheme.typography.titleMedium) }
             if (analysis.transcript.isEmpty()) item { Text(if (phone) "La llamada debe entrar al número configurado en Vapi, directamente o mediante un desvío de la operadora. Esta pantalla no activa el desvío." else if (assistant) "El asistente saludará al conectar. Los dos agentes analizan progresivamente lo que tú dices; los subtítulos pueden contener errores." else "Los fragmentos aparecerán al hablar. Los agentes analizan al cerrar una pausa de voz.") }
             items(analysis.transcript, key = { it.id }) { line ->
-                Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = MaterialTheme.shapes.medium) { Text((if (assistant) { if (line.speaker == com.tiskz.app.model.Speaker.AGENT) "Tiskz · " else "Interlocutor · " } else "") + line.text, Modifier.fillMaxWidth().padding(14.dp)) }
+                Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = MaterialTheme.shapes.medium) { Text((if (assistant) { if (line.speaker == com.tiskz.app.model.Speaker.AGENT) "PhoneWard · " else "Interlocutor · " } else "") + line.text, Modifier.fillMaxWidth().padding(14.dp)) }
             }
             item { Text("Comprensión y evidencia", style = MaterialTheme.typography.titleMedium) }
             val understanding = analysis.understanding

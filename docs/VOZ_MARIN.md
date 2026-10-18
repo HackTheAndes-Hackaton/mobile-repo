@@ -5,7 +5,7 @@ En **Voz en vivo**, activa «El asistente escucha y responde con voz de IA». Us
 `https://api.maritime.sh/a/ebf0eb81-42c0-4437-a044-1af84af1b755`
 
 1. Autoriza el envío del audio, su análisis y las respuestas de voz de IA.
-2. Pulsa **Conversar**, concede micrófono y espera el saludo de Tiskz. Usa el volumen de llamadas/multimedia del dispositivo; prueba auriculares si hay eco.
+2. Pulsa **Conversar**, concede micrófono y espera el saludo de PhoneWard. Usa el volumen de llamadas/multimedia del dispositivo; prueba auriculares si hay eco.
 3. Habla en español. La pantalla separa los subtítulos del interlocutor y del asistente. Los dos agentes analizan únicamente al interlocutor y muestran alerta y comprensión provisionales.
 4. Pulsa **Detener** para cerrar. Salir de la pantalla o enviar la app al fondo también detiene la sesión. No se guarda audio ni texto en disco.
 

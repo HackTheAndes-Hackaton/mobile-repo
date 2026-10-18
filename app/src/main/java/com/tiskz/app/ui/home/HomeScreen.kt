@@ -76,11 +76,11 @@ import com.tiskz.app.model.Verdict
 import com.tiskz.app.ui.LocalAppContainer
 import com.tiskz.app.ui.components.CallerAvatar
 import com.tiskz.app.ui.components.PulsingRings
-import com.tiskz.app.ui.components.TiskzCard
-import com.tiskz.app.ui.components.TiskzLogo
+import com.tiskz.app.ui.components.PhoneWardCard
+import com.tiskz.app.ui.components.PhoneWardLogo
 import com.tiskz.app.ui.components.overlapUp
-import com.tiskz.app.ui.theme.TiskzBrushes
-import com.tiskz.app.ui.theme.TiskzColors
+import com.tiskz.app.ui.theme.PhoneWardBrushes
+import com.tiskz.app.ui.theme.PhoneWardColors
 import com.tiskz.app.ui.theme.color
 import com.tiskz.app.ui.theme.containerColor
 import com.tiskz.app.util.DialerRole
@@ -130,7 +130,7 @@ fun HomeScreen(
     LightStatusBarIcons()
 
     Scaffold(
-        containerColor = TiskzColors.Background,
+        containerColor = PhoneWardColors.Background,
         contentWindowInsets = WindowInsets(0),
         floatingActionButton = {
             FloatingActionButton(
@@ -141,9 +141,9 @@ fun HomeScreen(
                 modifier = Modifier
                     .navigationBarsPadding()
                     .size(64.dp)
-                    .shadow(18.dp, CircleShape, spotColor = TiskzColors.Blue600),
+                    .shadow(18.dp, CircleShape, spotColor = PhoneWardColors.Blue600),
             ) {
-                Box(Modifier.fillMaxSize().background(TiskzBrushes.Brand), contentAlignment = Alignment.Center) {
+                Box(Modifier.fillMaxSize().background(PhoneWardBrushes.Brand), contentAlignment = Alignment.Center) {
                     Icon(TablerIcons.GridDots, contentDescription = "Marcar", tint = Color.White)
                 }
             }
@@ -170,7 +170,7 @@ fun HomeScreen(
                 )
             }
             item {
-                Surface(color = TiskzColors.Blue50, shape = RoundedCornerShape(24.dp),
+                Surface(color = PhoneWardColors.Blue50, shape = RoundedCornerShape(24.dp),
                     modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 16.dp)) {
                     Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text("Filtro de llamadas", style = MaterialTheme.typography.titleMedium)
@@ -191,7 +191,7 @@ fun HomeScreen(
             }
             item {
                 Surface(
-                    color = TiskzColors.Blue50,
+                    color = PhoneWardColors.Blue50,
                     shape = RoundedCornerShape(24.dp),
                     modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 16.dp),
                 ) {
@@ -210,7 +210,7 @@ fun HomeScreen(
             }
             item {
                 if (records.isEmpty()) {
-                    TiskzCard(Modifier.padding(horizontal = 20.dp).fillMaxWidth()) { EmptyRecents() }
+                    PhoneWardCard(Modifier.padding(horizontal = 20.dp).fillMaxWidth()) { EmptyRecents() }
                 } else {
                     PagedRecents(records, onOpenRecord)
                 }
@@ -243,9 +243,9 @@ private fun ProtectionHero(
     onActivate: () -> Unit,
 ) {
     val brush = if (active) {
-        TiskzBrushes.Brand
+        PhoneWardBrushes.Brand
     } else {
-        Brush.linearGradient(listOf(TiskzColors.Navy, TiskzColors.Blue900))
+        Brush.linearGradient(listOf(PhoneWardColors.Navy, PhoneWardColors.Blue900))
     }
     Box(
         Modifier
@@ -257,9 +257,9 @@ private fun ProtectionHero(
     ) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                TiskzLogo(size = 38.dp, onDark = true)
+                PhoneWardLogo(size = 38.dp, onDark = true)
                 Spacer(Modifier.size(10.dp))
-                Text("Tiskz", style = MaterialTheme.typography.titleLarge, color = Color.White, modifier = Modifier.weight(1f))
+                Text("PhoneWard", style = MaterialTheme.typography.titleLarge, color = Color.White, modifier = Modifier.weight(1f))
                 IconButton(onClick = onOpenContacts) {
                     Icon(TablerIcons.Users, contentDescription = "Contactos", tint = Color.White)
                 }
@@ -318,7 +318,7 @@ private fun ProtectionHero(
                 } else {
                     Button(
                         onClick = onActivate,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = TiskzColors.Blue700),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = PhoneWardColors.Blue700),
                         shape = RoundedCornerShape(50),
                         modifier = Modifier.height(48.dp),
                     ) {
@@ -337,22 +337,22 @@ private fun StatsRow(records: List<CallRecord>, modifier: Modifier = Modifier) {
     val scams = records.count { it.verdict == Verdict.SCAM }
     val safe = records.count { it.verdict == Verdict.SAFE }
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        StatCard(records.size, "Analizadas", TablerIcons.Activity, TiskzColors.Blue600, TiskzColors.Blue50, Modifier.weight(1f))
-        StatCard(scams, "Estafas", TablerIcons.ShieldX, TiskzColors.Red, TiskzColors.RedContainer, Modifier.weight(1f))
-        StatCard(safe, "Seguras", TablerIcons.ShieldCheck, TiskzColors.EmeraldDark, TiskzColors.EmeraldContainer, Modifier.weight(1f))
+        StatCard(records.size, "Analizadas", TablerIcons.Activity, PhoneWardColors.Blue600, PhoneWardColors.Blue50, Modifier.weight(1f))
+        StatCard(scams, "Estafas", TablerIcons.ShieldX, PhoneWardColors.Red, PhoneWardColors.RedContainer, Modifier.weight(1f))
+        StatCard(safe, "Seguras", TablerIcons.ShieldCheck, PhoneWardColors.EmeraldDark, PhoneWardColors.EmeraldContainer, Modifier.weight(1f))
     }
 }
 
 @Composable
 private fun StatCard(value: Int, label: String, icon: ImageVector, tint: Color, container: Color, modifier: Modifier) {
-    TiskzCard(modifier, RoundedCornerShape(22.dp)) {
+    PhoneWardCard(modifier, RoundedCornerShape(22.dp)) {
         Column(Modifier.fillMaxWidth().padding(14.dp)) {
             Box(Modifier.size(34.dp).clip(CircleShape).background(container), contentAlignment = Alignment.Center) {
                 Icon(icon, null, tint = tint, modifier = Modifier.size(20.dp))
             }
             Spacer(Modifier.height(10.dp))
-            Text("$value", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = TiskzColors.Ink)
-            Text(label, style = MaterialTheme.typography.bodySmall, color = TiskzColors.Muted)
+            Text("$value", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = PhoneWardColors.Ink)
+            Text(label, style = MaterialTheme.typography.bodySmall, color = PhoneWardColors.Muted)
         }
     }
 }
@@ -365,22 +365,22 @@ private fun SectionTitle(title: String, subtitle: String) {
         Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 28.dp, bottom = 12.dp),
         verticalAlignment = Alignment.Bottom,
     ) {
-        Text(title, style = MaterialTheme.typography.titleLarge, color = TiskzColors.Ink, modifier = Modifier.weight(1f))
-        Text(subtitle, style = MaterialTheme.typography.bodySmall, color = TiskzColors.Muted)
+        Text(title, style = MaterialTheme.typography.titleLarge, color = PhoneWardColors.Ink, modifier = Modifier.weight(1f))
+        Text(subtitle, style = MaterialTheme.typography.bodySmall, color = PhoneWardColors.Muted)
     }
 }
 
 @Composable
 private fun ContactsBanner(onAllow: () -> Unit, modifier: Modifier = Modifier) {
-    TiskzCard(modifier.fillMaxWidth()) {
+    PhoneWardCard(modifier.fillMaxWidth()) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(44.dp).clip(CircleShape).background(TiskzColors.Blue50), contentAlignment = Alignment.Center) {
-                Icon(TablerIcons.Users, null, tint = TiskzColors.Blue600)
+            Box(Modifier.size(44.dp).clip(CircleShape).background(PhoneWardColors.Blue50), contentAlignment = Alignment.Center) {
+                Icon(TablerIcons.Users, null, tint = PhoneWardColors.Blue600)
             }
             Spacer(Modifier.size(12.dp))
             Column(Modifier.weight(1f)) {
-                Text("Ver nombres de contactos", style = MaterialTheme.typography.titleMedium, color = TiskzColors.Ink)
-                Text("Muestra quién llama, no solo el número.", style = MaterialTheme.typography.bodySmall, color = TiskzColors.Muted)
+                Text("Ver nombres de contactos", style = MaterialTheme.typography.titleMedium, color = PhoneWardColors.Ink)
+                Text("Muestra quién llama, no solo el número.", style = MaterialTheme.typography.bodySmall, color = PhoneWardColors.Muted)
             }
             Button(onClick = onAllow, shape = RoundedCornerShape(50)) { Text("Permitir") }
         }
@@ -420,14 +420,14 @@ private fun PagedRecents(records: List<CallRecord>, onOpenRecord: (String) -> Un
                     Surface(
                         onClick = { scope.launch { pager.animateScrollToPage(page) } },
                         shape = RoundedCornerShape(12.dp),
-                        color = if (selected) TiskzColors.Blue600 else TiskzColors.Blue50,
+                        color = if (selected) PhoneWardColors.Blue600 else PhoneWardColors.Blue50,
                         modifier = Modifier.size(width = 44.dp, height = 36.dp),
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(
                                 "${page + 1}",
                                 style = MaterialTheme.typography.labelLarge,
-                                color = if (selected) Color.White else TiskzColors.Blue700,
+                                color = if (selected) Color.White else PhoneWardColors.Blue700,
                             )
                         }
                     }
@@ -444,10 +444,10 @@ private fun PagedRecents(records: List<CallRecord>, onOpenRecord: (String) -> Un
             pageSpacing = 12.dp,
             verticalAlignment = Alignment.Top,
         ) { page ->
-            TiskzCard(Modifier.fillMaxWidth()) {
+            PhoneWardCard(Modifier.fillMaxWidth()) {
                 Column {
                     pages[page].forEachIndexed { index, record ->
-                        if (index > 0) HorizontalDivider(Modifier.padding(start = 82.dp), color = TiskzColors.Line)
+                        if (index > 0) HorizontalDivider(Modifier.padding(start = 82.dp), color = PhoneWardColors.Line)
                         CallRecordRow(record, onClick = { onOpenRecord(record.id) })
                     }
                 }
@@ -456,7 +456,7 @@ private fun PagedRecents(records: List<CallRecord>, onOpenRecord: (String) -> Un
         Text(
             "Página ${pager.currentPage + 1} de ${pages.size} · desliza para ver más",
             style = MaterialTheme.typography.bodySmall,
-            color = TiskzColors.Muted,
+            color = PhoneWardColors.Muted,
             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             textAlign = TextAlign.Center,
         )
@@ -469,12 +469,12 @@ private fun EmptyRecents() {
         Modifier.fillMaxWidth().padding(vertical = 32.dp, horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(Modifier.size(64.dp).clip(CircleShape).background(TiskzColors.Blue50), contentAlignment = Alignment.Center) {
-            Icon(TablerIcons.Phone, null, tint = TiskzColors.Blue600, modifier = Modifier.size(30.dp))
+        Box(Modifier.size(64.dp).clip(CircleShape).background(PhoneWardColors.Blue50), contentAlignment = Alignment.Center) {
+            Icon(TablerIcons.Phone, null, tint = PhoneWardColors.Blue600, modifier = Modifier.size(30.dp))
         }
         Spacer(Modifier.height(12.dp))
-        Text("Aún no hay llamadas", style = MaterialTheme.typography.titleMedium, color = TiskzColors.Ink)
-        Text("Aquí verás tus llamadas y qué tan seguras fueron.", style = MaterialTheme.typography.bodySmall, color = TiskzColors.Muted)
+        Text("Aún no hay llamadas", style = MaterialTheme.typography.titleMedium, color = PhoneWardColors.Ink)
+        Text("Aquí verás tus llamadas y qué tan seguras fueron.", style = MaterialTheme.typography.bodySmall, color = PhoneWardColors.Muted)
     }
 }
 
@@ -520,7 +520,7 @@ private fun CallRecordRow(record: CallRecord, onClick: () -> Unit) {
             Text(
                 record.title,
                 style = MaterialTheme.typography.titleMedium,
-                color = if (record.verdict == Verdict.SCAM) TiskzColors.Red else TiskzColors.Ink,
+                color = if (record.verdict == Verdict.SCAM) PhoneWardColors.Red else PhoneWardColors.Ink,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -528,7 +528,7 @@ private fun CallRecordRow(record: CallRecord, onClick: () -> Unit) {
                 Icon(
                     imageVector = if (record.direction == CallDirection.INCOMING) TablerIcons.PhoneIncoming else TablerIcons.PhoneOutgoing,
                     contentDescription = null,
-                    tint = TiskzColors.Muted,
+                    tint = PhoneWardColors.Muted,
                     modifier = Modifier.size(14.dp),
                 )
                 Spacer(Modifier.size(4.dp))
@@ -537,7 +537,7 @@ private fun CallRecordRow(record: CallRecord, onClick: () -> Unit) {
                     add(formatWhen(record.startedAt))
                     if (record.callerName != null) add(PhoneNumbers.display(record.number))
                 }.joinToString(" · ")
-                Text(detail, style = MaterialTheme.typography.bodySmall, color = TiskzColors.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(detail, style = MaterialTheme.typography.bodySmall, color = PhoneWardColors.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
         if (record.verdict != Verdict.NONE) {

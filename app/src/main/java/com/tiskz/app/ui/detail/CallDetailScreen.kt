@@ -27,7 +27,7 @@ import com.tiskz.app.ui.LocalAppContainer
 import com.tiskz.app.ui.components.RiskBar
 import com.tiskz.app.ui.components.StaticTranscript
 import com.tiskz.app.ui.components.VerdictBadge
-import com.tiskz.app.ui.theme.TiskzColors
+import com.tiskz.app.ui.theme.PhoneWardColors
 import com.tiskz.app.util.PhoneNumbers
 import com.tiskz.app.util.formatDuration
 import com.tiskz.app.util.formatWhen
@@ -43,7 +43,7 @@ fun CallDetailScreen(recordId: String, onBack: () -> Unit) {
     val record = records.firstOrNull { it.id == recordId }
 
     Scaffold(
-        containerColor = TiskzColors.White,
+        containerColor = PhoneWardColors.White,
         topBar = {
             TopAppBar(
                 title = { Text("Detalle de la llamada") },
@@ -52,7 +52,7 @@ fun CallDetailScreen(recordId: String, onBack: () -> Unit) {
                         Icon(TablerIcons.ArrowLeft, contentDescription = "Volver")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = TiskzColors.White),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = PhoneWardColors.White),
             )
         },
     ) { padding ->
@@ -60,7 +60,7 @@ fun CallDetailScreen(recordId: String, onBack: () -> Unit) {
             Text(
                 text = "No encontramos esta llamada.",
                 modifier = Modifier.padding(padding).padding(20.dp),
-                color = TiskzColors.Muted,
+                color = PhoneWardColors.Muted,
             )
             return@Scaffold
         }
@@ -83,7 +83,7 @@ fun CallDetailScreen(recordId: String, onBack: () -> Unit) {
                     if (record.simulated) add("Simulación")
                 }.joinToString(" · "),
                 style = MaterialTheme.typography.bodyMedium,
-                color = TiskzColors.Muted,
+                color = PhoneWardColors.Muted,
             )
             VerdictBadge(record.verdict)
             archived[record.id]?.let { state ->
@@ -95,9 +95,9 @@ fun CallDetailScreen(recordId: String, onBack: () -> Unit) {
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = when (state) {
-                        ArchiveState.SAVED -> TiskzColors.EmeraldDark
-                        ArchiveState.PENDING -> TiskzColors.Muted
-                        ArchiveState.FAILED -> TiskzColors.Red
+                        ArchiveState.SAVED -> PhoneWardColors.EmeraldDark
+                        ArchiveState.PENDING -> PhoneWardColors.Muted
+                        ArchiveState.FAILED -> PhoneWardColors.Red
                     },
                 )
             }
@@ -125,7 +125,7 @@ fun CallDetailScreen(recordId: String, onBack: () -> Unit) {
 @Composable
 private fun Section(title: String, content: @Composable () -> Unit) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(title, style = MaterialTheme.typography.titleMedium, color = TiskzColors.Blue700)
+        Text(title, style = MaterialTheme.typography.titleMedium, color = PhoneWardColors.Blue700)
         content()
     }
 }

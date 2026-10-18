@@ -56,7 +56,7 @@ class PhoneAlertSession(client: OkHttpClient, baseUrl: String, accessCode: Strin
                 callControl.accept(json)?.let { _hangupRequests.value = it }
                 if (BuildConfig.DEBUG) runCatching {
                     // Solo forma del evento, sin texto: sirve para revisar etiquetas e ids de la transcripción.
-                    Log.d("TiskzPhone", "${json.optString("type")} speaker=${json.optString("speaker")} " +
+                    Log.d("PhoneWardPhone", "${json.optString("type")} speaker=${json.optString("speaker")} " +
                         "id=${json.optString("id")} seq=${json.opt("sequence")} final=${json.opt("final")} " +
                         "len=${json.optString("text").length} lines=${json.optString("text").count { it == '\n' } + 1} " +
                         "source=${json.optString("source")} serverSentMs=${json.optLong("server_sent_at_ms")} receivedMs=${System.currentTimeMillis()}")

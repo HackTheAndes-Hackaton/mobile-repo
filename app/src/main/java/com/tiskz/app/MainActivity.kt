@@ -15,8 +15,8 @@ import com.tiskz.app.call.CallManager
 import com.tiskz.app.call.CallNotifications
 import com.tiskz.app.data.DemoScenario
 import com.tiskz.app.ui.LocalAppContainer
-import com.tiskz.app.ui.TiskzNavHost
-import com.tiskz.app.ui.theme.TiskzTheme
+import com.tiskz.app.ui.PhoneWardNavHost
+import com.tiskz.app.ui.theme.PhoneWardTheme
 
 class MainActivity : ComponentActivity() {
 
@@ -33,11 +33,11 @@ class MainActivity : ComponentActivity() {
             handleDebugSimulation(intent)
         }
 
-        val container = (application as TiskzApp).container
+        val container = (application as PhoneWardApp).container
         setContent {
-            TiskzTheme {
+            PhoneWardTheme {
                 CompositionLocalProvider(LocalAppContainer provides container) {
-                    TiskzNavHost(pendingDial = pendingDial, onDialConsumed = { pendingDial = null })
+                    PhoneWardNavHost(pendingDial = pendingDial, onDialConsumed = { pendingDial = null })
                 }
             }
         }

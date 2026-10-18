@@ -110,9 +110,9 @@ fun AutomaticConferenceSettings() {
                 if (!defaultDialer) DialerRole.requestIntent(context)?.let(role::launch)
                 else permissions.launch(arrayOf(Manifest.permission.CALL_PHONE, Manifest.permission.READ_PHONE_STATE))
             }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
-                Text(if (!defaultDialer) "Elegir Tiskz como teléfono" else "Permitir gestionar llamadas")
+                Text(if (!defaultDialer) "Elegir PhoneWard como teléfono" else "Permitir gestionar llamadas")
             }
-        } else Text("✓ Tiskz puede gestionar tus llamadas")
+        } else Text("✓ PhoneWard puede gestionar tus llamadas")
 
         Text("Tu línea móvil", style = MaterialTheme.typography.titleMedium)
         accounts.forEach { (handle, label) ->

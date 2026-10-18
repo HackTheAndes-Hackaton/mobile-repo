@@ -13,7 +13,7 @@ enum class DemoScenario(val label: String) {
     SAFE("Segura"),
 }
 
-data class TiskzSettings(
+data class PhoneWardSettings(
     val onboardingDone: Boolean,
     /** true: las llamadas se analizan con guiones locales; false: con los agentes por WebSocket. */
     val demoMode: Boolean,
@@ -31,7 +31,7 @@ data class TiskzSettings(
     val panelSync: Boolean = true,
     val phoneEvidenceConsent: Boolean = false,
     val panelUrl: String = BuildConfig.PANEL_URL,
-    /** Organización del panel con la que se comparten las llamadas (X-Tiskz-Org). */
+    /** Organización del panel con la que se comparten las llamadas (X-PhoneWard-Org). */
     val panelOrg: String = BuildConfig.PANEL_ORG,
 )
 
@@ -39,10 +39,10 @@ class SettingsRepository(context: Context) {
 
     private val prefs = context.getSharedPreferences("tiskz_settings", Context.MODE_PRIVATE)
     private val _settings = MutableStateFlow(load())
-    val settings: StateFlow<TiskzSettings> = _settings.asStateFlow()
-    val current: TiskzSettings get() = _settings.value
+    val settings: StateFlow<PhoneWardSettings> = _settings.asStateFlow()
+    val current: PhoneWardSettings get() = _settings.value
 
-    fun update(transform: (TiskzSettings) -> TiskzSettings) {
+    fun update(transform: (PhoneWardSettings) -> PhoneWardSettings) {
         val proposed = transform(_settings.value)
         val sameRoute = proposed.conferenceAccount == current.conferenceAccount &&
             proposed.conferenceDestination == current.conferenceDestination
@@ -74,7 +74,7 @@ class SettingsRepository(context: Context) {
             .apply()
     }
 
-    private fun load() = TiskzSettings(
+    private fun load() = PhoneWardSettings(
         onboardingDone = prefs.getBoolean(KEY_ONBOARDING, false),
         demoMode = prefs.getBoolean(KEY_DEMO, BuildConfig.DEMO_MODE_DEFAULT),
         demoScenario = prefs.getString(KEY_SCENARIO, null)

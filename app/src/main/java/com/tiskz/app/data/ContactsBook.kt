@@ -38,7 +38,7 @@ data class PhoneContact(
 }
 
 /**
- * Contactos guardados en el teléfono. Tiskz reemplaza a la app de teléfono, así que también
+ * Contactos guardados en el teléfono. PhoneWard reemplaza a la app de teléfono, así que también
  * tiene que poder buscarlos y llamarlos; crearlos y editarlos se delega a la app de contactos.
  */
 object ContactsBook {

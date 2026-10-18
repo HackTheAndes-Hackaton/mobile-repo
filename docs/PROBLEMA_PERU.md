@@ -63,9 +63,9 @@ Frase sugerida:
 
 **El hueco:** nadie protege a la persona **durante** la llamada, ni convierte cada intento en evidencia para la autoridad.
 
-## 7. Cómo responde Tiskz a cada parte del problema
+## 7. Cómo responde PhoneWard a cada parte del problema
 
-| Problema | Respuesta de Tiskz |
+| Problema | Respuesta de PhoneWard |
 |---|---|
 | El fraude entra por llamadas de números desconocidos | Los desconocidos los atiende primero el agente de IA; los contactos suenan normal |
 | El estafador cambia de número y de libreto | Análisis de la conversación, incongruencias ("dijo ser de Claro, ahora habla del BCP") y huella de voz |

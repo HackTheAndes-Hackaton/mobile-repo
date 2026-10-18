@@ -6,7 +6,7 @@ import com.tiskz.app.call.CallNotifications
 import com.tiskz.app.data.AppContainer
 import com.tiskz.app.util.PhoneNumbers
 
-class TiskzApp : Application() {
+class PhoneWardApp : Application() {
 
     lateinit var container: AppContainer
         private set

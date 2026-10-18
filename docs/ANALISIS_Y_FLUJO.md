@@ -1,4 +1,4 @@
-# Tiskz: análisis del proyecto y flujo
+# PhoneWard: análisis del proyecto y flujo
 
 > Track: **Seguridad: extorsión, estafas, suplantación y desinformación**.
 > Modelo: **B2G** (estándar nacional), empezando por B2C para validar.
@@ -39,17 +39,17 @@ burlar: el estafador se porta bien hasta llegar a la víctima y recién ahí emp
 
 ## 2. La propuesta
 
-Tiskz es la app de teléfono del usuario y funciona así:
+PhoneWard es la app de teléfono del usuario y funciona así:
 
 1. **Los contactos guardados suenan normal.** Sin filtro ni espera.
 2. **Las llamadas desconocidas las atiende primero un agente de IA**, con un saludo neutro, sin anunciar que es un filtro.
-3. **El análisis no termina al pasar la llamada.** Tiskz escucha **toda la conversación**: la del agente con quien llama y la del usuario con quien llama. Detecta incongruencias en vivo y avisa al usuario.
+3. **El análisis no termina al pasar la llamada.** PhoneWard escucha **toda la conversación**: la del agente con quien llama y la del usuario con quien llama. Detecta incongruencias en vivo y avisa al usuario.
 4. **No hay un "modo honeypot" aparte.** El honeypot **es el mismo agente**: si quien llama resulta ser estafador, el agente simplemente se queda conversando con él, lo retiene y registra evidencia. El usuario nunca habla con el estafador.
 5. **Cada estafa alimenta una base comunitaria** que, en el modelo B2G, valida la autoridad. Los números confirmados van directo al agente en las siguientes llamadas.
 
 Mensaje para el pitch:
 > *El estafador no sabe que lo están filtrando, y aunque pase el filtro portándose bien,
-> Tiskz sigue escuchando durante toda la llamada.*
+> PhoneWard sigue escuchando durante toda la llamada.*
 
 ## 3. Principios de diseño
 
@@ -57,9 +57,9 @@ Mensaje para el pitch:
 |---|---|
 | **Fricción mínima donde no hay riesgo** | Feedback de mentoría: el valor tiene que superar con claridad la fricción que se agrega. Los contactos (la mayoría de las llamadas) no pasan por nada. |
 | **Un solo agente, sin distinguir "externo" de "estafador" de antemano** | Al empezar la llamada no se sabe quién es quién. El mismo agente conversa con todos; lo que cambia es cómo termina la llamada. |
-| **Análisis continuo, no un filtro de entrada** | Un estafador puede actuar como persona legítima ante el agente y cambiar de rol con el usuario. Por eso Tiskz analiza hasta que se cuelga. |
+| **Análisis continuo, no un filtro de entrada** | Un estafador puede actuar como persona legítima ante el agente y cambiar de rol con el usuario. Por eso PhoneWard analiza hasta que se cuelga. |
 | **El agente no se delata, pero no suplanta al usuario** | No dice "soy un filtro anti-estafas" (el estafador se pondría en guardia), pero tampoco dice ser el dueño del teléfono. Si le preguntan directamente si es una máquina, no miente. |
-| **El usuario siempre decide** | Tiskz alerta y recomienda; el usuario puede contestar, colgar o marcar "No es estafa". |
+| **El usuario siempre decide** | PhoneWard alerta y recomienda; el usuario puede contestar, colgar o marcar "No es estafa". |
 
 ## 4. Flujo principal
 
@@ -69,14 +69,14 @@ Mensaje para el pitch:
 flowchart TD
     A[Entra una llamada al número del usuario] --> B{¿Quién llama?}
     B -- Contacto guardado --> C[Suena normal<br/>sin filtro]
-    B -- Número desconocido u oculto --> D[Tiskz la rechaza en silencio]
+    B -- Número desconocido u oculto --> D[PhoneWard la rechaza en silencio]
     B -- Estafa ya confirmada<br/>en la base --> D
-    D --> E[El operador la desvía al número de Tiskz<br/>desvío 'si está ocupado']
+    D --> E[El operador la desvía al número de PhoneWard<br/>desvío 'si está ocupado']
     E --> F[El agente de IA contesta con saludo neutro<br/>'Aló, ¿de parte de quién?']
     F --> G[Análisis continuo:<br/>riesgo, incongruencias, huella de voz]
     G --> H{Resultado}
-    H -- Legítima --> I[Tiskz llama al usuario:<br/>'Llamada verificada de …']
-    I --> J[Usuario conectado con quien llama<br/>Tiskz sigue escuchando en silencio]
+    H -- Legítima --> I[PhoneWard llama al usuario:<br/>'Llamada verificada de …']
+    I --> J[Usuario conectado con quien llama<br/>PhoneWard sigue escuchando en silencio]
     J --> K{¿Cambia a patrón de estafa?}
     K -- No --> L[Llamada normal hasta colgar]
     K -- Sí --> M[Alerta en pantalla con el motivo<br/>'Dijo ser de Claro, ahora habla del BCP']
@@ -93,16 +93,16 @@ flowchart TD
 ### 4.2 Cómo llega la llamada al agente
 
 Android no permite que una app lea el audio de una llamada del operador (ver [sección 7](#7-restricciones-técnicas-de-android-y-de-la-red)).
-Por eso la llamada desconocida tiene que pasar por el backend de Tiskz. La forma de lograrlo **sin desviar todas las llamadas**:
+Por eso la llamada desconocida tiene que pasar por el backend de PhoneWard. La forma de lograrlo **sin desviar todas las llamadas**:
 
-1. **Una sola vez**, el usuario activa el desvío "si está ocupado" (`**67*<número de Tiskz>#`). La app lo hace con un botón.
-2. **Contacto:** Tiskz no interviene y el teléfono suena.
-3. **Desconocido o estafa confirmada:** Tiskz (`CallScreeningService` / `InCallService`) **rechaza la llamada en silencio**. Para el operador, rechazar equivale a "ocupado", así que la desvía al número de Tiskz. Es el mismo mecanismo que hoy envía una llamada rechazada al buzón de voz.
+1. **Una sola vez**, el usuario activa el desvío "si está ocupado" (`**67*<número de PhoneWard>#`). La app lo hace con un botón.
+2. **Contacto:** PhoneWard no interviene y el teléfono suena.
+3. **Desconocido o estafa confirmada:** PhoneWard (`CallScreeningService` / `InCallService`) **rechaza la llamada en silencio**. Para el operador, rechazar equivale a "ocupado", así que la desvía al número de PhoneWard. Es el mismo mecanismo que hoy envía una llamada rechazada al buzón de voz.
 4. El backend recibe la llamada y conecta al agente.
 
-**Cuando la llamada es legítima**, el backend **llama al usuario** desde el número de Tiskz. La app reconoce ese número
+**Cuando la llamada es legítima**, el backend **llama al usuario** desde el número de PhoneWard. La app reconoce ese número
 y muestra "Llamada verificada" con el nombre que dio quien llama, el motivo y el riesgo. Al contestar,
-el backend une ambas llamadas **y la mantiene pasando por Tiskz**, lo que permite seguir analizándola.
+el backend une ambas llamadas **y la mantiene pasando por PhoneWard**, lo que permite seguir analizándola.
 
 A validar antes de construirlo:
 - que el desvío por ocupado funcione al rechazar desde la app con cada operador (Claro, Movistar, Entel, Bitel), y su costo por minuto;
@@ -127,7 +127,7 @@ El análisis corre en **dos tramos** de la misma llamada:
 | Tramo | Quién habla | Qué ve el usuario |
 |---|---|---|
 | **1. Agente ↔ quien llama** | El agente conversa con quien llama. | En la pantalla de llamada: transcripción, % de riesgo y motivos. |
-| **2. Usuario ↔ quien llama** (si se conectó) | El usuario habla; Tiskz escucha en silencio. | Indicador "Tiskz está escuchando", el riesgo y **alertas** si cambia el patrón. |
+| **2. Usuario ↔ quien llama** (si se conectó) | El usuario habla; PhoneWard escucha en silencio. | Indicador "PhoneWard está escuchando", el riesgo y **alertas** si cambia el patrón. |
 
 **Señales que se evalúan en ambos tramos:**
 
@@ -154,22 +154,22 @@ sequenceDiagram
     autonumber
     participant E as Quien llama
     participant O as Operador
-    participant APP as App Tiskz
-    participant B as Backend Tiskz
+    participant APP as App PhoneWard
+    participant B as Backend PhoneWard
     participant AG as Agente IA
     participant U as Usuario
 
     E->>O: Llama al usuario
     O->>APP: Llamada entrante (número desconocido)
     APP->>O: Rechazo silencioso
-    O->>B: Desvío por ocupado al número de Tiskz
+    O->>B: Desvío por ocupado al número de PhoneWard
     B->>AG: Abre sesión con la llamada
     AG->>E: "Aló, ¿de parte de quién?"
     E->>AG: "Soy Luis, de Claro, por su plan"
     AG->>B: Transcripción + análisis
     B->>APP: transcript.update / risk.update
     alt Parece legítima
-        B->>U: Llama desde el número de Tiskz
+        B->>U: Llama desde el número de PhoneWard
         APP->>U: "Llamada verificada: Luis (Claro) · riesgo 12 %"
         U->>B: Contesta
         B->>B: Une las llamadas y sigue escuchando
@@ -191,9 +191,9 @@ sequenceDiagram
 | Momento | Qué ve el usuario | Acciones |
 |---|---|---|
 | Contacto llamando | Pantalla normal de llamada entrante | Contestar · Rechazar |
-| Desconocido en el agente (en segundo plano) | Notificación discreta "Tiskz está atendiendo a +51…" con transcripción y riesgo al abrirla | Contestar ahora · Colgar · Dejar al asistente |
+| Desconocido en el agente (en segundo plano) | Notificación discreta "PhoneWard está atendiendo a +51…" con transcripción y riesgo al abrirla | Contestar ahora · Colgar · Dejar al asistente |
 | Llamada verificada | "Llamada verificada de Luis (Claro)", motivo y riesgo | **Contestar** · Rechazar |
-| En llamada, sin señales | Duración e indicador "Tiskz está escuchando" | Silenciar · Altavoz · Colgar |
+| En llamada, sin señales | Duración e indicador "PhoneWard está escuchando" | Silenciar · Altavoz · Colgar |
 | En llamada, alerta | Banner rojo con el motivo y el % | Colgar · Pasar al asistente · Es legítimo |
 | Estafa retenida por el agente | Historial: "Estafa retenida 12 min · evidencia enviada" | Ver transcripción · Reportar |
 
@@ -211,14 +211,14 @@ Colores de riesgo: `< 30 %` verde · `30–59 %` ámbar · `60–84 %` naranja �
 ```mermaid
 flowchart TB
     subgraph Telefono["Teléfono del usuario"]
-        APP[App Tiskz<br/>Kotlin + Compose]
+        APP[App PhoneWard<br/>Kotlin + Compose]
         ICS[InCallService<br/>pantalla de llamada]
         CSS[CallScreeningService<br/>contactos / desconocidos / base]
         APP --- ICS
         APP --- CSS
     end
 
-    subgraph Nube["Backend Tiskz"]
+    subgraph Nube["Backend PhoneWard"]
         TEL[Entrada de telefonía<br/>llamadas desviadas]
         BR[Puente de llamada<br/>agente ↔ quien llama ↔ usuario]
         STT[Transcripción]
@@ -252,8 +252,8 @@ flowchart TB
 
 | Componente | Hace | No hace |
 |---|---|---|
-| **App Tiskz** | Separar contactos de desconocidos, rechazar en silencio, mostrar transcripción, riesgo y alertas, decisiones del usuario, historial | No toca el audio de la llamada del operador |
-| **Puente de telefonía** | Recibir la llamada desviada, conectar al agente, llamar al usuario si es legítima, mantener la llamada pasando por Tiskz | — |
+| **App PhoneWard** | Separar contactos de desconocidos, rechazar en silencio, mostrar transcripción, riesgo y alertas, decisiones del usuario, historial | No toca el audio de la llamada del operador |
+| **Puente de telefonía** | Recibir la llamada desviada, conectar al agente, llamar al usuario si es legítima, mantener la llamada pasando por PhoneWard | — |
 | **Agente de voz** | Conversar con quien llama según las reglas de 4.3, de principio a fin, también como persona ficticia ante una estafa | No decide solo si es estafa: lo decide el análisis |
 | **Análisis continuo** | Riesgo 0–100, motivos, **incongruencias** entre lo dicho al agente y al usuario, en ambos tramos | No confirma identidades ni culpabilidad |
 | **Huella de voz** | Embedding de la voz y búsqueda de similares | No detecta voces clonadas sin un anti-spoofing aparte |
@@ -300,10 +300,10 @@ Contrato exacto app ↔ backend: [`CONTRATO_BACKEND.md`](CONTRATO_BACKEND.md).
 | Llamadas comerciales | Chile | Prefijo obligatorio para televentas (Subtel; impugnado, verificar vigencia). |
 
 **Perú hoy:** OSIPTEL actúa sobre líneas y equipos (RENTESEG, baja de líneas a pedido de la policía o la fiscalía,
-"candado" contra contrataciones a tu nombre), pero **no protege a la persona durante la llamada**. Ahí entra Tiskz.
+"candado" contra contrataciones a tu nombre), pero **no protege a la persona durante la llamada**. Ahí entra PhoneWard.
 
 Frase para el pitch:
-> *Tiskz es el ScamShield de Singapur con la IA en vivo de Corea, pensado para Perú y conectado
+> *PhoneWard es el ScamShield de Singapur con la IA en vivo de Corea, pensado para Perú y conectado
 > con lo que OSIPTEL ya hace con RENTESEG.*
 
 ### 8.4 Ruta
@@ -321,7 +321,7 @@ debe ser siempre **opcional y con consentimiento**, como en Singapur (solo lista
 
 ### Productos
 
-| Producto | Qué hace | Diferencia con Tiskz |
+| Producto | Qué hace | Diferencia con PhoneWard |
 |---|---|---|
 | **Google Scam Detection (Pixel)** | Analiza la llamada en el teléfono con Gemini Nano y avisa durante la conversación. | Solo avisa; no atiende por ti ni retiene al estafador. |
 | **Google Fake Call Detection (2026)** | Verifica por RCS que un contacto sea quien dice ser. | Verifica identidad, no analiza la conversación. |
@@ -339,7 +339,7 @@ debe ser siempre **opcional y con consentimiento**, como en Singapur (solo lista
 - **Falta de datos:** no se encontraron datasets en español; cada llamada retenida es un dato valioso.
 - **Huella de voz:** ECAPA-TDNN es el estándar; necesita anti-spoofing aparte para voces clonadas.
 
-### Qué diferencia a Tiskz
+### Qué diferencia a PhoneWard
 
 1. **Contactos sin fricción** y filtro solo para desconocidos.
 2. **Un solo agente** que filtra, conversa y retiene, sin delatarse.
@@ -356,7 +356,7 @@ Su flujo: llamada a un número Twilio → stream de audio → transcripción →
 **Se reutiliza:** el contrato de eventos como base, el **prompt de detección con estafas locales** y la idea de verificar con el contacto suplantado.
 
 **No se reutiliza:** el frontend web, la autenticación (clave JWT por defecto), las alertas por WhatsApp (se envían a todos los usuarios),
-el análisis por categorías (Tiskz usa porcentaje), la transcripción sin separar hablantes, webhooks sin validar firma y endpoints sin autenticación.
+el análisis por categorías (PhoneWard usa porcentaje), la transcripción sin separar hablantes, webhooks sin validar firma y endpoints sin autenticación.
 
 ## 11. Stack y costos
 
@@ -384,8 +384,8 @@ el análisis por categorías (Tiskz usa porcentaje), la transcripción sin separ
 
 ### Hecho
 
-- [x] App Android Tiskz: bienvenida, inicio, llamada en vivo, detalle, marcador y ajustes.
-- [x] Tiskz como app de teléfono (`InCallService`) y bloqueo previo (`CallScreeningService`).
+- [x] App Android PhoneWard: bienvenida, inicio, llamada en vivo, detalle, marcador y ajustes.
+- [x] PhoneWard como app de teléfono (`InCallService`) y bloqueo previo (`CallScreeningService`).
 - [x] Contactos: nombre en vez del número; en el modo demo, los contactos siempre se tratan como llamada segura.
 - [x] Modo demo con guiones de estafa y de llamada segura (también por `adb`).
 - [x] **Canal de voz WebRTC** con transcripción, alerta y comprensión en vivo (servicio en Maritime).
@@ -395,15 +395,15 @@ el análisis por categorías (Tiskz usa porcentaje), la transcripción sin separ
 
 - [ ] Rechazo silencioso de desconocidos y botón para activar el desvío por ocupado.
 - [ ] Validar el desvío por ocupado con operadores peruanos y que llegue el número original.
-- [ ] Puente de telefonía: agente ↔ quien llama ↔ usuario, con la llamada pasando por Tiskz.
+- [ ] Puente de telefonía: agente ↔ quien llama ↔ usuario, con la llamada pasando por PhoneWard.
 - [ ] Agente de voz con las reglas de la sección 4.3.
 - [ ] Análisis continuo en ambos tramos y detección de incongruencias (`insight.update`).
-- [ ] Pantallas: "Llamada verificada", "Tiskz está escuchando" y alerta durante la llamada.
+- [ ] Pantallas: "Llamada verificada", "PhoneWard está escuchando" y alerta durante la llamada.
 - [ ] Base comunitaria con estados de revisión.
 
 ### Guion de demo sugerido
 
-1. Abrir Tiskz y mostrar "Protección activa".
+1. Abrir PhoneWard y mostrar "Protección activa".
 2. **Contacto llamando:** suena normal, sin filtro.
 3. **Desconocido:** el agente atiende con saludo neutro; la transcripción y el riesgo se ven en vivo (canal de voz o simulación).
 4. **El estafador se porta bien y luego cambia:** "Soy de Claro…" → "…del área de seguridad del BCP". Aparece la alerta de incongruencia.

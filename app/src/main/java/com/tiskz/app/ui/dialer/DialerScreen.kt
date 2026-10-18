@@ -46,7 +46,7 @@ import com.tiskz.app.call.Dialing
 import com.tiskz.app.data.ContactsBook
 import com.tiskz.app.data.PhoneContact
 import com.tiskz.app.ui.components.CallerAvatar
-import com.tiskz.app.ui.theme.TiskzColors
+import com.tiskz.app.ui.theme.PhoneWardColors
 import com.tiskz.app.util.PhoneNumbers
 import compose.icons.TablerIcons
 import compose.icons.tablericons.Users
@@ -64,7 +64,7 @@ private val keys = listOf(
     "*" to "", "0" to "+", "#" to "",
 )
 
-/** Marcador mínimo: al ser la app de teléfono, Tiskz también tiene que poder llamar. */
+/** Marcador mínimo: al ser la app de teléfono, PhoneWard también tiene que poder llamar. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DialerScreen(initialNumber: String, onBack: () -> Unit, onOpenContacts: () -> Unit = {}) {
@@ -88,7 +88,7 @@ fun DialerScreen(initialNumber: String, onBack: () -> Unit, onOpenContacts: () -
     }
 
     Scaffold(
-        containerColor = TiskzColors.White,
+        containerColor = PhoneWardColors.White,
         topBar = {
             TopAppBar(
                 title = { Text("Marcar") },
@@ -100,14 +100,14 @@ fun DialerScreen(initialNumber: String, onBack: () -> Unit, onOpenContacts: () -
                 actions = {
                     if (number.isNotBlank()) {
                         IconButton(onClick = { context.startActivity(ContactsBook.insertIntent(number)) }) {
-                            Icon(TablerIcons.UserPlus, contentDescription = "Guardar contacto", tint = TiskzColors.Blue600)
+                            Icon(TablerIcons.UserPlus, contentDescription = "Guardar contacto", tint = PhoneWardColors.Blue600)
                         }
                     }
                     IconButton(onClick = onOpenContacts) {
-                        Icon(TablerIcons.Users, contentDescription = "Contactos", tint = TiskzColors.Blue600)
+                        Icon(TablerIcons.Users, contentDescription = "Contactos", tint = PhoneWardColors.Blue600)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = TiskzColors.White),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = PhoneWardColors.White),
             )
         },
     ) { padding ->
@@ -125,8 +125,8 @@ fun DialerScreen(initialNumber: String, onBack: () -> Unit, onOpenContacts: () -
                         CallerAvatar(contact.name, size = 36.dp)
                         Spacer(Modifier.width(10.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(contact.name, style = MaterialTheme.typography.titleSmall, color = TiskzColors.Ink, maxLines = 1)
-                            Text("${PhoneNumbers.display(phone.number)} · ${phone.label}", style = MaterialTheme.typography.bodySmall, color = TiskzColors.Muted, maxLines = 1)
+                            Text(contact.name, style = MaterialTheme.typography.titleSmall, color = PhoneWardColors.Ink, maxLines = 1)
+                            Text("${PhoneNumbers.display(phone.number)} · ${phone.label}", style = MaterialTheme.typography.bodySmall, color = PhoneWardColors.Muted, maxLines = 1)
                         }
                     }
                 }
@@ -135,14 +135,14 @@ fun DialerScreen(initialNumber: String, onBack: () -> Unit, onOpenContacts: () -
                 Text(
                     text = number,
                     fontSize = 34.sp,
-                    color = TiskzColors.Ink,
+                    color = PhoneWardColors.Ink,
                     textAlign = TextAlign.Center,
                     maxLines = 1,
                     modifier = Modifier.weight(1f),
                 )
                 if (number.isNotEmpty()) {
                     IconButton(onClick = { number = number.dropLast(1) }) {
-                        Icon(TablerIcons.Backspace, contentDescription = "Borrar", tint = TiskzColors.Muted)
+                        Icon(TablerIcons.Backspace, contentDescription = "Borrar", tint = PhoneWardColors.Muted)
                     }
                 }
             }
@@ -166,11 +166,11 @@ fun DialerScreen(initialNumber: String, onBack: () -> Unit, onOpenContacts: () -
                     }
                 },
                 shape = CircleShape,
-                color = TiskzColors.Blue600,
+                color = PhoneWardColors.Blue600,
                 modifier = Modifier.size(76.dp),
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(TablerIcons.Phone, contentDescription = "Llamar", tint = TiskzColors.White, modifier = Modifier.size(34.dp))
+                    Icon(TablerIcons.Phone, contentDescription = "Llamar", tint = PhoneWardColors.White, modifier = Modifier.size(34.dp))
                 }
             }
             Spacer(Modifier.height(32.dp))
@@ -180,11 +180,11 @@ fun DialerScreen(initialNumber: String, onBack: () -> Unit, onOpenContacts: () -
 
 @Composable
 private fun DialKey(digit: String, letters: String, onClick: () -> Unit) {
-    Surface(onClick = onClick, shape = CircleShape, color = TiskzColors.Blue50, modifier = Modifier.size(76.dp)) {
+    Surface(onClick = onClick, shape = CircleShape, color = PhoneWardColors.Blue50, modifier = Modifier.size(76.dp)) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            Text(digit, fontSize = 28.sp, color = TiskzColors.Ink)
+            Text(digit, fontSize = 28.sp, color = PhoneWardColors.Ink)
             if (letters.isNotEmpty()) {
-                Text(letters, style = MaterialTheme.typography.bodySmall, color = TiskzColors.Muted)
+                Text(letters, style = MaterialTheme.typography.bodySmall, color = PhoneWardColors.Muted)
             }
         }
     }

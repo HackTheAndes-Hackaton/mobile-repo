@@ -15,7 +15,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.tiskz.app.model.AssessmentState
 import com.tiskz.app.model.CallAnalysis
-import com.tiskz.app.ui.theme.TiskzColors
+import com.tiskz.app.ui.theme.PhoneWardColors
 
 /** Solo presenta orientación: no cambia alertas, porcentajes ni ejecuta acciones. */
 @Composable
@@ -23,10 +23,10 @@ fun AssessmentCard(analysis: CallAnalysis, modifier: Modifier = Modifier, compac
     val assessment = analysis.currentAssessment
     val waitingAlert = assessment == null && analysis.alert == true
     val (background, foreground) = when {
-        assessment?.state == AssessmentState.ALERT || waitingAlert -> TiskzColors.RedContainer to TiskzColors.RedDark
-        assessment?.state == AssessmentState.VERIFY -> TiskzColors.AmberContainer to TiskzColors.AmberDark
-        assessment?.state == AssessmentState.OBSERVE -> TiskzColors.Blue50 to TiskzColors.Blue700
-        else -> TiskzColors.Surface to TiskzColors.Ink
+        assessment?.state == AssessmentState.ALERT || waitingAlert -> PhoneWardColors.RedContainer to PhoneWardColors.RedDark
+        assessment?.state == AssessmentState.VERIFY -> PhoneWardColors.AmberContainer to PhoneWardColors.AmberDark
+        assessment?.state == AssessmentState.OBSERVE -> PhoneWardColors.Blue50 to PhoneWardColors.Blue700
+        else -> PhoneWardColors.Surface to PhoneWardColors.Ink
     }
     val title = assessment?.state?.label ?: when {
         waitingAlert -> "Alerta preventiva · orientación pendiente"
@@ -44,9 +44,9 @@ fun AssessmentCard(analysis: CallAnalysis, modifier: Modifier = Modifier, compac
             liveRegion = if (assessment?.state == AssessmentState.ALERT || waitingAlert) LiveRegionMode.Assertive else LiveRegionMode.Polite
         }, verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(title, style = if (compact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge, color = foreground)
-            Text(guidance, style = if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium, color = TiskzColors.Ink)
+            Text(guidance, style = if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium, color = PhoneWardColors.Ink)
             if (!compact) Text("Orientación provisional. La identidad y el origen de la voz no se han verificado.",
-                style = MaterialTheme.typography.bodySmall, color = TiskzColors.Muted)
+                style = MaterialTheme.typography.bodySmall, color = PhoneWardColors.Muted)
         }
     }
 }

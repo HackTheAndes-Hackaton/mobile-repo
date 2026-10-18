@@ -17,7 +17,7 @@ import com.tiskz.app.model.CallPhase
 import com.tiskz.app.ui.call.LiveCallActions
 import com.tiskz.app.ui.call.LiveCallScreen
 import com.tiskz.app.ui.components.AssessmentCard
-import com.tiskz.app.ui.theme.TiskzTheme
+import com.tiskz.app.ui.theme.PhoneWardTheme
 import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Test
@@ -39,7 +39,7 @@ class AssessmentDisplayTest {
         val call = ActiveCall("+51900000000", CallDirection.INCOMING, CallPhase.ACTIVE, simulated = true)
         try {
             instrumentation.runOnMainSync {
-                activity.setContent { TiskzTheme {
+                activity.setContent { PhoneWardTheme {
                     if (fullCall.value) LiveCallScreen(call, analysis.value, 40, actions)
                     else AssessmentCard(analysis.value)
                 } }

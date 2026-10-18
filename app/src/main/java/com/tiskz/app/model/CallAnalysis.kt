@@ -10,7 +10,7 @@ data class TranscriptLine(
     val sequence: Int? = null,
 )
 
-/** Qué está haciendo el agente de Tiskz en este momento. */
+/** Qué está haciendo el agente de PhoneWard en este momento. */
 enum class AgentStatus { CONNECTING, SCREENING, ANALYZING, SAFE, SUSPICIOUS, SCAM, OFFLINE }
 
 enum class RiskLevel(val label: String) {
