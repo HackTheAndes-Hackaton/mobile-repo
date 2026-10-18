@@ -27,6 +27,17 @@ private val modalityLabels = mapOf(
 
 data class FraudModality(val category: String, val hypothesis: Boolean, val quotes: List<String>, val sources: List<String>) {
     val label: String get() = modalityLabels[category].orEmpty()
+    val explanation: String get() = when (category) {
+        "posible_extorsion" -> "Hay una amenaza ligada a una exigencia o condición."
+        "amenaza_por_verificar" -> "Hay una posible amenaza, pero falta contexto sobre la exigencia."
+        "posible_fraude_credenciales", "credenciales_por_verificar" -> "Se pide compartir una clave o un código de acceso."
+        "posible_fraude_acceso_remoto", "acceso_remoto_por_verificar" -> "Se pide acceso o control del dispositivo."
+        "posible_fraude_pago" -> "Hay un pedido de dinero con otras señales de riesgo."
+        "peticion_economica_por_verificar" -> "Hay un pedido de dinero; por sí solo no demuestra engaño."
+        "relato_o_denuncia" -> "Se está contando una amenaza recibida o citada."
+        "solicitud_cotidiana" -> "La petición observada es cotidiana."
+        else -> "Falta contexto para determinar el motivo."
+    }
     fun toJson() = JSONObject().put("categoria", category)
         .put("interpretacion", if (hypothesis) "hipotesis_preventiva" else "conducta_por_revisar")
         .put("evidencias", JSONArray(quotes.map { JSONObject().put("cita", it) }))

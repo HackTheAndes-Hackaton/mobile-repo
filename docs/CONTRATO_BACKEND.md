@@ -323,3 +323,8 @@ La APK 0.4.8 conserva además el motivo de la orden autenticada antes de descone
 La pantalla de llamada y su detalle muestran el tipo provisional, sus citas y las fuentes. `risk.update.scam_type` contiene la primera hipótesis disponible de esa revisión o null; un evento nuevo con null retira una clasificación anterior. Una alerta no espera a que llegue el tipo, y sin comprensión suficiente se muestra «Tipo todavía sin determinar». La clasificación no cambia el porcentaje, los permisos ni la política de corte.
 
 `voice.match.scam_type` es un antecedente de reportes previos. Se muestra como tal, separado del análisis del contenido actual; no identifica al hablante ni atribuye esa modalidad a la llamada nueva. Si el campo falta, no se inventa. El historial conserva modalidades y referencias de la revisión vigente, sin rellenar retroactivamente registros anteriores.
+
+
+### Presentación simplificada (APK 0.4.10)
+
+La app presenta el tipo provisional y un motivo breve en lenguaje cotidiano. No muestra bibliografía, enlaces a artículos ni citas académicas en el flujo de llamadas. Las referencias y evidencias estructuradas permanecen como metadatos internos; los aprendizajes se aplican en los prompts de comprensión y detección. La transcripción de la conversación sigue disponible, separada del resumen del tipo.

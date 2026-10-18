@@ -117,7 +117,7 @@ fun CallDetailScreen(recordId: String, onBack: () -> Unit) {
             }
 
             if (record.modalities.isNotEmpty()) {
-                Section("Tipo y evidencia del contenido") {
+                Section("Tipo y motivo") {
                     com.tiskz.app.ui.components.FraudModalityDetails(record.modalities)
                 }
             } else if (record.endedByVoiceMatch) {
