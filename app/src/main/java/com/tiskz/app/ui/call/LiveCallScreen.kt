@@ -37,6 +37,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -69,6 +70,7 @@ import kotlin.math.roundToInt
 
 class LiveCallActions(
     val onAnswer: () -> Unit,
+    val onJoin: () -> Unit,
     val onReject: () -> Unit,
     val onHangUp: () -> Unit,
     val onBlock: () -> Unit,
@@ -112,6 +114,7 @@ fun LiveCallScreen(
     val screened = call.direction == CallDirection.INCOMING && analysis != null
     val mood = when {
         analysis == null -> Mood.NEUTRAL
+        automatic && analysis.alert != true && analysis.isSafeToAnswer(answerThreshold) -> Mood.SAFE
         automatic && (conference.phase != ConferencePhase.CONNECTED || analysis.alert == null) -> Mood.NEUTRAL
         automatic && analysis.alert == true -> Mood.DANGER
         automatic && analysis.alert == false -> Mood.SAFE
@@ -132,26 +135,25 @@ fun LiveCallScreen(
                 headline = if (automatic) when {
                     conference.phase == ConferencePhase.FAILED -> "Sin monitoreo del agente"
                     analysis.alert == true -> "Alerta detectada"
+                    analysis.isSafeToAnswer(answerThreshold) -> "Espacio seguro · puedes entrar"
                     analysis.alert == false -> "Sin señales de alerta detectadas"
                     else -> "Esperando análisis real"
                 } else riskHeadline(analysis, answerThreshold),
-                detail = if (automatic) analysis.error ?: analysis.reasons.firstOrNull() else riskDetail(analysis, answerThreshold),
+                // En automático solo se explica lo accionable: un error, por qué falló o el motivo de la alerta.
+                detail = if (automatic) when {
+                    analysis.error != null -> analysis.error
+                    conference.phase == ConferencePhase.FAILED -> conference.message
+                    analysis.alert == true -> analysis.reasons.firstOrNull()
+                    else -> null
+                } else riskDetail(analysis, answerThreshold),
                 headlineColor = if (mood == Mood.NEUTRAL && analysis.riskPercent < 30) TiskzColors.Blue600 else null,
                 modifier = Modifier
                     .padding(horizontal = 20.dp)
                     .overlapUp(HERO_OVERLAP),
             )
-            if (automatic) {
-                Text(conference.message, modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
-                    style = MaterialTheme.typography.bodyMedium)
-                analysis.understanding?.summary?.let {
-                    Text(it, modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.bodySmall, maxLines = 3, overflow = TextOverflow.Ellipsis)
-                }
-            }
             LiveTranscript(
                 lines = analysis.transcript,
-                callerLabel = if (automatic) "Participantes de la conferencia" else call.callerName ?: "Quien llama",
+                callerLabel = call.callerName ?: "Quien llama",
                 live = if (automatic) conference.phase == ConferencePhase.CONNECTED else call.phase == CallPhase.RINGING && !analysis.isScam,
                 modifier = Modifier
                     .weight(1f)
@@ -160,17 +162,21 @@ fun LiveCallScreen(
             )
         } else {
             FullHero(call, Modifier.weight(1f))
-            if (automatic) Text(conference.message, modifier = Modifier.padding(20.dp))
+            if (automatic) Text(conference.message, style = MaterialTheme.typography.bodySmall, color = TiskzColors.Muted,
+                modifier = Modifier.fillMaxWidth().padding(16.dp), textAlign = TextAlign.Center)
         }
 
-        if (conference.running && conference.phase != ConferencePhase.CONNECTED) {
-            TextButton(onClick = actions.onAnswer, modifier = Modifier.fillMaxWidth()) { Text("Cancelar conexión con marin y tomar la llamada") }
-        } else if (call.phase == CallPhase.HOLDING) {
+        if (!call.screening && call.phase == CallPhase.HOLDING) {
             TextButton(onClick = actions.onAnswer, modifier = Modifier.fillMaxWidth()) { Text("Retomar llamada") }
         }
-        if (automatic) TextButton(onClick = { showProgress = true }, modifier = Modifier.fillMaxWidth()) { Text("Ver progreso de conexión") }
+        // El detalle técnico solo hace falta si la conexión con marin falló.
+        if (conference.phase == ConferencePhase.FAILED) {
+            TextButton(onClick = { showProgress = true }, modifier = Modifier.fillMaxWidth()) {
+                Text("Ver detalle de la conexión", style = MaterialTheme.typography.bodySmall)
+            }
+        }
 
-        ActionBar(call, analysis, answerThreshold, actions)
+        ActionBar(call, analysis, answerThreshold, actions, conference)
     }
 }
 
@@ -247,7 +253,8 @@ private fun FullHero(call: ActiveCall, modifier: Modifier) {
 @Composable
 private fun CallerText(call: ActiveCall, modifier: Modifier = Modifier, centered: Boolean = false) {
     val now by rememberNow()
-    val status = when (call.phase) {
+    val status = if (call.screening && call.phase != CallPhase.DISCONNECTED) "Marin está atendiendo"
+    else when (call.phase) {
         CallPhase.RINGING -> "Llamada entrante"
         CallPhase.DIALING -> "Llamando…"
         CallPhase.ACTIVE -> "En llamada · " + formatDuration(((now - (call.answeredAt ?: now)) / 1000).coerceAtLeast(0))
@@ -294,6 +301,7 @@ private fun GlassChip(text: String) {
 }
 
 private val HERO_OVERLAP = 40.dp
+private val SCREENING_BUTTON = 56.dp
 
 // --- Riesgo: una línea de titular y una de detalle ---
 
@@ -325,6 +333,7 @@ private fun ActionBar(
     analysis: CallAnalysis?,
     answerThreshold: Int,
     actions: LiveCallActions,
+    conference: ConferenceState,
 ) {
     val shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
     Column(
@@ -334,7 +343,7 @@ private fun ActionBar(
             .clip(shape)
             .background(TiskzColors.White)
             .navigationBarsPadding()
-            .padding(horizontal = 24.dp, vertical = 20.dp),
+            .padding(horizontal = 24.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         when {
@@ -346,6 +355,8 @@ private fun ActionBar(
             ) {
                 Text("Cerrar", style = MaterialTheme.typography.titleMedium)
             }
+
+            call.screening -> ScreeningActions(analysis, answerThreshold, actions, conference)
 
             call.phase == CallPhase.RINGING && call.direction == CallDirection.INCOMING -> {
                 val scam = analysis?.isScam == true
@@ -376,11 +387,16 @@ private fun ActionBar(
                 }
             }
 
-            else -> Row(
+            else -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
+              if (conference.phase == ConferencePhase.CONNECTED) {
+                  Text("Marin sigue escuchando y analizando la llamada", style = MaterialTheme.typography.bodySmall,
+                      color = TiskzColors.Muted, modifier = Modifier.padding(bottom = 12.dp))
+              }
+              Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.Bottom,
-            ) {
+              ) {
                 ToggleAction(
                     icon = if (call.muted) TablerIcons.MicrophoneOff else TablerIcons.Microphone,
                     label = if (call.muted) "Silenciado" else "Silenciar",
@@ -394,7 +410,63 @@ private fun ActionBar(
                     active = call.speaker,
                     onClick = actions.onToggleSpeaker,
                 )
+              }
             }
+        }
+    }
+}
+
+/**
+ * Mientras marin atiende, el titular no está en la llamada: no hay contestar, silenciar ni altavoz.
+ * Solo puede cancelar o entrar, y entrar se habilita cuando marin confirma un espacio seguro.
+ */
+@Composable
+private fun ScreeningActions(
+    analysis: CallAnalysis?,
+    answerThreshold: Int,
+    actions: LiveCallActions,
+    conference: ConferenceState,
+) {
+    val scam = analysis?.isScam == true || analysis?.alert == true
+    val noAgent = conference.phase == ConferencePhase.FAILED
+    val safe = !scam && analysis?.isSafeToAnswer(answerThreshold) == true
+    val canJoin = safe || noAgent
+    Text(
+        text = when {
+            noAgent -> "Si entras, hablarás sin protección"
+            scam -> "Posible estafa · mejor no entres"
+            safe -> "Es seguro · ya puedes entrar"
+            else -> "Podrás entrar cuando Marin confirme que es seguro"
+        },
+        style = MaterialTheme.typography.bodySmall,
+        color = if (scam) TiskzColors.Red else TiskzColors.Muted,
+        modifier = Modifier.padding(bottom = 10.dp),
+    )
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        CircleAction(TablerIcons.PhoneOff, "Cancelar", actions.onHangUp, TiskzBrushes.Danger, Color.White,
+            size = SCREENING_BUTTON, glow = TiskzColors.Red)
+        when {
+            scam -> CircleAction(
+                TablerIcons.Ban, "Bloquear", actions.onBlock,
+                Brush.linearGradient(listOf(TiskzColors.Navy, TiskzColors.Blue900)), Color.White,
+                size = SCREENING_BUTTON, glow = TiskzColors.Navy,
+            )
+            canJoin -> CircleAction(TablerIcons.Phone, "Entrar", actions.onJoin, TiskzBrushes.Safe, Color.White,
+                size = SCREENING_BUTTON, glow = TiskzColors.Emerald)
+            else -> CircleAction(
+                TablerIcons.Phone, "Entrar", {},
+                Brush.linearGradient(listOf(TiskzColors.Blue50, TiskzColors.Blue50)), TiskzColors.Muted,
+                size = SCREENING_BUTTON, enabled = false,
+            )
+        }
+    }
+    if (scam) {
+        TextButton(onClick = actions.onNotScam, modifier = Modifier.padding(top = 6.dp)) {
+            Text("No es estafa", color = TiskzColors.Muted)
         }
     }
 }
@@ -420,10 +492,12 @@ private fun CircleAction(
     content: Color,
     size: Dp = 76.dp,
     glow: Color? = null,
+    enabled: Boolean = true,
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Surface(
             onClick = onClick,
+            enabled = enabled,
             shape = CircleShape,
             color = Color.Transparent,
             modifier = Modifier
@@ -437,7 +511,7 @@ private fun CircleAction(
                 ),
         ) {
             Box(Modifier.fillMaxSize().background(background), contentAlignment = Alignment.Center) {
-                Icon(icon, contentDescription = label, tint = content, modifier = Modifier.size(32.dp))
+                Icon(icon, contentDescription = label, tint = content, modifier = Modifier.size(size * 0.42f))
             }
         }
         Spacer(Modifier.height(8.dp))

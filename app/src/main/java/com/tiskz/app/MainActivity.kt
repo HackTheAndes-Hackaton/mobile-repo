@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.tiskz.app.call.CallManager
+import com.tiskz.app.call.CallNotifications
 import com.tiskz.app.data.DemoScenario
 import com.tiskz.app.ui.LocalAppContainer
 import com.tiskz.app.ui.TiskzNavHost
@@ -40,6 +41,11 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        CallNotifications.cancelMissed(this)
     }
 
     override fun onNewIntent(intent: Intent) {

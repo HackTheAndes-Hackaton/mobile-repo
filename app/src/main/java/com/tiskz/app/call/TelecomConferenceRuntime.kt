@@ -106,6 +106,10 @@ class TelecomConferenceRuntime(
             check(required(first).conferenceableCalls.contains(required(second)))
             required(first).conference(required(second))
         }
+        override fun mergeConference(id: String) {
+            check(required(id).details.can(Call.Details.CAPABILITY_MERGE_CONFERENCE))
+            required(id).mergeConference()
+        }
         override fun disconnect(id: String) { calls[id]?.disconnect() }
         override fun unhold(id: String) { calls[id]?.unhold() }
         override fun closeAlerts() {
@@ -150,7 +154,9 @@ class TelecomConferenceRuntime(
     fun add(call: Call) {
         if (disposed) { disconnectLateAgent(call); return }
         // No incorporar otras llamadas entrantes ni conferencias ajenas a la sesión.
-        if (call.details.callDirection == Call.Details.DIRECTION_INCOMING && call != incoming && call.parent == null) {
+        // La conferencia que crea la red al unir (VoLTE) no es una llamada entrante nueva.
+        if (call.details.callDirection == Call.Details.DIRECTION_INCOMING && call != incoming && call.parent == null &&
+            !call.details.hasProperty(Call.Details.PROPERTY_CONFERENCE)) {
             call.reject(false, null)
             return
         }
@@ -219,6 +225,8 @@ class TelecomConferenceRuntime(
             parent = idOf(call.parent), children = call.children.mapNotNull(::idOf).toSet(),
             conferenceable = call.conferenceableCalls.mapNotNull(::idOf).toSet(),
             agentRequest = ConferenceTelecom.request(call),
+            canMerge = call.details.can(Call.Details.CAPABILITY_MERGE_CONFERENCE),
+            isConference = call.details.hasProperty(Call.Details.PROPERTY_CONFERENCE),
         )
     }
 

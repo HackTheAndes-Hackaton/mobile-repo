@@ -45,6 +45,10 @@ data class ConferenceLeg(
     val children: Set<String> = emptySet(),
     val conferenceable: Set<String> = emptySet(),
     val agentRequest: String? = null,
+    /** CAPABILITY_MERGE_CONFERENCE: la red une las llamadas aunque no las liste como conferenciables (VoLTE/IMS). */
+    val canMerge: Boolean = false,
+    /** PROPERTY_CONFERENCE: es la llamada de conferencia creada por la red. */
+    val isConference: Boolean = false,
 )
 
 /** Efectos de Telecom separados para probar carreras, cancelaciones y fallos sin llamar. */
@@ -53,6 +57,7 @@ interface ConferenceActions {
     fun hold(id: String)
     fun dial(account: String, requestId: String)
     fun merge(first: String, second: String)
+    fun mergeConference(id: String)
     fun disconnect(id: String)
     fun unhold(id: String)
     fun closeAlerts()
@@ -83,6 +88,8 @@ class AutomaticConference(
     private var agentConnected = false
     private var mergeRequested = false
     private var confirmed = false
+    /** En VoLTE la red reemplaza las dos patas por una llamada de conferencia nueva, sin hijos visibles. */
+    private var networkConference = false
 
     fun start(initial: List<ConferenceLeg>) {
         if (state.phase != ConferencePhase.IDLE) return
@@ -124,15 +131,22 @@ class AutomaticConference(
                 (it.children.containsAll(setOf(callerId, agentId!!)) ||
                     (caller()?.parent == it.id && agent()?.parent == it.id))
         }
-        if (parent != null && state.phase in setOf(ConferencePhase.MERGING, ConferencePhase.CONNECTED)) {
-            conferenceId = parent.id
+        val network = if (parent == null && state.phase == ConferencePhase.MERGING) current.firstOrNull {
+            it.phase == LegPhase.ACTIVE && it.isConference && it.id != callerId
+        } else null
+        if ((parent ?: network) != null && state.phase in setOf(ConferencePhase.MERGING, ConferencePhase.CONNECTED)) {
+            conferenceId = (parent ?: network)!!.id
+            if (parent == null) networkConference = true
             if (state.phase != ConferencePhase.CONNECTED) {
                 confirmed = true
-                move(ConferencePhase.CONNECTED, "Android confirmó la conferencia · comprueben que se escucha a marin", 120_000)
+                // Sin límite: marin escucha toda la llamada, también después de que entre el titular.
+                move(ConferencePhase.CONNECTED, "Marin está en la llamada y analiza la conversación")
             }
         }
         if (state.phase == ConferencePhase.CONNECTED) {
             val conference = current.firstOrNull { it.id == conferenceId && it.phase != LegPhase.DISCONNECTED }
+            // Sin patas visibles solo se puede seguir la conferencia misma.
+            if (networkConference) { if (conference == null) end(); return }
             if (conference == null || caller()?.phase == LegPhase.DISCONNECTED ||
                 (callerId !in conference.children && caller()?.parent != conference.id)) end()
             else if (agent()?.phase == LegPhase.DISCONNECTED ||
@@ -162,7 +176,6 @@ class AutomaticConference(
                 ConferencePhase.CONNECTING_ALERTS -> "No se conectaron las alertas. Puedes contestar manualmente."
                 ConferencePhase.DIALING -> "Vapi no respondió a tiempo. Retoma la llamada original."
                 ConferencePhase.MERGING, ConferencePhase.WAITING_MERGE -> "La red no confirmó la conferencia. Retoma la llamada original."
-                ConferencePhase.CONNECTED -> "Finalizó el tiempo de prueba del agente. Retoma la conversación."
                 else -> "Android no completó la conexión. Puedes continuar manualmente."
             })
         }
@@ -218,8 +231,13 @@ class AutomaticConference(
                     }
                     if (pair != null) {
                         mergeRequested = true
-                        move(ConferencePhase.MERGING, "Uniendo las llamadas; esperando confirmación de la red…", 10_000)
+                        move(ConferencePhase.MERGING, "Uniendo las llamadas; esperando confirmación de la red…", 15_000)
                         effect { actions.merge(pair.first, pair.second) }
+                    } else if (agent.canMerge) {
+                        // Igual que el botón "Unir" del teléfono: en VoLTE la red no lista llamadas conferenciables.
+                        mergeRequested = true
+                        move(ConferencePhase.MERGING, "Uniendo las llamadas; esperando confirmación de la red…", 15_000)
+                        effect { actions.mergeConference(agent.id) }
                     }
                 }
             }

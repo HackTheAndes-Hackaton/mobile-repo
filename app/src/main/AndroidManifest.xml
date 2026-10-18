@@ -82,5 +82,14 @@
                 <action android:name="android.telecom.CallScreeningService" />
             </intent-filter>
         </service>
+
+        <!-- Llamadas perdidas: Telecom delega el aviso en la app de teléfono predeterminada. -->
+        <receiver
+            android:name=".call.MissedCallReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.telecom.action.SHOW_MISSED_CALLS_NOTIFICATION" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

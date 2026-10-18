@@ -91,8 +91,9 @@ object EventParser {
         else -> null
     }
 
-    private fun speakerOf(value: String): Speaker = when (value) {
-        "agent" -> Speaker.AGENT
+    // Vapi llama "assistant" a marin y "customer" a quien llama (cae en CALLER); se aceptan ambas convenciones.
+    private fun speakerOf(value: String): Speaker = when (value.lowercase()) {
+        "agent", "assistant", "bot", "ai", "marin" -> Speaker.AGENT
         "user" -> Speaker.USER
         else -> Speaker.CALLER
     }

@@ -22,6 +22,8 @@ data class ActiveCall(
     val muted: Boolean = false,
     val speaker: Boolean = false,
     val blocked: Boolean = false,
+    /** Marin atiende y el titular todavía no entró: micrófono silenciado, solo Cancelar o Entrar. */
+    val screening: Boolean = false,
 ) {
     /** Lo que se muestra en grande: el nombre del contacto o, si no está guardado, el número. */
     val title: String get() = callerName ?: PhoneNumbers.display(number)

@@ -104,7 +104,7 @@ fun AutomaticConferenceSettings() {
         Text("Marin contesta por ti", style = MaterialTheme.typography.titleLarge)
         Text("Cuando actives la protección, Tiskz contestará, llamará al agente y pedirá unir la conferencia. Las alertas aparecerán en la pantalla de llamada.")
         Text("Preparación inicial · no se realizará ninguna llamada al configurar esto.", style = MaterialTheme.typography.bodySmall)
-        Text("Cada conexión de prueba limita la participación del agente a dos minutos; después se intenta recuperar la llamada original.", style = MaterialTheme.typography.bodySmall)
+        Text("Mientras marin atiende, tu micrófono queda silenciado. Entras cuando marin confirma que es seguro, y sigue escuchando hasta que cuelguen.", style = MaterialTheme.typography.bodySmall)
         if (!defaultDialer || !permitted) {
             Button(onClick = {
                 if (!defaultDialer) DialerRole.requestIntent(context)?.let(role::launch)

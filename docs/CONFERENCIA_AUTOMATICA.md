@@ -90,9 +90,14 @@ Esto no determina la conservación que hagan los proveedores.
 - **Colgar** termina las patas propias, incluida la conferencia si existe. No basta cerrar la app.
 
 Hay límites de 12 s para conectar alertas, 8 s para contestar/espera, 25 s para marcar, 10 s
-para obtener capacidad de unión y 10 s para confirmarla. La participación del agente se limita
-a dos minutos desde la confirmación. Al agotar el plazo se intenta cerrar Vapi y recuperar
-la llamada original. Si la red rechaza una acción o se pierde el monitor, no hay remarcación;
+para obtener capacidad de unión y 10 s para confirmarla. Una vez unida, marin no tiene límite
+de tiempo: escucha y analiza hasta que se cuelgue, también después de que entre el titular.
+
+Mientras marin atiende, el titular **no está en la llamada**: Tiskz silencia el micrófono, baja
+el volumen de la llamada y solo muestra **Cancelar** y **Entrar**. *Entrar* se habilita cuando el
+backend envía `call.ready_to_answer` o `agent.status: safe` (espacio seguro), o si marin no logró
+unirse. Si hay alerta de estafa se muestra **Bloquear** en su lugar. Al entrar se reactiva el
+micrófono y se restaura el volumen. Si la red rechaza una acción o se pierde el monitor, no hay remarcación;
 se intenta cerrar solo el agente y recuperar la llamada original. **Retomar llamada** permite
 pedir salir de espera. La recuperación depende de la operadora.
 

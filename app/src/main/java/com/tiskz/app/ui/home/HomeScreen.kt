@@ -21,6 +21,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.text.style.TextAlign
+import compose.icons.tablericons.ChevronLeft
+import compose.icons.tablericons.ChevronRight
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -228,17 +238,10 @@ fun HomeScreen(
                 )
             }
             item {
-                TiskzCard(Modifier.padding(horizontal = 20.dp).fillMaxWidth()) {
-                    if (records.isEmpty()) {
-                        EmptyRecents()
-                    } else {
-                        Column {
-                            records.take(20).forEachIndexed { index, record ->
-                                if (index > 0) HorizontalDivider(Modifier.padding(start = 82.dp), color = TiskzColors.Line)
-                                CallRecordRow(record, onClick = { onOpenRecord(record.id) })
-                            }
-                        }
-                    }
+                if (records.isEmpty()) {
+                    TiskzCard(Modifier.padding(horizontal = 20.dp).fillMaxWidth()) { EmptyRecents() }
+                } else {
+                    PagedRecents(records, onOpenRecord)
                 }
             }
         }
@@ -441,6 +444,80 @@ private fun DemoTile(
 }
 
 // --- Historial ---
+
+private const val RECENTS_PAGE_SIZE = 5
+
+/** Recientes de 5 en 5: se desliza a la derecha y las páginas numeradas van arriba de la lista. */
+@Composable
+private fun PagedRecents(records: List<CallRecord>, onOpenRecord: (String) -> Unit) {
+    // Por fecha y hora, la más reciente primero, sin separar contactos de desconocidos.
+    val pages = remember(records) { records.sortedByDescending { it.startedAt }.chunked(RECENTS_PAGE_SIZE) }
+    val pager = rememberPagerState { pages.size }
+    val scope = rememberCoroutineScope()
+    val tabs = rememberLazyListState()
+    LaunchedEffect(pager.currentPage) { tabs.animateScrollToItem((pager.currentPage - 2).coerceAtLeast(0)) }
+
+    Column {
+        Row(
+            Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, bottom = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(
+                onClick = { scope.launch { pager.animateScrollToPage(pager.currentPage - 1) } },
+                enabled = pager.currentPage > 0,
+            ) { Icon(TablerIcons.ChevronLeft, contentDescription = "Página anterior") }
+            LazyRow(
+                state = tabs,
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(pages.size) { page ->
+                    val selected = page == pager.currentPage
+                    Surface(
+                        onClick = { scope.launch { pager.animateScrollToPage(page) } },
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (selected) TiskzColors.Blue600 else TiskzColors.Blue50,
+                        modifier = Modifier.size(width = 44.dp, height = 36.dp),
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                "${page + 1}",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = if (selected) Color.White else TiskzColors.Blue700,
+                            )
+                        }
+                    }
+                }
+            }
+            IconButton(
+                onClick = { scope.launch { pager.animateScrollToPage(pager.currentPage + 1) } },
+                enabled = pager.currentPage < pages.lastIndex,
+            ) { Icon(TablerIcons.ChevronRight, contentDescription = "Página siguiente") }
+        }
+        HorizontalPager(
+            state = pager,
+            contentPadding = PaddingValues(horizontal = 20.dp),
+            pageSpacing = 12.dp,
+            verticalAlignment = Alignment.Top,
+        ) { page ->
+            TiskzCard(Modifier.fillMaxWidth()) {
+                Column {
+                    pages[page].forEachIndexed { index, record ->
+                        if (index > 0) HorizontalDivider(Modifier.padding(start = 82.dp), color = TiskzColors.Line)
+                        CallRecordRow(record, onClick = { onOpenRecord(record.id) })
+                    }
+                }
+            }
+        }
+        Text(
+            "Página ${pager.currentPage + 1} de ${pages.size} · desliza para ver más",
+            style = MaterialTheme.typography.bodySmall,
+            color = TiskzColors.Muted,
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            textAlign = TextAlign.Center,
+        )
+    }
+}
 
 @Composable
 private fun EmptyRecents() {

@@ -1,5 +1,7 @@
 package com.tiskz.app.voice
 
+import android.util.Log
+import com.tiskz.app.BuildConfig
 import com.tiskz.app.analysis.AnalysisEvent
 import com.tiskz.app.analysis.AnalysisSession
 import com.tiskz.app.analysis.EventParser
@@ -46,6 +48,12 @@ class PhoneAlertSession(client: OkHttpClient, baseUrl: String, accessCode: Strin
             override fun onMessage(webSocket: WebSocket, text: String) {
                 if (closed.get() || text.length > 20000) return
                 val json = runCatching { JSONObject(text) }.getOrNull() ?: return
+                if (BuildConfig.DEBUG) {
+                    // Solo forma del evento, sin texto: sirve para revisar etiquetas e ids de la transcripción.
+                    Log.d("TiskzPhone", "${json.optString("type")} speaker=${json.optString("speaker")} " +
+                        "id=${json.optString("id")} seq=${json.opt("sequence")} final=${json.opt("final")} " +
+                        "len=${json.optString("text").length} lines=${json.optString("text").count { it == '\n' } + 1}")
+                }
                 when (json.optString("type")) {
                     "phone.ready" -> _connection.value = WebRtcVoiceSession.Connection.STREAMING
                     "phone.call" -> {

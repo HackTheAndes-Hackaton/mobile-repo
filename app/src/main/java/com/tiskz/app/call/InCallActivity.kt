@@ -46,6 +46,7 @@ class InCallActivity : ComponentActivity() {
                         conference = conference,
                         actions = LiveCallActions(
                             onAnswer = CallManager::answer,
+                            onJoin = CallManager::join,
                             onReject = CallManager::reject,
                             onHangUp = CallManager::hangUp,
                             onBlock = CallManager::blockAndHangUp,

@@ -6,9 +6,13 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import android.telecom.TelecomManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import com.tiskz.app.MainActivity
 import com.tiskz.app.R
+import com.tiskz.app.util.PhoneNumbers
 import com.tiskz.app.model.ActiveCall
 import com.tiskz.app.model.CallDirection
 import com.tiskz.app.model.CallPhase
@@ -21,8 +25,14 @@ object CallNotifications {
     /** Con la pantalla de Tiskz ya visible: solo un ícono discreto en la barra. */
     private const val ONGOING_CHANNEL_ID = "tiskz_calls_ongoing"
     private const val NOTIFICATION_ID = 1001
+    private const val MISSED_CHANNEL_ID = "tiskz_missed"
+    private const val MISSED_NOTIFICATION_ID = 1002
 
     fun createChannel(context: Context) {
+        val missed = NotificationChannel(MISSED_CHANNEL_ID, "Llamadas perdidas", NotificationManager.IMPORTANCE_HIGH).apply {
+            description = "Llamadas que no contestaste"
+        }
+        context.getSystemService(NotificationManager::class.java).createNotificationChannel(missed)
         val channel = NotificationChannel(CHANNEL_ID, "Llamadas", NotificationManager.IMPORTANCE_HIGH).apply {
             description = "Llamadas entrantes y en curso analizadas por Tiskz"
             setSound(null, null)
@@ -52,7 +62,11 @@ object CallNotifications {
             .setSmallIcon(R.drawable.ic_tiskz_shield)
             .setColor(0xFF2563EB.toInt())
             .setContentTitle(call.title)
-            .setContentText(if (incoming) "Tiskz está analizando la llamada" else "Llamada en curso")
+            .setContentText(when {
+                call.screening -> "Marin está atendiendo · aún no estás en la llamada"
+                incoming -> "Tiskz está analizando la llamada"
+                else -> "Llamada en curso"
+            })
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setOngoing(true)
@@ -68,5 +82,46 @@ object CallNotifications {
 
     fun cancel(context: Context) {
         NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
+    }
+
+    /** Aviso de llamada perdida con el estilo de Tiskz: abre el historial o vuelve a llamar. */
+    fun showMissed(context: Context, count: Int, number: String, name: String?) {
+        val manager = NotificationManagerCompat.from(context)
+        if (!manager.areNotificationsEnabled()) return
+        val who = name ?: number.takeIf { it.isNotBlank() }?.let(PhoneNumbers::display) ?: "Número privado"
+        val openApp = PendingIntent.getActivity(
+            context, 1,
+            Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val builder = NotificationCompat.Builder(context, MISSED_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_tiskz_shield)
+            .setColor(0xFF2563EB.toInt())
+            .setContentTitle(if (count > 1) "$count llamadas perdidas" else "Llamada perdida")
+            .setContentText(if (count > 1) "La última de $who" else who)
+            .setCategory(NotificationCompat.CATEGORY_MISSED_CALL)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setContentIntent(openApp)
+        if (number.isNotBlank()) {
+            val callBack = PendingIntent.getActivity(
+                context, 2,
+                Intent(Intent.ACTION_DIAL, Uri.fromParts("tel", number, null), context, MainActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+            )
+            builder.addAction(0, "Llamar", callBack)
+        }
+        try {
+            manager.notify(MISSED_NOTIFICATION_ID, builder.build())
+        } catch (e: SecurityException) {
+            // Sin permiso de notificaciones: la llamada queda igual en el historial.
+        }
+    }
+
+    /** Al abrir Tiskz se dan por vistas: se quita nuestro aviso y se reinicia el contador de Telecom. */
+    fun cancelMissed(context: Context) {
+        NotificationManagerCompat.from(context).cancel(MISSED_NOTIFICATION_ID)
+        runCatching { context.getSystemService(TelecomManager::class.java).cancelMissedCallsNotification() }
     }
 }

@@ -14,6 +14,7 @@ class AutomaticConferenceTest {
             override fun hold(id: String) { effects += "hold:$id" }
             override fun dial(account: String, requestId: String) { effects += "dial:$account:$requestId" }
             override fun merge(first: String, second: String) { effects += "merge:$first:$second" }
+            override fun mergeConference(id: String) { effects += "merge-conference:$id" }
             override fun disconnect(id: String) { effects += "disconnect:$id" }
             override fun unhold(id: String) { effects += "unhold:$id" }
             override fun closeAlerts() { effects += "close-alerts" }
@@ -165,6 +166,25 @@ class AutomaticConferenceTest {
         r.controller.callsChanged(listOf(r.caller(LegPhase.HOLDING), r.agent(LegPhase.ACTIVE),
             ConferenceLeg("conference", LegPhase.DIALING, children = setOf("caller", "agent"))))
         assertEquals(ConferencePhase.MERGING, r.controller.state.phase)
+    }
+
+    @Test fun volteMergesWithMergeConferenceWhenNoConferenceableCallsAreListed() {
+        val r = Rig(); r.dial()
+        r.controller.callsChanged(listOf(r.caller(LegPhase.HOLDING), r.agent(LegPhase.ACTIVE).copy(canMerge = true)))
+        assertEquals(listOf("merge-conference:agent"), r.effects.filter { it.startsWith("merge") })
+        assertEquals(ConferencePhase.MERGING, r.controller.state.phase)
+    }
+
+    @Test fun volteConferenceReplacingBothLegsCountsAsConnectedAndLivesUntilItEnds() {
+        val r = Rig(); r.dial()
+        r.controller.callsChanged(listOf(r.caller(LegPhase.HOLDING), r.agent(LegPhase.ACTIVE).copy(canMerge = true)))
+        r.controller.callsChanged(listOf(ConferenceLeg("ims", LegPhase.ACTIVE, isConference = true)))
+        assertEquals(ConferencePhase.CONNECTED, r.controller.state.phase)
+        assertEquals("ims", r.controller.displayCallId)
+        r.now = 600_000; r.controller.tick()
+        assertEquals(ConferencePhase.CONNECTED, r.controller.state.phase)
+        r.controller.callsChanged(emptyList())
+        assertEquals(ConferencePhase.ENDED, r.controller.state.phase)
     }
 
     @Test fun agentLeavingConferenceStopsMonitoringWithoutHangingUpCaller() {

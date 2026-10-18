@@ -2,6 +2,7 @@ package com.tiskz.app.call
 
 import android.content.Context
 import android.content.Intent
+import android.media.AudioManager
 import android.os.Build
 import android.os.SystemClock
 import android.telecom.Call
@@ -125,11 +126,16 @@ object CallManager {
             return
         }
         telecomCall = call
-        val attempt = direction == CallDirection.INCOMING && stateOf(call) == Call.STATE_RINGING &&
+        // Los contactos pasan sin fricción: suenan normal, sin marin ni análisis.
+        val contactName = if (direction == CallDirection.INCOMING) ContactLookup.findName(appContext, number) else null
+        val known = contactName != null
+        val attempt = direction == CallDirection.INCOMING && !known && stateOf(call) == Call.STATE_RINGING &&
             ConferenceTelecom.gate(appContext, container, call.details.accountHandle).allowed
-        start(ActiveCall(number = number, direction = direction, phase = phaseOf(call), simulated = false), null,
-            attempt || (direction == CallDirection.INCOMING && container.settings.current.automaticConferenceEnabled))
+        start(ActiveCall(number = number, direction = direction, phase = phaseOf(call), simulated = false,
+            callerName = contactName, screening = attempt), null,
+            attempt || known || (direction == CallDirection.INCOMING && container.settings.current.automaticConferenceEnabled))
         if (attempt) {
+            inCallService?.setMuted(true)
             try {
                 automatic = TelecomConferenceRuntime(appContext, container, call,
                     sessionOpened = { session.value = it },
@@ -146,7 +152,7 @@ object CallManager {
             }
         } else {
             call.registerCallback(telecomCallback)
-            if (direction == CallDirection.INCOMING && container.settings.current.automaticConferenceEnabled) {
+            if (direction == CallDirection.INCOMING && !known && container.settings.current.automaticConferenceEnabled) {
                 _conference.value = ConferenceState(ConferencePhase.FAILED,
                     "Protección automática no disponible para esta SIM. Revisa la configuración; contesta manualmente.")
             }
@@ -163,6 +169,8 @@ object CallManager {
 
     internal fun onAudioStateChanged(muted: Boolean, speaker: Boolean) {
         _activeCall.update { it?.copy(muted = muted, speaker = speaker) }
+        // Unir la conferencia puede reactivar el micrófono: mientras atiende marin, sigue silenciado.
+        if (!muted && _activeCall.value?.screening == true) inCallService?.setMuted(true)
     }
 
     // --- Demo ---
@@ -171,7 +179,7 @@ object CallManager {
         val current = _activeCall.value
         if (current != null && current.phase != CallPhase.DISCONNECTED) return
         start(
-            ActiveCall(number = number, direction = CallDirection.INCOMING, phase = CallPhase.RINGING, simulated = true),
+            ActiveCall(number = number, direction = CallDirection.INCOMING, phase = CallPhase.RINGING, simulated = true, screening = true),
             scenario,
         )
     }
@@ -186,6 +194,25 @@ object CallManager {
         if (call.simulated) updatePhase(CallPhase.ACTIVE)
         else if (telecomCall?.let(::stateOf) == Call.STATE_HOLDING) telecomCall?.unhold()
         else telecomCall?.answer(VideoProfile.STATE_AUDIO_ONLY)
+    }
+
+    /**
+     * El titular entra a la llamada que atendía marin. El agente no sale de la conferencia:
+     * sigue escuchando y analizando hasta que se cuelgue.
+     */
+    fun join() {
+        val call = _activeCall.value ?: return
+        if (!call.screening || call.phase == CallPhase.DISCONNECTED) return
+        _activeCall.value = call.copy(screening = false)
+        restoreCallVolume()
+        session.value?.send(UserDecision.ANSWER)
+        if (call.simulated) { updatePhase(CallPhase.ACTIVE); return }
+        inCallService?.setMuted(false)
+        // Si la conferencia no llegó a formarse, se recupera la llamada original.
+        when (telecomCall?.let(::stateOf)) {
+            Call.STATE_RINGING -> telecomCall?.answer(VideoProfile.STATE_AUDIO_ONLY)
+            Call.STATE_HOLDING -> if (_conference.value.phase != ConferencePhase.CONNECTED) telecomCall?.unhold()
+        }
     }
 
     fun reject() {
@@ -275,6 +302,12 @@ object CallManager {
     }
 
     private fun updatePhase(phase: CallPhase) {
+        val current = _activeCall.value
+        if (current?.screening == true && !current.simulated && phase != CallPhase.RINGING) {
+            // Contestó marin, no el titular: no se le escucha ni oye la conversación hasta que entre.
+            inCallService?.setMuted(true)
+            lowerCallVolume()
+        }
         _activeCall.update { call ->
             when {
                 call == null -> null
@@ -288,8 +321,9 @@ object CallManager {
     private fun finish() {
         val call = _activeCall.value ?: return
         if (call.phase == CallPhase.DISCONNECTED) return
-        val ended = call.copy(phase = CallPhase.DISCONNECTED, endedAt = System.currentTimeMillis())
+        val ended = call.copy(phase = CallPhase.DISCONNECTED, endedAt = System.currentTimeMillis(), screening = false)
         _activeCall.value = ended
+        restoreCallVolume()
         val finalAnalysis = session.value?.state?.value
         session.value?.close()
         // La conversación real de la conferencia se muestra en vivo, sin guardarla por defecto.
@@ -312,6 +346,21 @@ object CallManager {
     private fun clear() {
         _activeCall.value = null
         session.value = null
+    }
+
+    private var savedCallVolume: Int? = null
+
+    private fun lowerCallVolume() = runCatching {
+        if (savedCallVolume != null) return@runCatching
+        val audio = appContext.getSystemService(AudioManager::class.java)
+        savedCallVolume = audio.getStreamVolume(AudioManager.STREAM_VOICE_CALL)
+        audio.setStreamVolume(AudioManager.STREAM_VOICE_CALL, audio.getStreamMinVolume(AudioManager.STREAM_VOICE_CALL), 0)
+    }
+
+    private fun restoreCallVolume() = runCatching {
+        val volume = savedCallVolume ?: return@runCatching
+        savedCallVolume = null
+        appContext.getSystemService(AudioManager::class.java).setStreamVolume(AudioManager.STREAM_VOICE_CALL, volume, 0)
     }
 
     private fun numberOf(details: Call.Details): String =
