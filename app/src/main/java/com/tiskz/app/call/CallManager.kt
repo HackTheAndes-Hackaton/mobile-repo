@@ -167,7 +167,10 @@ object CallManager {
                     sessionOpened = { session.value = it },
                     stateChanged = { state ->
                         _conference.value = state
-                        _activeCall.update { active -> active?.copy(blocked = active.blocked || container.blocklist.isBlocked(active.number)) }
+                        _activeCall.update { active -> active?.copy(
+                            blocked = active.blocked || container.blocklist.isBlocked(active.number),
+                            endReason = state.endReason ?: active.endReason,
+                        ) }
                     },
                     phaseChanged = { if (it == CallPhase.DISCONNECTED) finish() else updatePhase(it) },
                     ended = ::finish,
@@ -445,6 +448,7 @@ object CallManager {
             finalAnalysis?.transcript?.any { it.speaker == Speaker.AGENT } == true
         val record = CallRecord.from(ended, finalAnalysis, screened)
         container.history.add(record)
+        CallNotifications.showAutomaticEnd(appContext, record)
         if (call.direction == CallDirection.INCOMING) container.archive.upload(record)
         automatic?.let {
             it.dispose()

@@ -26,8 +26,18 @@ data class CallRecord(
     val screened: Boolean = false,
     /** De qué trató la llamada, según el análisis. */
     val summary: String? = null,
+    val endReason: CallEndReason? = null,
+    val voiceSimilarity: Float? = null,
 ) {
     val title: String get() = callerName ?: PhoneNumbers.display(number)
+    val endedByVoiceMatch: Boolean get() = endReason == CallEndReason.VOICE_MATCH
+    val endExplanation: String? get() = if (endedByVoiceMatch) buildString {
+        append("Se cortó por similitud con una muestra de voz guardada")
+        voiceSimilarity?.let { append(" (${kotlin.math.round(it * 100).toInt()} %)") }
+        append(". ")
+        append(if (blocked) "El número se añadió a tu lista local de bloqueo. " else "No se añadió un bloqueo de número. ")
+        append("La coincidencia no verifica una identidad. El riesgo del contenido se evalúa por separado.")
+    } else null
 
     fun toJson(): JSONObject = JSONObject().apply {
         put("id", id)
@@ -57,6 +67,8 @@ data class CallRecord(
         put("endedAt", endedAt ?: JSONObject.NULL)
         put("screened", screened)
         put("summary", summary ?: JSONObject.NULL)
+        put("endReason", endReason?.wireValue ?: JSONObject.NULL)
+        put("voiceSimilarity", voiceSimilarity ?: JSONObject.NULL)
     }
 
     companion object {
@@ -82,6 +94,8 @@ data class CallRecord(
                 endedAt = end,
                 screened = screened,
                 summary = analysis?.understanding?.summary?.takeIf { it.isNotBlank() },
+                endReason = call.endReason,
+                voiceSimilarity = analysis?.voiceMatch?.similarity?.takeIf { it.isFinite() && it in 0f..1f },
             )
         }
 
@@ -114,6 +128,8 @@ data class CallRecord(
             endedAt = if (json.isNull("endedAt")) null else json.getLong("endedAt"),
             screened = json.optBoolean("screened"),
             summary = json.optStringOrNull("summary"),
+            endReason = CallEndReason.fromWire(json.optStringOrNull("endReason")),
+            voiceSimilarity = json.optDouble("voiceSimilarity", Double.NaN).toFloat().takeIf { it.isFinite() && it in 0f..1f },
         )
     }
 }

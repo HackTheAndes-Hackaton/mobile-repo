@@ -157,15 +157,17 @@ class TelecomConferenceRuntime(
                             container.settings.current.conferenceDestination,
                         ) else null
                         number?.let(container.blocklist::block)
-                        // Se cierra la conferencia y ambas patas, no solo la conexión con marin.
-                        controller.hangUp()
                         val message = when (request.reason) {
                             "agent_ended" -> "El agente terminó: cierre de conferencia solicitado a Android."
                             "voice_match" -> if (number != null) "Número bloqueado localmente y corte preventivo por similitud de voz solicitado a Android."
                                 else "Corte preventivo por similitud de voz; el número entrante no se pudo bloquear."
                             else -> "Corte por riesgo solicitado a Android."
                         }
-                        stateChanged(ConferenceState(ConferencePhase.ENDED, message))
+                        // Guardar el motivo antes de desconectar: Telecom puede confirmar el fin enseguida.
+                        stateChanged(ConferenceState(ConferencePhase.ENDED, message,
+                            endReason = com.tiskz.app.model.CallEndReason.fromWire(request.reason)))
+                        // Se cierra la conferencia y ambas patas, no solo la conexión con el agente.
+                        controller.hangUp()
                         // Telecom confirma la desconexión mediante sus callbacks.
                     }
                 }

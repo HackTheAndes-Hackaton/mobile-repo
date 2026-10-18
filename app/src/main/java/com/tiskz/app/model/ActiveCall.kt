@@ -26,6 +26,8 @@ data class ActiveCall(
     val screening: Boolean = false,
     /** Reportes de la comunidad sobre este número; null si no se consultó o no hay panel. */
     val reputation: NumberReputation? = null,
+    /** Se fija antes de desconectar Telecom para conservar por qué se solicitó el corte. */
+    val endReason: CallEndReason? = null,
 ) {
     /** Lo que se muestra en grande: el nombre del contacto o, si no está guardado, el número. */
     val title: String get() = callerName ?: PhoneNumbers.display(number)

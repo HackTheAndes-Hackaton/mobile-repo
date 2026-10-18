@@ -22,6 +22,7 @@ import com.tiskz.app.model.ActiveCall
 import com.tiskz.app.model.CallAnalysis
 import com.tiskz.app.model.CallDirection
 import com.tiskz.app.model.CallPhase
+import com.tiskz.app.model.CallRecord
 import com.tiskz.app.util.PhoneNumbers
 import com.tiskz.app.util.DialerRole
 
@@ -78,6 +79,7 @@ object CallNotifications {
     private const val ALERT_ID = 1001
     private const val QUIET_ID = 1003
     private const val GUARD_ID = 1004
+    private const val RESULT_ID = 1005
     private const val MISSED_CHANNEL_ID = "tiskz_missed"
     private const val MISSED_NOTIFICATION_ID = 1002
 
@@ -329,6 +331,29 @@ object CallNotifications {
         Intent(context, CallActionReceiver::class.java).setAction(action),
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
     )
+
+    /** Conserva el motivo aunque el corte cierre el aviso de llamada en curso. */
+    fun showAutomaticEnd(context: Context, record: CallRecord) {
+        if (!record.endedByVoiceMatch) return
+        val manager = NotificationManagerCompat.from(context)
+        if (!manager.areNotificationsEnabled()) return
+        val openApp = PendingIntent.getActivity(context, RESULT_ID,
+            Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        val notice = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_tiskz_shield)
+            .setColor(NoticeTone.DANGER.color)
+            .setContentTitle(record.endReason?.label)
+            .setContentText(if (record.blocked) "Número bloqueado por coincidencia de voz" else "Corte preventivo por coincidencia de voz")
+            .setStyle(NotificationCompat.BigTextStyle().bigText(record.endExplanation))
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setContentIntent(openApp)
+        try { manager.notify(RESULT_ID, notice.build()) } catch (_: SecurityException) {
+            // El motivo también queda visible en Recientes y en el detalle.
+        }
+    }
 
     /** Aviso de llamada perdida con el estilo de Tiskz: abre el historial o vuelve a llamar. */
     fun showMissed(context: Context, count: Int, number: String, name: String?) {

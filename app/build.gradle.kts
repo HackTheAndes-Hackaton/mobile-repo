@@ -23,8 +23,8 @@ android {
         applicationId = "com.tiskz.app"
         minSdk = 29
         targetSdk = 35
-        versionCode = 11
-        versionName = "0.4.7"
+        versionCode = 12
+        versionName = "0.4.8"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // La voz usa Maritime por defecto; la URL se puede cambiar en Ajustes.

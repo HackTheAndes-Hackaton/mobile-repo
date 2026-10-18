@@ -294,7 +294,7 @@ private fun CallerText(call: ActiveCall, modifier: Modifier = Modifier, centered
         CallPhase.DIALING -> "Llamando…"
         CallPhase.ACTIVE -> "En llamada · " + formatDuration(((now - (call.answeredAt ?: now)) / 1000).coerceAtLeast(0))
         CallPhase.HOLDING -> "En espera"
-        CallPhase.DISCONNECTED -> if (call.blocked) "Número bloqueado" else "Llamada finalizada"
+        CallPhase.DISCONNECTED -> call.endReason?.label ?: if (call.blocked) "Número bloqueado" else "Llamada finalizada"
     }
     val align = if (centered) Alignment.CenterHorizontally else Alignment.Start
 

@@ -432,7 +432,7 @@ private fun CallRecordRow(record: CallRecord, onClick: () -> Unit) {
         Box {
             CallerAvatar(name = record.callerName, size = 50.dp)
             // Insignia del veredicto en la esquina del avatar.
-            if (record.verdict != Verdict.NONE) {
+            if (record.endedByVoiceMatch || record.verdict != Verdict.NONE) {
                 Box(
                     Modifier
                         .align(Alignment.BottomEnd)
@@ -441,17 +441,17 @@ private fun CallRecordRow(record: CallRecord, onClick: () -> Unit) {
                         .background(Color.White)
                         .padding(2.dp)
                         .clip(CircleShape)
-                        .background(record.verdict.containerColor()),
+                        .background(if (record.endedByVoiceMatch) TiskzColors.Red.copy(alpha = 0.1f) else record.verdict.containerColor()),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
-                        imageVector = when (record.verdict) {
+                        imageVector = if (record.endedByVoiceMatch) TablerIcons.AlertTriangle else when (record.verdict) {
                             Verdict.SCAM -> TablerIcons.ShieldX
                             Verdict.SUSPICIOUS -> TablerIcons.AlertTriangle
                             else -> TablerIcons.ShieldCheck
                         },
-                        contentDescription = record.verdict.label,
-                        tint = record.verdict.color(),
+                        contentDescription = if (record.endedByVoiceMatch) "Coincidencia de voz" else record.verdict.label,
+                        tint = if (record.endedByVoiceMatch) TiskzColors.Red else record.verdict.color(),
                         modifier = Modifier.size(13.dp),
                     )
                 }
@@ -475,14 +475,18 @@ private fun CallRecordRow(record: CallRecord, onClick: () -> Unit) {
                 )
                 Spacer(Modifier.size(4.dp))
                 val detail = buildList {
-                    if (record.blocked) add("Bloqueada")
+                    if (record.endedByVoiceMatch) add("Cortada por coincidencia de voz")
+                    else if (record.blocked) add("Bloqueada")
                     add(formatWhen(record.startedAt))
                     if (record.callerName != null) add(PhoneNumbers.display(record.number))
                 }.joinToString(" · ")
                 Text(detail, style = MaterialTheme.typography.bodySmall, color = TiskzColors.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
-        if (record.verdict != Verdict.NONE) {
+        if (record.endedByVoiceMatch) {
+            Spacer(Modifier.size(8.dp))
+            Text("Coincidencia\nde voz", style = MaterialTheme.typography.bodySmall, color = TiskzColors.Red)
+        } else if (record.verdict != Verdict.NONE) {
             Spacer(Modifier.size(8.dp))
             Column(horizontalAlignment = Alignment.End) {
                 Text("${record.riskPercent}%", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = record.verdict.color())

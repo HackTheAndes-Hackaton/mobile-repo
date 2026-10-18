@@ -28,6 +28,7 @@ data class ConferenceState(
     val mergeRequested: Boolean = false,
     val confirmed: Boolean = false,
     val diagnostic: String? = null,
+    val endReason: com.tiskz.app.model.CallEndReason? = null,
 ) {
     val running: Boolean get() = phase !in setOf(ConferencePhase.IDLE, ConferencePhase.FAILED, ConferencePhase.ENDED)
 }

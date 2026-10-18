@@ -85,7 +85,10 @@ fun CallDetailScreen(recordId: String, onBack: () -> Unit) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = TiskzColors.Muted,
             )
-            VerdictBadge(record.verdict)
+            if (record.endedByVoiceMatch) {
+                Text(record.endReason!!.label, style = MaterialTheme.typography.titleMedium, color = TiskzColors.Red)
+                Text(record.endExplanation.orEmpty(), style = MaterialTheme.typography.bodyMedium, color = TiskzColors.Ink)
+            } else VerdictBadge(record.verdict)
             archived[record.id]?.let { state ->
                 Text(
                     text = when (state) {
@@ -105,7 +108,7 @@ fun CallDetailScreen(recordId: String, onBack: () -> Unit) {
             if (record.verdict != Verdict.NONE) {
                 RiskBar(
                     percent = record.riskPercent,
-                    headline = record.verdict.label,
+                    headline = if (record.endedByVoiceMatch) "Riesgo del contenido" else record.verdict.label,
                     detail = listOfNotNull(
                         record.scamType,
                         record.impersonating?.let { "se hizo pasar por $it" },
