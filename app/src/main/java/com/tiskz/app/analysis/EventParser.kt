@@ -21,6 +21,12 @@ object EventParser {
     }
 
     private fun parse(json: JSONObject): AnalysisEvent? = when (json.optString("type")) {
+        "audio.capture_result" -> {
+            val status = json.optString("status")
+            val fragment = json.optString("fragment_id").takeIf { it.matches(Regex("clip_[a-f0-9]{48}")) }
+            if (status !in setOf("saving", "saved", "failed") || (status == "saved" && fragment == null)) null
+            else AnalysisEvent.AudioEvidence(status, fragment)
+        }
         "comparison.status" -> if (json.opt("comparison_only") == true) AnalysisEvent.ComparisonStatus(json.optString("status")) else null
         "transcript.comparison" -> {
             val id = json.optString("id")

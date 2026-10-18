@@ -3,6 +3,10 @@ package com.tiskz.app.voice
 import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Test
+import com.tiskz.app.analysis.AnalysisEvent
+import com.tiskz.app.analysis.EventParser
+import com.tiskz.app.analysis.reduce
+import com.tiskz.app.model.CallAnalysis
 
 class PhoneCallControlTest {
     private val call = "11111111-2222-3333-4444-555555555555"
@@ -44,5 +48,30 @@ class PhoneCallControlTest {
         assertNull(control.accept(JSONObject().put("type", "alert.updated").put("session_id", call).put("alerta", true).put("revision", 3)))
         assertNull(control.accept(order(2)))
         assertNotNull(control.accept(order(3)))
+    }
+
+    @Test fun agentEndClosesBoundConferenceWithoutClaimingRisk() {
+        val control = PhoneCallControl(); start(control)
+        val result = control.accept(order().put("reason", "agent_ended"))
+        assertEquals("agent_ended", result?.reason)
+        assertNull(control.accept(order().put("reason", "agent_ended")))
+    }
+    @Test fun agentMayEndBeforeFirstCallerTurnButRiskCannot() {
+        val control = PhoneCallControl()
+        control.accept(JSONObject().put("type", "phone.call").put("call_id", call))
+        assertNull(control.accept(order(0)))
+        assertNotNull(control.accept(order(0).put("reason", "agent_ended")))
+    }
+
+    @Test fun evidenceIsSavedOnlyAfterValidServerConfirmationAndDoesNotChangeRisk() {
+        val saving = EventParser.parse("""{"type":"audio.capture_result","status":"saving"}""")!!
+        val saved = EventParser.parse("""{"type":"audio.capture_result","status":"saved","fragment_id":"clip_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}""")!!
+        var state = CallAnalysis().reduce(saving)
+        assertEquals("saving", state.audioEvidenceStatus)
+        assertNull(state.audioFragmentId)
+        state = state.reduce(saved)
+        assertEquals("saved", state.audioEvidenceStatus)
+        assertEquals(false, state.alert == true)
+        assertNull(EventParser.parse("""{"type":"audio.capture_result","status":"saved"}"""))
     }
 }

@@ -174,6 +174,12 @@ fun AutomaticConferenceSettings() {
             Switch(checked = settings.automaticConferenceEnabled, enabled = !busy && (ready || settings.automaticConferenceEnabled),
                 onCheckedChange = { enabled -> repo.update { it.copy(automaticConferenceEnabled = enabled && ready) } })
         }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Guardar hasta 10 s de la llamada al detectar riesgo en Red Vecinal Segura. Revisión pendiente; no identifica a quien llama.", Modifier.weight(1f))
+            Switch(checked = settings.phoneEvidenceConsent, enabled = !busy,
+                onCheckedChange = { enabled -> repo.update { it.copy(phoneEvidenceConsent = enabled) } })
+        }
+
         if (!confirmed) Text("Bloqueado hasta confirmar los costos para esta SIM, operadora y destino.", color = MaterialTheme.colorScheme.error)
         if (busy) Text("Finaliza la llamada para cambiar esta configuración.", style = MaterialTheme.typography.bodySmall)
     }

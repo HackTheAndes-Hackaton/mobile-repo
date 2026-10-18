@@ -29,6 +29,7 @@ data class TiskzSettings(
     val conferenceConfirmedRoute: String = "",
     /** Guardar la conversación de cada llamada en el panel web. */
     val panelSync: Boolean = true,
+    val phoneEvidenceConsent: Boolean = false,
     val panelUrl: String = BuildConfig.PANEL_URL,
     /** Organización del panel con la que se comparten las llamadas (X-Tiskz-Org). */
     val panelOrg: String = BuildConfig.PANEL_ORG,
@@ -66,6 +67,7 @@ class SettingsRepository(context: Context) {
             .putString("conference_account", updated.conferenceAccount)
             .putString("conference_destination", updated.conferenceDestination)
             .putString("conference_confirmed_route", updated.conferenceConfirmedRoute)
+            .putBoolean("phone_evidence_consent", updated.phoneEvidenceConsent)
             .putBoolean(KEY_PANEL_SYNC, updated.panelSync)
             .putString(KEY_PANEL_URL, updated.panelUrl)
             .putString(KEY_PANEL_ORG, updated.panelOrg)
@@ -87,6 +89,7 @@ class SettingsRepository(context: Context) {
         conferenceDestination = prefs.getString("conference_destination", null) ?: CarrierDialPlan.DEFAULT_AGENT,
         conferenceConfirmedRoute = prefs.getString("conference_confirmed_route", "").orEmpty(),
         panelSync = prefs.getBoolean(KEY_PANEL_SYNC, true),
+        phoneEvidenceConsent = prefs.getBoolean("phone_evidence_consent", false),
         panelUrl = prefs.getString(KEY_PANEL_URL, null) ?: BuildConfig.PANEL_URL,
         panelOrg = prefs.getString(KEY_PANEL_ORG, null) ?: BuildConfig.PANEL_ORG,
     )

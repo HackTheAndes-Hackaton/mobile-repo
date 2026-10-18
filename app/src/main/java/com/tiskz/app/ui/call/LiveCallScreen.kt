@@ -41,6 +41,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.tiskz.app.model.audioEvidenceMessage
 import com.tiskz.app.model.ActiveCall
 import com.tiskz.app.analysis.GuardAlert
 import com.tiskz.app.call.ConferencePhase
@@ -168,6 +169,7 @@ fun LiveCallScreen(
             )
             guard?.let { GuardBanner(it, actions.onDismissGuard, Modifier.padding(start = 20.dp, end = 20.dp, top = 10.dp)) }
             AssessmentCard(analysis, compact = true, modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
+            audioEvidenceMessage(analysis.audioEvidenceStatus)?.let { Text(it, modifier = Modifier.padding(horizontal = 20.dp), style = MaterialTheme.typography.bodySmall) }
             ScribeComparisonCard(analysis.scribe, compact = true, modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
             LiveTranscript(
                 lines = analysis.transcript,
