@@ -57,7 +57,7 @@ fun VoiceScreen(onBack: () -> Unit) {
         if (!consent || !lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) return
         try {
             session?.close()
-            val next = if (phone) container.openPhoneAlerts(baseUrl, code.trim()) else container.openVoiceSession(baseUrl, code.trim(), assistant, evidenceConsent)
+            val next = if (phone) container.openPhoneAlerts(baseUrl, code.trim(), evidenceConsent) else container.openVoiceSession(baseUrl, code.trim(), assistant, evidenceConsent)
             session = next
             formError = null
             (next as? WebRtcVoiceSession)?.start(consent)
@@ -121,10 +121,10 @@ fun VoiceScreen(onBack: () -> Unit) {
                     OutlinedButton(onClick = { session?.close() }, enabled = active, modifier = Modifier.weight(1f)) { Text(if (phone) "Detener alertas" else "Detener") }
                 }
             }
-            if (!phone) item {
+            item {
                 Row {
                     Checkbox(checked = evidenceConsent, onCheckedChange = { evidenceConsent = it }, enabled = !active && !pendingStart)
-                    Text("Autorizo conservar y compartir con Red Vecinal Segura hasta 10 segundos del micrófono cuando haya una alerta o pulse Guardar. No autoriza identificar personas por su voz.", Modifier.weight(1f))
+                    Text(if (phone) "Autorizo conservar y compartir con Red Vecinal Segura hasta 10 segundos de la llamada cuando se detecte una alerta. Queda pendiente de revisión; no identifica personas." else "Autorizo conservar y compartir con Red Vecinal Segura hasta 10 segundos del micrófono cuando haya una alerta o pulse Guardar. No autoriza identificar personas por su voz.", Modifier.weight(1f))
                 }
                 Text("Sin esta opción no se conserva audio. Los fragmentos guardados permanecen en el servidor hasta su eliminación; el búfer local se borra al terminar.", style = MaterialTheme.typography.bodySmall)
             }

@@ -24,7 +24,7 @@ import org.json.JSONObject
 import java.util.concurrent.atomic.AtomicBoolean
 
 /** Solo observa la línea del equipo. No captura audio ni activa desvíos de la SIM. */
-class PhoneAlertSession(client: OkHttpClient, baseUrl: String, accessCode: String) : AnalysisSession() {
+class PhoneAlertSession(client: OkHttpClient, baseUrl: String, accessCode: String, evidenceConsent: Boolean = false) : AnalysisSession() {
     private val closed = AtomicBoolean(false)
     private val _connection = MutableStateFlow(WebRtcVoiceSession.Connection.CONNECTING)
     val connection = _connection.asStateFlow()
@@ -42,7 +42,7 @@ class PhoneAlertSession(client: OkHttpClient, baseUrl: String, accessCode: Strin
         require(base.isHttps && base.username.isEmpty() && base.password.isEmpty() && base.query == null && base.fragment == null) { "El canal requiere HTTPS sin credenciales ni parámetros." }
         scope.launch {
           try {
-            val request = Request.Builder().url(api.phoneEventsUrl(accessCode)).build()
+            val request = Request.Builder().url(api.phoneEventsUrl(accessCode, evidenceConsent)).build()
             if (closed.get()) return@launch
             val connected = client.newBuilder().followRedirects(false).followSslRedirects(false).build().newWebSocket(request, object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {

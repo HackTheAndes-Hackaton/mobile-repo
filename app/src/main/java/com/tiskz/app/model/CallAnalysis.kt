@@ -67,7 +67,16 @@ data class ScribeComparison(
 )
 
 /** Estado acumulado del análisis de una llamada, sin importar si viene del backend o de la demo. */
+fun audioEvidenceMessage(status: String?): String? = when (status) {
+    "saving" -> "Guardando fragmento de voz; puede completarse después del corte."
+    "saved" -> "Fragmento de voz guardado · pendiente de revisión."
+    "failed" -> "No se pudo guardar el fragmento de voz."
+    else -> null
+}
+
 data class CallAnalysis(
+    val audioEvidenceStatus: String? = null,
+    val audioFragmentId: String? = null,
     val status: AgentStatus = AgentStatus.CONNECTING,
     val riskPercent: Int = 0,
     val alert: Boolean? = null,

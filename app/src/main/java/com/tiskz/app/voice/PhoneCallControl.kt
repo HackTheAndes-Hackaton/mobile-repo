@@ -2,7 +2,7 @@ package com.tiskz.app.voice
 
 import org.json.JSONObject
 
-data class PhoneHangup(val callId: String, val requestId: String, val revision: Int)
+data class PhoneHangup(val callId: String, val requestId: String, val revision: Int, val reason: String = "risk_detected")
 
 /** Solo una orden autenticada de la llamada vinculada puede cerrar Telecom. */
 internal class PhoneCallControl {
@@ -25,11 +25,11 @@ internal class PhoneCallControl {
                 val id = event.optString("request_id")
                 val nextRevision = (event.opt("revision") as? Number)?.toDouble() ?: return null
                 if (!consumed && callId != null && event.optString("session_id") == callId &&
-                    event.optString("call_id") == callId && event.optString("reason") == "risk_detected" &&
-                    uuid.matches(id) && nextRevision.isFinite() && nextRevision >= maxOf(1, revision) &&
+                    event.optString("call_id") == callId && event.optString("reason") in setOf("risk_detected", "agent_ended") &&
+                    uuid.matches(id) && nextRevision.isFinite() && nextRevision >= maxOf(if (event.optString("reason") == "risk_detected") 1 else 0, revision) &&
                     nextRevision <= Int.MAX_VALUE && nextRevision % 1 == 0.0) {
                     consumed = true
-                    return PhoneHangup(requireNotNull(callId), id, nextRevision.toInt())
+                    return PhoneHangup(requireNotNull(callId), id, nextRevision.toInt(), event.optString("reason"))
                 }
             }
         }

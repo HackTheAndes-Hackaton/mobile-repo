@@ -41,6 +41,8 @@ sealed interface AnalysisEvent {
     data class ComparisonCaption(val id: String, val text: String, val final: Boolean, val sequence: Int) : AnalysisEvent
     data class ComparisonAlert(val value: Boolean, val probability: Double, val revision: Int, val analysisMs: Int?) : AnalysisEvent
 
+    data class AudioEvidence(val status: String, val fragmentId: String?) : AnalysisEvent
+
     data class Voice(val match: VoiceMatch) : AnalysisEvent
 
     /** Puede incorporarse después de la revisión inicial; no autentica a quien llama. */
@@ -108,6 +110,8 @@ fun CallAnalysis.reduce(event: AnalysisEvent): CallAnalysis = when (event) {
         scamType = event.scamType ?: scamType,
         impersonating = event.impersonating ?: impersonating,
     )
+
+    is AnalysisEvent.AudioEvidence -> copy(audioEvidenceStatus = event.status, audioFragmentId = event.fragmentId)
 
     is AnalysisEvent.Voice -> copy(voiceMatch = event.match)
 

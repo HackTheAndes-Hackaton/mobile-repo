@@ -141,7 +141,7 @@ class TelecomConferenceRuntime(
                     if (request != null && !disposed && controller.state.running) {
                         // Se cierra la conferencia y ambas patas, no solo la conexión con marin.
                         controller.hangUp()
-                        stateChanged(ConferenceState(ConferencePhase.ENDED, "Corte por riesgo solicitado a Android."))
+                        stateChanged(ConferenceState(ConferencePhase.ENDED, if (request.reason == "agent_ended") "El agente terminó: cierre de conferencia solicitado a Android." else "Corte por riesgo solicitado a Android."))
                         // Telecom confirma la desconexión mediante sus callbacks.
                     }
                 }

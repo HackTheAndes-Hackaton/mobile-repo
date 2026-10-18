@@ -93,9 +93,9 @@ class VoiceBackendApi(baseUrl: String, client: OkHttpClient) {
         })
     }
 
-    suspend fun phoneEventsUrl(accessCode: String): String {
+    suspend fun phoneEventsUrl(accessCode: String, evidenceConsent: Boolean = false): String {
         val ticket = post("v1/phone/monitor", accessCode, JSONObject().put("consentimiento_analisis", true)
-            .put("consentimiento_corte_automatico", true)).getString("ticket")
+            .put("consentimiento_corte_automatico", true).put("consentimiento_conservacion", evidenceConsent)).getString("ticket")
         check(ticket.length in 12..256) { "Ticket de alertas inválido." }
         return base.newBuilder().addPathSegments("ws/calls").addQueryParameter("channel", "phone")
             .addQueryParameter("ticket", ticket).build().toString().replaceFirst("https://", "wss://")

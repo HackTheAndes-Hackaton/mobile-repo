@@ -280,3 +280,9 @@ App                                   Backend / agentes
 
 Ejemplo completo de esta secuencia (los mismos eventos que usa el modo demo):
 `app/src/main/java/com/tiskz/app/analysis/DemoScripts.kt`.
+
+### Cierre del agente y fragmento telefónico (APK 0.4.6)
+
+La orden autenticada `call.hangup_requested` admite `reason:agent_ended` además de `risk_detected`. El motivo de cierre del agente no modifica el riesgo y admite revisión 0 (antes del primer turno). Se vincula a la misma sesión/llamada, requiere request_id válido y solo se consume una vez. La conferencia se cierra con ambas patas. Un `call.ended` aislado no ordena desconectar.
+
+El monitor envía `consentimiento_conservacion:true` únicamente con la opción de evidencia activada. El servidor conserva hasta 10 s del canal customer ante riesgo principal, no por la comparación experimental. `audio.capture_result` indica `saving`, `saved` con `fragment_id`, o `failed`. El guardado puede completarse después de colgar y quedar confirmado en el panel, aunque el monitor del celular ya se haya cerrado. No hay reconocimiento de identidad por voz: el WAV queda pendiente de revisión.
