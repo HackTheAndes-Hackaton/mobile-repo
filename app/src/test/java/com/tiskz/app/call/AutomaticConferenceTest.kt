@@ -86,8 +86,25 @@ class AutomaticConferenceTest {
     @Test fun noHoldCapabilityKeepsTheOriginalCall() {
         val r = Rig(); r.start(); r.controller.alertsReady()
         r.controller.callsChanged(listOf(r.caller(LegPhase.ACTIVE, canHold = false)))
+        assertEquals(ConferencePhase.ANSWERING, r.controller.state.phase)
+        r.now = 8_001; r.controller.tick()
         assertEquals(ConferencePhase.FAILED, r.controller.state.phase)
         assertFalse(r.effects.any { it.startsWith("dial:") || it.startsWith("disconnect:") })
+        r.controller.callsChanged(listOf(r.caller(LegPhase.ACTIVE, canHold = true)))
+        assertFalse(r.effects.any { it.startsWith("hold:") || it.startsWith("dial:") })
+    }
+
+    @Test fun holdCapabilityArrivingAfterActiveContinuesImmediatelyOnce() {
+        val r = Rig(); r.start(); r.controller.alertsReady()
+        r.controller.callsChanged(listOf(r.caller(LegPhase.ACTIVE, canHold = false)))
+        assertEquals(listOf("answer:caller"), r.effects)
+        r.now = 44
+        repeat(3) { r.controller.callsChanged(listOf(r.caller(LegPhase.ACTIVE, canHold = true))) }
+        assertEquals(ConferencePhase.HOLDING, r.controller.state.phase)
+        assertEquals(1, r.effects.count { it == "hold:caller" })
+        assertFalse(r.effects.any { it.startsWith("dial:") || it == "close-alerts" })
+        repeat(3) { r.controller.callsChanged(listOf(r.caller(LegPhase.HOLDING))) }
+        assertEquals(1, r.effects.count { it.startsWith("dial:") })
     }
 
     @Test fun mergesOnlyTaggedAgentOnTheSameSimAndAfterConferenceCapability() {

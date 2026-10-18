@@ -174,6 +174,9 @@ class AutomaticConference(
         if (clock() >= deadline) {
             fail(when (state.phase) {
                 ConferencePhase.CONNECTING_ALERTS -> "No se conectaron las alertas. Puedes contestar manualmente."
+                ConferencePhase.ANSWERING -> if (caller()?.phase == LegPhase.ACTIVE && caller()?.canHold != true)
+                    "La red no habilitó poner la llamada en espera. Continúa manualmente."
+                    else "Android no completó la respuesta. Puedes continuar manualmente."
                 ConferencePhase.DIALING -> "Vapi no respondió a tiempo. Retoma la llamada original."
                 ConferencePhase.MERGING, ConferencePhase.WAITING_MERGE -> "La red no confirmó la conferencia. Retoma la llamada original."
                 else -> "Android no completó la conexión. Puedes continuar manualmente."
@@ -207,7 +210,9 @@ class AutomaticConference(
         when (state.phase) {
             ConferencePhase.ANSWERING -> if (caller()?.phase == LegPhase.ACTIVE) {
                 callerConnected = true
-                if (caller()?.canHold != true) return fail("La red no permite poner esta llamada en espera. Continúa manualmente.")
+                // Telecom puede emitir ACTIVE antes de CAPABILITY_HOLD. Esperar el callback
+                // de capacidades dentro del plazo de ANSWERING, sin añadir demora al caso listo.
+                if (caller()?.canHold != true) return
                 move(ConferencePhase.HOLDING, "Preparando la segunda llamada…", 8_000)
                 effect { actions.hold(callerId) }
             }
