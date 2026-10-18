@@ -69,9 +69,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tiskz.app.R
-import com.tiskz.app.call.CallManager
 import com.tiskz.app.data.ContactLookup
-import com.tiskz.app.data.DemoScenario
 import com.tiskz.app.model.CallDirection
 import com.tiskz.app.model.CallRecord
 import com.tiskz.app.model.Verdict
@@ -91,21 +89,16 @@ import com.tiskz.app.util.formatWhen
 import compose.icons.TablerIcons
 import compose.icons.tablericons.Activity
 import compose.icons.tablericons.AlertTriangle
-import compose.icons.tablericons.BuildingBank
 import compose.icons.tablericons.GridDots
 import compose.icons.tablericons.Phone
-import compose.icons.tablericons.PhoneCall
 import compose.icons.tablericons.PhoneIncoming
 import compose.icons.tablericons.PhoneOutgoing
-import compose.icons.tablericons.Pill
 import compose.icons.tablericons.Settings
 import compose.icons.tablericons.ShieldCheck
 import compose.icons.tablericons.ShieldOff
 import compose.icons.tablericons.ShieldX
 import compose.icons.tablericons.Users
 
-private const val DEMO_SCAM_NUMBER = "+56987654321"
-private const val DEMO_SAFE_NUMBER = "+56987654320"
 private val STATS_OVERLAP = 44.dp
 
 @Composable
@@ -205,30 +198,6 @@ fun HomeScreen(
                         Text("Envía el micrófono a los agentes y recibe transcripción y alertas reales.", style = MaterialTheme.typography.bodyMedium)
                         Button(onClick = onOpenVoice, modifier = Modifier.fillMaxWidth()) { Text("Abrir canal de voz") }
                     }
-                }
-            }
-            item { SectionTitle("Probar Tiskz", "Simula una llamada entrante") }
-            item {
-                Row(
-                    Modifier.padding(horizontal = 20.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    DemoTile(
-                        title = "Simular estafa",
-                        subtitle = "Falso banco pide tu clave",
-                        icon = TablerIcons.BuildingBank,
-                        brush = TiskzBrushes.Danger,
-                        onClick = { CallManager.simulateIncoming(DEMO_SCAM_NUMBER, DemoScenario.SCAM) },
-                        modifier = Modifier.weight(1f),
-                    )
-                    DemoTile(
-                        title = "Llamada segura",
-                        subtitle = "Farmacia con tu receta",
-                        icon = TablerIcons.Pill,
-                        brush = TiskzBrushes.Safe,
-                        onClick = { CallManager.simulateIncoming(DEMO_SAFE_NUMBER, DemoScenario.SAFE) },
-                        modifier = Modifier.weight(1f),
-                    )
                 }
             }
             item {
@@ -407,38 +376,6 @@ private fun ContactsBanner(onAllow: () -> Unit, modifier: Modifier = Modifier) {
                 Text("Muestra quién llama, no solo el número.", style = MaterialTheme.typography.bodySmall, color = TiskzColors.Muted)
             }
             Button(onClick = onAllow, shape = RoundedCornerShape(50)) { Text("Permitir") }
-        }
-    }
-}
-
-@Composable
-private fun DemoTile(
-    title: String,
-    subtitle: String,
-    icon: ImageVector,
-    brush: Brush,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    TiskzCard(modifier) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onClick)
-                .padding(16.dp),
-        ) {
-            Box(Modifier.size(48.dp).clip(RoundedCornerShape(16.dp)).background(brush), contentAlignment = Alignment.Center) {
-                Icon(icon, null, tint = Color.White, modifier = Modifier.size(26.dp))
-            }
-            Spacer(Modifier.height(14.dp))
-            Text(title, style = MaterialTheme.typography.titleMedium, color = TiskzColors.Ink)
-            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = TiskzColors.Muted, minLines = 2)
-            Spacer(Modifier.height(10.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(TablerIcons.PhoneCall, null, tint = TiskzColors.Blue600, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.size(6.dp))
-                Text("Probar", style = MaterialTheme.typography.labelLarge, color = TiskzColors.Blue600)
-            }
         }
     }
 }
