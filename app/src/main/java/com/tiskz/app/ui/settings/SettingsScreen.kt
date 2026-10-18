@@ -74,6 +74,8 @@ fun SettingsScreen(onBack: () -> Unit) {
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
+            AutomaticConferenceSettings()
+            HorizontalDivider(color = TiskzColors.Line)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text("Modo demo", style = MaterialTheme.typography.titleMedium)

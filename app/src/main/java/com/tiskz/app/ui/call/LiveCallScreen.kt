@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -26,6 +27,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,6 +41,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.tiskz.app.model.ActiveCall
+import com.tiskz.app.call.ConferencePhase
+import com.tiskz.app.call.ConferenceState
 import com.tiskz.app.model.AgentStatus
 import com.tiskz.app.model.CallAnalysis
 import com.tiskz.app.model.CallDirection
@@ -84,10 +90,31 @@ fun LiveCallScreen(
     analysis: CallAnalysis?,
     answerThreshold: Int,
     actions: LiveCallActions,
+    conference: ConferenceState = ConferenceState(),
 ) {
+    val automatic = conference.phase != ConferencePhase.IDLE
+    var showProgress by remember(call.id) { mutableStateOf(false) }
+    if (showProgress) {
+        AlertDialog(onDismissRequest = { showProgress = false }, title = { Text("Progreso de la conferencia") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("✓ Android entregó la llamada entrante")
+                    Text("${if (conference.callerConnected) "✓" else "○"} Android conectó la llamada original")
+                    Text("${if (conference.agentConnected) "✓" else "○"} Android conectó la llamada a Vapi")
+                    Text("${if (conference.mergeRequested) "✓" else "○"} Se solicitó unir ambas llamadas")
+                    Text("${if (conference.confirmed) "✓" else "○"} Android confirmó la conferencia")
+                    Text(conference.message)
+                    conference.diagnostic?.let { Text(it) }
+                    Text("La confirmación de Android no demuestra por sí sola que ambos extremos escuchen al agente.")
+                }
+            }, confirmButton = { TextButton(onClick = { showProgress = false }) { Text("Cerrar") } })
+    }
     val screened = call.direction == CallDirection.INCOMING && analysis != null
     val mood = when {
         analysis == null -> Mood.NEUTRAL
+        automatic && (conference.phase != ConferencePhase.CONNECTED || analysis.alert == null) -> Mood.NEUTRAL
+        automatic && analysis.alert == true -> Mood.DANGER
+        automatic && analysis.alert == false -> Mood.SAFE
         analysis.isScam -> Mood.DANGER
         analysis.isSafeToAnswer(answerThreshold) -> Mood.SAFE
         else -> Mood.NEUTRAL
@@ -102,17 +129,30 @@ fun LiveCallScreen(
             CompactHero(call, mood)
             RiskBar(
                 percent = analysis!!.riskPercent,
-                headline = riskHeadline(analysis, answerThreshold),
-                detail = riskDetail(analysis, answerThreshold),
+                headline = if (automatic) when {
+                    conference.phase == ConferencePhase.FAILED -> "Sin monitoreo del agente"
+                    analysis.alert == true -> "Alerta detectada"
+                    analysis.alert == false -> "Sin señales de alerta detectadas"
+                    else -> "Esperando análisis real"
+                } else riskHeadline(analysis, answerThreshold),
+                detail = if (automatic) analysis.error ?: analysis.reasons.firstOrNull() else riskDetail(analysis, answerThreshold),
                 headlineColor = if (mood == Mood.NEUTRAL && analysis.riskPercent < 30) TiskzColors.Blue600 else null,
                 modifier = Modifier
                     .padding(horizontal = 20.dp)
                     .overlapUp(HERO_OVERLAP),
             )
+            if (automatic) {
+                Text(conference.message, modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                    style = MaterialTheme.typography.bodyMedium)
+                analysis.understanding?.summary?.let {
+                    Text(it, modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.bodySmall, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                }
+            }
             LiveTranscript(
                 lines = analysis.transcript,
-                callerLabel = call.callerName ?: "Quien llama",
-                live = call.phase == CallPhase.RINGING && !analysis.isScam,
+                callerLabel = if (automatic) "Participantes de la conferencia" else call.callerName ?: "Quien llama",
+                live = if (automatic) conference.phase == ConferencePhase.CONNECTED else call.phase == CallPhase.RINGING && !analysis.isScam,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
@@ -120,7 +160,15 @@ fun LiveCallScreen(
             )
         } else {
             FullHero(call, Modifier.weight(1f))
+            if (automatic) Text(conference.message, modifier = Modifier.padding(20.dp))
         }
+
+        if (conference.running && conference.phase != ConferencePhase.CONNECTED) {
+            TextButton(onClick = actions.onAnswer, modifier = Modifier.fillMaxWidth()) { Text("Cancelar conexión con marin y tomar la llamada") }
+        } else if (call.phase == CallPhase.HOLDING) {
+            TextButton(onClick = actions.onAnswer, modifier = Modifier.fillMaxWidth()) { Text("Retomar llamada") }
+        }
+        if (automatic) TextButton(onClick = { showProgress = true }, modifier = Modifier.fillMaxWidth()) { Text("Ver progreso de conexión") }
 
         ActionBar(call, analysis, answerThreshold, actions)
     }

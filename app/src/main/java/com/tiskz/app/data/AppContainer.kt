@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit
 class AppContainer(private val context: Context) {
 
     val settings = SettingsRepository(context)
+    val conferenceCredentials = ConferenceCredentials(context)
     val history = HistoryRepository(context)
     val blocklist = BlocklistRepository(context)
 

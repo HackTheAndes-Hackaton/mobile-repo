@@ -71,7 +71,7 @@ fun OnboardingScreen(onFinished: () -> Unit) {
         Text("Tiskz", style = MaterialTheme.typography.displayMedium, color = TiskzColors.Blue700)
         Spacer(Modifier.height(8.dp))
         Text(
-            text = "Contestamos por ti las llamadas sospechosas.",
+            text = "Prepara a marin para atender tus llamadas.",
             style = MaterialTheme.typography.titleMedium,
             color = TiskzColors.Ink,
             textAlign = TextAlign.Center,
@@ -79,9 +79,9 @@ fun OnboardingScreen(onFinished: () -> Unit) {
         Spacer(Modifier.height(32.dp))
 
         Column(verticalArrangement = Arrangement.spacedBy(18.dp), modifier = Modifier.fillMaxWidth()) {
-            Feature(TablerIcons.Headset, "Un asistente atiende primero", "Pregunta quién llama y para qué, antes de que contestes.")
-            Feature(TablerIcons.Activity, "Riesgo en tiempo real", "Ves el porcentaje de estafa subir o bajar mientras hablan.")
-            Feature(TablerIcons.Fingerprint, "Reconoce voces de estafadores", "Compara la voz con estafas ya reportadas.")
+            Feature(TablerIcons.Headset, "Un agente en la conferencia", "Puede conversar cuando tu operadora permite unir las llamadas.")
+            Feature(TablerIcons.Activity, "Alertas durante la conversación", "Revisa transcripciones y señales de riesgo; no confirman identidades.")
+            Feature(TablerIcons.Fingerprint, "Una configuración inicial", "Elige tu SIM y confirma los costos antes de activar la atención automática.")
         }
 
         Spacer(Modifier.weight(1f))
@@ -98,10 +98,10 @@ fun OnboardingScreen(onFinished: () -> Unit) {
             modifier = Modifier.fillMaxWidth().height(60.dp),
             shape = RoundedCornerShape(20.dp),
         ) {
-            Text("Activar protección", style = MaterialTheme.typography.titleMedium)
+            Text("Preparar Tiskz", style = MaterialTheme.typography.titleMedium)
         }
         Text(
-            text = "Tiskz pasará a ser tu app de teléfono, igual que Truecaller.",
+            text = "Android te pedirá elegir Tiskz como teléfono y conceder permisos. Esto todavía no activa las llamadas automáticas.",
             style = MaterialTheme.typography.bodySmall,
             color = TiskzColors.Muted,
             textAlign = TextAlign.Center,
@@ -111,7 +111,7 @@ fun OnboardingScreen(onFinished: () -> Unit) {
             Text("Probar sin activar")
         }
         Text(
-            text = "Puedes crear una cuenta más adelante.",
+            text = "La atención automática viene apagada.",
             style = MaterialTheme.typography.bodySmall,
             color = TiskzColors.Muted,
         )

@@ -1,0 +1,31 @@
+{
+  "package": "com.tiskz.app",
+  "version": "0.2.0",
+  "version_code": 2,
+  "automatic_enabled_by_default": false,
+  "costs_confirmed_by_default": false,
+  "default_destination": "+12098195098",
+  "carrier_prefixes": {
+    "Entel": "1990",
+    "Claro": "1912",
+    "Movistar": "1911",
+    "Bitel": "1968"
+  },
+  "unit_tests": 40,
+  "unit_failures": 0,
+  "instrumented_tests": {
+    "count": 3,
+    "failures": 0,
+    "device": "Pixel_6 emulator Android 12",
+    "scope": "isolated preferences and Android KeyStore; no Telecom calls"
+  },
+  "lint_errors": 0,
+  "build": "testDebugUnitTest assembleDebug lintDebug succeeded",
+  "apk": "dist/tiskz-conferencia-automatica-0.2.0.apk",
+  "apk_sha256": "c69d1e151999555a06e3eb374cd5b707a2da1e69d9b8ded3863e675a881ded23",
+  "physical_pstn_conference_verified": false,
+  "remote_marin_audio_verified": false,
+  "operator_zero_cost_verified": false,
+  "outbound_calls_during_implementation": 0,
+  "source_reference": "local tiskz-call-probe 0.2.1; user-supplied report and inspected Java sources"
+}
