@@ -286,6 +286,10 @@ class WebRtcVoiceSession(
         captureProtocol?.result(raw)?.let { result ->
             if (result.saved) {
                 savedExcerptId = result.fragmentId
+                if (pendingExcerpt?.first == result.id) {
+                    pendingExcerpt?.second?.fill(0)
+                    pendingExcerpt = null
+                }
                 _evidence.value = _evidence.value.copy(saved = true, message = "Guardado automático confirmado por el servidor · pendiente de revisión.")
             } else if (!_evidence.value.busy) {
                 _evidence.value = _evidence.value.copy(message = if (result.reason == "expired") "La solicitud de captura venció. Puedes guardar manualmente." else "La captura automática no se completó. Puedes volver a intentar.")
