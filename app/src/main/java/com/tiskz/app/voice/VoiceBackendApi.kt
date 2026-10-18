@@ -94,7 +94,8 @@ class VoiceBackendApi(baseUrl: String, client: OkHttpClient) {
     }
 
     suspend fun phoneEventsUrl(accessCode: String): String {
-        val ticket = post("v1/phone/monitor", accessCode, JSONObject().put("consentimiento_analisis", true)).getString("ticket")
+        val ticket = post("v1/phone/monitor", accessCode, JSONObject().put("consentimiento_analisis", true)
+            .put("consentimiento_corte_automatico", true)).getString("ticket")
         check(ticket.length in 12..256) { "Ticket de alertas inválido." }
         return base.newBuilder().addPathSegments("ws/calls").addQueryParameter("channel", "phone")
             .addQueryParameter("ticket", ticket).build().toString().replaceFirst("https://", "wss://")
@@ -125,6 +126,7 @@ class VoiceBackendApi(baseUrl: String, client: OkHttpClient) {
                     val result = response.use {
                         if (!it.isSuccessful) throw IOException(when (it.code) {
                             401 -> "Código de acceso incorrecto o sesión vencida."
+                            409 -> "Ya hay una llamada o un monitor de corte activo. Ciérralo antes de conectar."
                             429 -> "Hay demasiadas sesiones o intentos. Termina una sesión y vuelve a intentar."
                             else -> "El servicio de voz devolvió HTTP ${it.code}."
                         })

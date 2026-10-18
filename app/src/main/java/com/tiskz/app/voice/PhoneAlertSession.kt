@@ -32,6 +32,9 @@ class PhoneAlertSession(client: OkHttpClient, baseUrl: String, accessCode: Strin
     private var socket: WebSocket? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val api = VoiceBackendApi(baseUrl, client)
+    private val callControl = PhoneCallControl()
+    private val _hangupRequests = MutableStateFlow<PhoneHangup?>(null)
+    val hangupRequests = _hangupRequests.asStateFlow()
 
     init {
         require(accessCode.length in 12..512) { "Introduce el código privado del equipo." }
@@ -48,7 +51,8 @@ class PhoneAlertSession(client: OkHttpClient, baseUrl: String, accessCode: Strin
             override fun onMessage(webSocket: WebSocket, text: String) {
                 if (closed.get() || text.length > 20000) return
                 val json = runCatching { JSONObject(text) }.getOrNull() ?: return
-                if (BuildConfig.DEBUG) {
+                callControl.accept(json)?.let { _hangupRequests.value = it }
+                if (BuildConfig.DEBUG) runCatching {
                     // Solo forma del evento, sin texto: sirve para revisar etiquetas e ids de la transcripción.
                     Log.d("TiskzPhone", "${json.optString("type")} speaker=${json.optString("speaker")} " +
                         "id=${json.optString("id")} seq=${json.opt("sequence")} final=${json.opt("final")} " +
@@ -62,6 +66,9 @@ class PhoneAlertSession(client: OkHttpClient, baseUrl: String, accessCode: Strin
                             callId = next; resetAnalysis()
                             dispatch(AnalysisEvent.Status(AgentStatus.SCREENING))
                         }
+                    }
+                    "call.hangup_result" -> if (json.optString("session_id") == callId && json.optString("status") == "failed") {
+                        dispatch(AnalysisEvent.Error("No se confirmó el corte de Vapi. Cuelga desde el teléfono."))
                     }
                     else -> EventParser.parse(text)?.let(::dispatch)
                 }

@@ -136,6 +136,16 @@ class TelecomConferenceRuntime(
         try {
             val code = container.conferenceCredentials.read(container.settings.current.backendUrl) ?: error("access unavailable")
             alerts = container.openPhoneAlerts(container.settings.current.backendUrl, code).also(sessionOpened)
+            scope.launch {
+                alerts!!.hangupRequests.collect { request ->
+                    if (request != null && !disposed && controller.state.running) {
+                        // Se cierra la conferencia y ambas patas, no solo la conexión con marin.
+                        controller.hangUp()
+                        stateChanged(ConferenceState(ConferencePhase.ENDED, "Corte por riesgo solicitado a Android."))
+                        // Telecom confirma la desconexión mediante sus callbacks.
+                    }
+                }
+            }
             monitorJob = scope.launch {
                 alerts!!.connection.collect { connection ->
                     if (connection == WebRtcVoiceSession.Connection.STREAMING) controller.alertsReady()
