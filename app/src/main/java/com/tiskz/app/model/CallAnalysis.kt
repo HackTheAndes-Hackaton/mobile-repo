@@ -81,6 +81,7 @@ data class CallAnalysis(
     val impersonating: String? = null,
     val transcript: List<TranscriptLine> = emptyList(),
     val voiceMatch: VoiceMatch? = null,
+    /** El servidor permite incorporarse después de la revisión inicial; no implica identidad verificada. */
     val readyToAnswer: Boolean = false,
     val markedSafeByUser: Boolean = false,
     val error: String? = null,

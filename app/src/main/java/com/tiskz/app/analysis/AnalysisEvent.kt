@@ -43,6 +43,7 @@ sealed interface AnalysisEvent {
 
     data class Voice(val match: VoiceMatch) : AnalysisEvent
 
+    /** Puede incorporarse después de la revisión inicial; no autentica a quien llama. */
     data object ReadyToAnswer : AnalysisEvent
 
     data class Ended(val finalPercent: Int?) : AnalysisEvent
@@ -79,7 +80,10 @@ fun CallAnalysis.reduce(event: AnalysisEvent): CallAnalysis = when (event) {
         val index = transcript.indexOfFirst { it.id == event.id }
         val line = TranscriptLine(event.id, event.speaker, event.text, event.flagged, event.sequence ?: transcript.getOrNull(index)?.sequence)
         val next = if (index >= 0) transcript.toMutableList().also { it[index] = line } else transcript + line
-        copy(transcript = if (next.any { it.sequence != null }) next.sortedBy { it.sequence ?: Int.MAX_VALUE } else next)
+        copy(
+            transcript = if (next.any { it.sequence != null }) next.sortedBy { it.sequence ?: Int.MAX_VALUE } else next,
+            readyToAnswer = if (event.speaker == Speaker.CALLER) false else readyToAnswer,
+        )
     }
 
     is AnalysisEvent.Alert -> if (event.revision < alertRevision) this else copy(

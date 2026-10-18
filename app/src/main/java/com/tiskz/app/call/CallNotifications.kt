@@ -30,7 +30,7 @@ enum class CallStage {
     INCOMING,
     /** Marin contestó y el titular no está en la llamada: aviso discreto de llamada en curso. */
     SCREENING,
-    /** Marin confirmó un espacio seguro (o no pudo unirse): aviso emergente para entrar. */
+    /** Terminó la revisión inicial o el usuario marcó la llamada como segura: aviso emergente para entrar. */
     SAFE,
     /** Marin detectó señales de estafa: aviso emergente para colgar o bloquear. */
     DANGER,
@@ -127,20 +127,20 @@ object CallNotifications {
         val reason = analysis?.reasons?.firstOrNull()?.trim()?.trimEnd('.')?.takeIf { it.isNotBlank() }
         val risk = analysis?.takeIf { it.transcript.isNotEmpty() }?.riskPercent
         fun screened(stage: CallStage, label: String, tone: NoticeTone, text: String, detail: String?, risk: Int? = null) =
-            CallNotice(call.id, stage, name, text, stage == CallStage.SAFE && tone == NoticeTone.SAFE, call.answeredAt,
+            CallNotice(call.id, stage, name, text, verified = false, answeredAt = call.answeredAt,
                 screened = true, label = label, tone = tone, risk = risk, detail = detail)
         return when {
             scam -> screened(CallStage.DANGER, "● Posible estafa", NoticeTone.DANGER,
                 listOfNotNull(analysis?.scamType, analysis?.impersonating?.let { "se hace pasar por $it" })
                     .joinToString(" · ").ifEmpty { reason ?: "Quien llama muestra señales de estafa" } + ".",
                 "Te recomendamos no entrar. Puedes bloquear el número.", analysis?.riskPercent)
-            safe -> screened(CallStage.SAFE, "● Llamada segura", NoticeTone.SAFE,
-                summary?.let { "Es sobre: $it." } ?: reason?.let { "$it." } ?: "Verificamos quién llama y para qué.",
-                "Ya puedes entrar a la llamada.", risk)
+            safe -> screened(CallStage.SAFE, "● Puedes entrar", NoticeTone.INFO,
+                summary?.let { "La revisión inicial indica que la llamada trata de: $it." } ?: reason?.let { "$it." } ?: "Terminó la revisión inicial de la llamada.",
+                "Ya puedes entrar a la llamada. La identidad de quien llama no está verificada.", risk)
             conference.phase == ConferencePhase.FAILED -> screened(CallStage.SAFE, "● Sin protección", NoticeTone.WARN,
-                "No pudimos analizar esta llamada.", "Puedes entrar, pero sin protección.")
+                "No pudimos analizar esta llamada.", "Puedes entrar, pero sin protección ni verificación de identidad.")
             !agentAnswered -> screened(CallStage.INCOMING, "● Llamada entrante", NoticeTone.INFO,
-                "Tu asistente va a contestar por ti.", "Te avisamos cuando sea seguro entrar.")
+                "Tu asistente va a contestar por ti.", "Te avisamos cuando termine la revisión inicial.")
             else -> screened(CallStage.SCREENING, "● Analizando", NoticeTone.INFO,
                 "Tu asistente está hablando con quien llama.", "Aún no estás en la llamada.", risk)
         }
