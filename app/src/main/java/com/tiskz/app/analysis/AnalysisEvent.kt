@@ -7,6 +7,8 @@ import com.tiskz.app.model.TranscriptLine
 import com.tiskz.app.model.VoiceMatch
 import com.tiskz.app.model.Understanding
 import com.tiskz.app.model.CallAssessment
+import com.tiskz.app.model.ScribeComparison
+import com.tiskz.app.model.ComparisonLine
 import kotlin.math.roundToInt
 
 /** Eventos que llegan de los agentes. El formato JSON está en docs/CONTRATO_BACKEND.md. */
@@ -35,6 +37,9 @@ sealed interface AnalysisEvent {
     data class Alert(val value: Boolean, val probability: Double, val revision: Int) : AnalysisEvent
     data class Understood(val value: Understanding, val revision: Int) : AnalysisEvent
     data class Assessed(val value: CallAssessment, val revision: Int) : AnalysisEvent
+    data class ComparisonStatus(val value: String) : AnalysisEvent
+    data class ComparisonCaption(val id: String, val text: String, val final: Boolean, val sequence: Int) : AnalysisEvent
+    data class ComparisonAlert(val value: Boolean, val probability: Double, val revision: Int, val analysisMs: Int?) : AnalysisEvent
 
     data class Voice(val match: VoiceMatch) : AnalysisEvent
 
@@ -49,6 +54,21 @@ sealed interface AnalysisEvent {
 }
 
 fun CallAnalysis.reduce(event: AnalysisEvent): CallAnalysis = when (event) {
+    is AnalysisEvent.ComparisonStatus -> copy(scribe = (scribe ?: ScribeComparison()).copy(status = event.value))
+    is AnalysisEvent.ComparisonCaption -> {
+        val current = scribe ?: ScribeComparison()
+        if (current.lines.any { it.id == event.id && it.final }) this
+        else {
+            val lines = (current.lines.filterNot { it.id == event.id } + ComparisonLine(event.id, event.text, event.final, event.sequence))
+                .sortedBy { it.sequence }.takeLast(12)
+            copy(scribe = current.copy(lines = lines))
+        }
+    }
+    is AnalysisEvent.ComparisonAlert -> {
+        val current = scribe ?: ScribeComparison()
+        if (event.revision < current.revision) this
+        else copy(scribe = current.copy(alert = event.value, probability = event.probability, revision = event.revision, analysisMs = event.analysisMs))
+    }
     is AnalysisEvent.Status -> copy(
         status = event.status,
         readyToAnswer = readyToAnswer || event.status == AgentStatus.SAFE,

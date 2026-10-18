@@ -21,6 +21,23 @@ object EventParser {
     }
 
     private fun parse(json: JSONObject): AnalysisEvent? = when (json.optString("type")) {
+        "comparison.status" -> if (json.opt("comparison_only") == true) AnalysisEvent.ComparisonStatus(json.optString("status")) else null
+        "transcript.comparison" -> {
+            val id = json.optString("id")
+            val sequence = json.optInt("sequence", -1)
+            val text = json.optString("text")
+            val final = json.opt("final") as? Boolean
+            if (json.opt("comparison_only") != true || !id.matches(Regex("scribe-\\d{1,3}")) || sequence !in 0..99 ||
+                text.isBlank() || text.length > 4000 || final == null) null
+            else AnalysisEvent.ComparisonCaption(id, text, final, sequence)
+        }
+        "comparison.alert" -> {
+            val value = json.opt("alerta") as? Boolean
+            val probability = json.optDouble("probability", Double.NaN)
+            val revision = json.optInt("revision", -1)
+            if (json.opt("comparison_only") != true || value == null || !probability.isFinite() || probability !in 0.0..1.0 || revision < 1) null
+            else AnalysisEvent.ComparisonAlert(value, probability, revision, json.optInt("analysis_ms", -1).takeIf { it >= 0 })
+        }
         "agent.status" -> statusOf(json.optString("status"))?.let { AnalysisEvent.Status(it) }
 
         "transcript.update" -> AnalysisEvent.Transcript(

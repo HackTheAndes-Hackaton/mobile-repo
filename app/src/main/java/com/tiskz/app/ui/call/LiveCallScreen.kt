@@ -52,6 +52,7 @@ import com.tiskz.app.model.CallPhase
 import com.tiskz.app.ui.components.CallerAvatar
 import com.tiskz.app.ui.components.AssessmentCard
 import com.tiskz.app.ui.components.LiveTranscript
+import com.tiskz.app.ui.components.ScribeComparisonCard
 import com.tiskz.app.ui.components.PulsingRings
 import com.tiskz.app.ui.components.RiskBar
 import com.tiskz.app.ui.components.overlapUp
@@ -162,6 +163,7 @@ fun LiveCallScreen(
                     .overlapUp(HERO_OVERLAP),
             )
             AssessmentCard(analysis, compact = true, modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
+            ScribeComparisonCard(analysis.scribe, compact = true, modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
             LiveTranscript(
                 lines = analysis.transcript,
                 callerLabel = call.callerName ?: "Quien llama",

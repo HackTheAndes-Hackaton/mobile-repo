@@ -56,6 +56,16 @@ data class CallAssessment(
     val evidence: List<Evidence>,
 )
 
+data class ComparisonLine(val id: String, val text: String, val final: Boolean, val sequence: Int)
+data class ScribeComparison(
+    val status: String = "starting",
+    val lines: List<ComparisonLine> = emptyList(),
+    val alert: Boolean? = null,
+    val probability: Double? = null,
+    val revision: Int = -1,
+    val analysisMs: Int? = null,
+)
+
 /** Estado acumulado del análisis de una llamada, sin importar si viene del backend o de la demo. */
 data class CallAnalysis(
     val status: AgentStatus = AgentStatus.CONNECTING,
@@ -76,6 +86,7 @@ data class CallAnalysis(
     val error: String? = null,
     val assessment: CallAssessment? = null,
     val assessmentRevision: Int = -1,
+    val scribe: ScribeComparison? = null,
 ) {
     /** Una orientación anterior no describe el último fragmento ya analizado. */
     val currentAssessment: CallAssessment?
