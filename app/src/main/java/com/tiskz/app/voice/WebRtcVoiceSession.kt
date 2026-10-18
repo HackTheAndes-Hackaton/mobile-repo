@@ -302,6 +302,7 @@ class WebRtcVoiceSession(
         _evidence.value = _evidence.value.copy(busy = true, message = "Recuperando el fragmento del servidor…")
         scope.launch {
             var bytes: ByteArray? = null
+            var completed = false
             try {
                 bytes = api.loadExcerpt(current, id)
                 playingExcerpt = true
@@ -315,13 +316,17 @@ class WebRtcVoiceSession(
                 player.play()
                 _evidence.value = _evidence.value.copy(message = "Reproduciendo · micrófono pausado.")
                 delay(((bytes.size - 44) * 1000L / 32000) + 100)
+                completed = true
             } catch (e: Exception) {
                 if (!closed.get()) _evidence.value = _evidence.value.copy(message = "No se pudo reproducir el fragmento.")
             } finally {
                 bytes?.fill(0)
                 runCatching { excerptPlayer?.stop(); excerptPlayer?.release() }
                 excerptPlayer = null; playingExcerpt = false
-                if (!closed.get()) { track?.setEnabled(true); _evidence.value = _evidence.value.copy(busy = false) }
+                if (!closed.get()) {
+                    track?.setEnabled(true)
+                    _evidence.value = _evidence.value.copy(busy = false, message = if (completed) "Fragmento reproducido · micrófono activo." else _evidence.value.message)
+                }
             }
         }
     }
